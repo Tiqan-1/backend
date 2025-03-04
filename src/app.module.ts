@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { AuthenticationModule } from './features/authentication/authentication.module'
+import { TokensModule } from './features/tokens/tokens.module'
 import { UsersModule } from './features/users/users.module'
 
 @Module({
@@ -14,6 +15,7 @@ import { UsersModule } from './features/users/users.module'
         MongooseModule.forRoot(process.env.MONGODB_URI as string),
         UsersModule,
         AuthenticationModule,
+        TokensModule,
     ],
     controllers: [AppController],
     providers: [AppService],

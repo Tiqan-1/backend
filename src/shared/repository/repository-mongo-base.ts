@@ -1,14 +1,14 @@
 import { Model } from 'mongoose'
 import { RepositoryBase } from './repository-base'
 
-export class RepositoryMongoBase<T, E> extends RepositoryBase<T, E> {
+export class RepositoryMongoBase<T> extends RepositoryBase<T> {
     constructor(protected model: Model<T>) {
         super()
     }
 
-    async create(element: E): Promise<void> {
+    async create(element: unknown): Promise<T> {
         const createdElement = new this.model(element)
-        await createdElement.save()
+        return (await createdElement.save()) as T
     }
 
     findAll(): Promise<T[]> {
