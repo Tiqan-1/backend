@@ -1,13 +1,24 @@
-import { ConfigModule } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
-import { MongooseModule } from '@nestjs/mongoose'
 import { Test, TestingModule } from '@nestjs/testing'
-import { TokensModule } from '../tokens/tokens.module'
-import { UsersModule } from '../users/users.module'
+import { TokensRepository } from '../tokens/tokens.repository'
+import { TokensService } from '../tokens/tokens.service'
+import { UsersRepository } from '../users/users.repository'
+import { UsersService } from '../users/users.service'
 import { AuthenticationService } from './authentication.service'
 
 const jwtService = {
     sign: () => {},
+}
+
+const usersRepository = {
+    create: () => {},
+    findOne: () => {},
+}
+
+const tokensRepository = {
+    create: () => {},
+    findOne: () => {},
+    remove: () => {},
 }
 
 describe('AuthenticationService', () => {
@@ -15,17 +26,12 @@ describe('AuthenticationService', () => {
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
-            imports: [
-                UsersModule,
-                TokensModule,
-                ConfigModule,
-                ConfigModule.forRoot({
-                    isGlobal: true,
-                }),
-                MongooseModule.forRoot(process.env.MONGODB_URI as string),
-            ],
-            providers: [AuthenticationService, JwtService],
+            providers: [AuthenticationService, JwtService, TokensService, TokensRepository, UsersService, UsersRepository],
         })
+            .overrideProvider(TokensRepository)
+            .useValue(tokensRepository)
+            .overrideProvider(UsersRepository)
+            .useValue(usersRepository)
             .overrideProvider(JwtService)
             .useValue(jwtService)
             .compile()
