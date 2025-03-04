@@ -24,6 +24,10 @@ export class TokensService {
     }
 
     async remove(refreshToken: string): Promise<void> {
-        await this.tokensRepository.remove({ token: refreshToken })
+        try {
+            await this.tokensRepository.remove({ token: refreshToken })
+        } catch (error) {
+            console.error('error while removing token', error)
+        }
     }
 }

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
 import * as bcrypt from 'bcryptjs'
 import { CreateUserDto } from './dto/create-user.dto'
 import { FindUserDto } from './dto/find-user.dto'
@@ -10,9 +10,14 @@ export class UsersService {
     constructor(private userRepository: UsersRepository) {}
 
     async create(user: CreateUserDto): Promise<FindUserDto> {
-        user.password = bcrypt.hashSync(user.password, 10)
-        const createdUser = await this.userRepository.create(user)
-        return new FindUserDto(createdUser)
+        try {
+            user.password = bcrypt.hashSync(user.password, 10)
+            const createdUser = await this.userRepository.create(user)
+            return new FindUserDto(createdUser)
+        } catch (error) {
+            console.error('error while creating user', error)
+            throw new InternalServerErrorException()
+        }
     }
 
     async findAll(): Promise<FindUserDto[]> {

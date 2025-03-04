@@ -37,9 +37,7 @@ export class AuthenticationService {
         if (!foundToken) {
             throw new UnauthorizedException('Invalid refresh token')
         }
-
         const newTokens = await this.generateUserTokens(foundToken.userId)
-
         await this.tokensService.remove(refreshToken)
         return newTokens
     }
