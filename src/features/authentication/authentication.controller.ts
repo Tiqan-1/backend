@@ -15,7 +15,7 @@ export class AuthenticationController {
         private readonly usersService: UsersService
     ) {}
 
-    @Post('signUp')
+    @Post('sign-up')
     signUp(@Body() createUserDto: CreateUserDto): Promise<FindUserDto> {
         return this.usersService.create(createUserDto)
     }
