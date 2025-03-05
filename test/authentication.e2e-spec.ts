@@ -82,22 +82,22 @@ describe('AuthenticationController (e2e)', () => {
         }
     })
 
-    it('POST /authentication/sign-up', () => {
+    it('POST /apiauthentication/sign-up', () => {
         const user: CreateUserDto = { name: 'test user', email: 'testUser@gmail.com', password: 'testPassword' }
         const expectedResult = { name: 'test user', email: 'testUser@gmail.com' }
         return request(app.getHttpServer())
-            .post('/authentication/sign-up')
+            .post('/api/authentication/sign-up')
             .send(user)
             .expect(HttpStatus.CREATED)
             .expect(expectedResult)
     })
 
-    it('POST /authentication/login', async () => {
+    it('POST /api/authentication/login', async () => {
         const user: User = { name: 'test user', email: 'testUser@gmail.com', password: bcrypt.hashSync('testPassword', 10) }
         const model = new userModel(user)
         await model.save()
 
         const body = { email: 'testUser@gmail.com', password: 'testPassword' }
-        return request(app.getHttpServer()).post('/authentication/login').send(body).expect(HttpStatus.OK)
+        return request(app.getHttpServer()).post('/api/authentication/login').send(body).expect(HttpStatus.OK)
     })
 })
