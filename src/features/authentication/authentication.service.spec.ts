@@ -7,18 +7,18 @@ import { UsersService } from '../users/users.service'
 import { AuthenticationService } from './authentication.service'
 
 const jwtService = {
-    sign: () => {},
+    sign: jest.fn(),
 }
 
 const usersRepository = {
-    create: () => {},
-    findOne: () => {},
+    create: jest.fn(),
+    findOne: jest.fn(),
 }
 
 const tokensRepository = {
-    create: () => {},
-    findOne: () => {},
-    remove: () => {},
+    create: jest.fn(),
+    findOne: jest.fn(),
+    remove: jest.fn(),
 }
 
 describe('AuthenticationService', () => {
@@ -36,7 +36,7 @@ describe('AuthenticationService', () => {
             .useValue(jwtService)
             .compile()
 
-        service = module.get<AuthenticationService>(AuthenticationService)
+        service = module.get(AuthenticationService)
     })
 
     it('should be defined', () => {
