@@ -4,10 +4,10 @@ import { UsersRepository } from './users.repository'
 import { UsersService } from './users.service'
 
 const usersRepository = {
-    create: () => {},
-    findAll: () => {},
-    findOne: () => {},
-    remove: () => {},
+    create: jest.fn(),
+    findAll: jest.fn(),
+    findOne: jest.fn(),
+    remove: jest.fn(),
 }
 
 describe('UsersController', () => {
