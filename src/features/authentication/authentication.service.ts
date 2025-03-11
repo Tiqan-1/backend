@@ -1,31 +1,18 @@
 import { Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
-import * as bcrypt from 'bcryptjs'
-import { Types } from 'mongoose'
 import { v4 as uuidv4 } from 'uuid'
 import { TokensService } from '../tokens/tokens.service'
-import { UserDocument } from '../users/schemas/user.schema'
-import { UsersService } from '../users/users.service'
 import { AuthenticationResponseDto } from './dto/authentication-response.dto'
 
 @Injectable()
 export class AuthenticationService {
     constructor(
-        private readonly usersService: UsersService,
         private readonly jwtService: JwtService,
         private readonly tokensService: TokensService
     ) {}
 
-    async validateUser(email: string, password: string): Promise<UserDocument | undefined> {
-        const user = await this.usersService.findByEmail(email)
-        if (user && bcrypt.compareSync(password, user.password)) {
-            return user
-        }
-        return undefined
-    }
-
-    login(user: UserDocument) {
-        return this.generateUserTokens(user._id)
+    login(userId: string) {
+        return this.generateUserTokens(userId)
     }
 
     logout(refreshToken: string): Promise<void> {
@@ -42,7 +29,7 @@ export class AuthenticationService {
         return newTokens
     }
 
-    private async generateUserTokens(userId: Types.ObjectId): Promise<AuthenticationResponseDto> {
+    private async generateUserTokens(userId: string): Promise<AuthenticationResponseDto> {
         try {
             const accessToken = this.jwtService.sign({ userId: userId })
             const refreshToken = uuidv4()

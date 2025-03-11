@@ -1,6 +1,6 @@
 import { Prop, raw, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { CallbackWithoutResultAndOptionalError, HydratedDocument, Types } from 'mongoose'
-import crypto from 'node:crypto'
+import * as crypto from 'node:crypto'
 import { Lesson, LessonSchema } from 'src/features/lessons/schemas/lesson.schema'
 import { Subject } from '../../subjects/schemas/subject.schema'
 

@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { CallbackWithoutResultAndOptionalError, HydratedDocument, Types } from 'mongoose'
-import crypto from 'node:crypto'
+import * as crypto from 'node:crypto'
 import { Level } from '../../levels/schemas/level.schema'
 import { Program } from '../../programs/schemas/program.schema'
 import { State } from '../enums/state.enum'

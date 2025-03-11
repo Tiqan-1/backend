@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { MongooseModule } from '@nestjs/mongoose'
 import { AuthenticationModule } from './features/authentication/authentication.module'
+import { ManagersModule } from './features/managers/managers.module'
 import { TokensModule } from './features/tokens/tokens.module'
 import { UsersModule } from './features/users/users.module'
 
@@ -14,6 +15,7 @@ import { UsersModule } from './features/users/users.module'
         UsersModule,
         AuthenticationModule,
         TokensModule,
+        ManagersModule,
     ],
 })
 export class AppModule {}

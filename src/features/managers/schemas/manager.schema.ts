@@ -1,12 +1,13 @@
-import { Prop, SchemaFactory } from '@nestjs/mongoose'
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { CallbackWithoutResultAndOptionalError, HydratedDocument, Types } from 'mongoose'
-import crypto from 'node:crypto'
+import * as crypto from 'node:crypto'
 import { Program } from '../../programs/schemas/program.schema'
 
 export type ManagerDocument = HydratedDocument<Manager>
 
+@Schema()
 export class Manager {
-    @Prop({ required: true, unique: true, type: String })
+    @Prop({ unique: true, type: String })
     id: string
 
     @Prop({ required: true, type: String })
@@ -19,7 +20,7 @@ export class Manager {
     password: string
 
     @Prop({ required: true, type: [Types.ObjectId], ref: 'Program', default: [] })
-    subscriptions: Program[]
+    programs: Program[]
 }
 
 export const ManagerSchema = SchemaFactory.createForClass(Manager)

@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { CallbackWithoutResultAndOptionalError, HydratedDocument, Types } from 'mongoose'
-import crypto from 'node:crypto'
+import * as crypto from 'node:crypto'
 import { Subscription } from '../../subscriptions/schemas/subscription.schema'
 import { Gender } from '../enums/gender'
 
