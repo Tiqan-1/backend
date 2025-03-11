@@ -8,7 +8,7 @@ export type SubjectInstanceDocument = HydratedDocument<SubjectInstance>
 
 @Schema()
 export class SubjectInstance {
-    @Prop({ required: true, unique: true, type: String })
+    @Prop({ unique: true, type: String })
     id: string
 
     @Prop({ required: true, type: Types.ObjectId, ref: 'Subject' })

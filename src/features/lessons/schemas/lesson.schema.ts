@@ -7,7 +7,7 @@ export type LessonDocument = HydratedDocument<Lesson>
 
 @Schema()
 export class Lesson {
-    @Prop({ required: true, unique: true, type: String })
+    @Prop({ unique: true, type: String })
     id: string
 
     @Prop({ required: true, type: String })

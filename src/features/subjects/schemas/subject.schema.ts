@@ -7,7 +7,7 @@ export type SubjectDocument = HydratedDocument<Subject>
 
 @Schema()
 export class Subject {
-    @Prop({ required: true, unique: true, type: String })
+    @Prop({ unique: true, type: String })
     id: string
 
     @Prop({ required: true, type: String })

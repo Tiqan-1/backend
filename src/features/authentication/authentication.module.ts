@@ -5,8 +5,11 @@ import { PassportModule } from '@nestjs/passport'
 import { RefreshToken, RefreshTokenSchema } from '../tokens/schemas/refresh-token.schema'
 import { TokensModule } from '../tokens/tokens.module'
 import { UsersModule } from '../users/users.module'
+import { AuthenticationController } from './authentication.controller'
 import { AuthenticationService } from './authentication.service'
 import { JwtStrategy } from './strategies/jwt.strategy'
+import { ManagersLocalStrategy } from './strategies/managers-local-strategy.service'
+import { StudentsLocalStrategy } from './strategies/students-local-strategy.service'
 
 @Module({
     imports: [
@@ -19,8 +22,8 @@ import { JwtStrategy } from './strategies/jwt.strategy'
             signOptions: { expiresIn: '1d' },
         }),
     ],
-    controllers: [],
-    providers: [AuthenticationService, JwtStrategy],
+    controllers: [AuthenticationController],
+    providers: [AuthenticationService, JwtStrategy, StudentsLocalStrategy, ManagersLocalStrategy],
     exports: [AuthenticationService],
 })
 export class AuthenticationModule {}

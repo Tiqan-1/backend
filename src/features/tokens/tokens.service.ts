@@ -7,14 +7,9 @@ export class TokensService {
     constructor(private tokensRepository: TokensRepository) {}
 
     async create(refreshToken: string, userId: string): Promise<void> {
-        const expiryDate = new Date()
-        expiryDate.setDate(expiryDate.getDate() + 10)
-
         await this.tokensRepository.create({
             token: refreshToken,
             userId: userId,
-            expiryDate,
-            lastUsedAt: new Date(),
         })
     }
 

@@ -11,11 +11,8 @@ export class RefreshToken {
     @Prop({ type: String, required: true })
     userId: string
 
-    @Prop({ required: true })
-    expiryDate: Date
-
-    @Prop({ required: true })
-    lastUsedAt: Date
+    @Prop({ required: true, default: Date.now(), expires: '10d' })
+    createdAt: Date
 }
 
 export const RefreshTokenSchema = SchemaFactory.createForClass(RefreshToken)

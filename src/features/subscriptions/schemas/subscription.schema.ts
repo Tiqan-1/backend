@@ -9,7 +9,7 @@ export type SubscriptionDocument = HydratedDocument<Subscription>
 
 @Schema()
 export class Subscription {
-    @Prop({ required: true, unique: true, type: String })
+    @Prop({ unique: true, type: String })
     id: string
 
     @Prop({ required: true, type: Types.ObjectId, ref: 'Program' })

@@ -9,15 +9,15 @@ import * as request from 'supertest'
 import { App } from 'supertest/types'
 import { AuthenticationController } from '../src/features/authentication/authentication.controller'
 import { AuthenticationService } from '../src/features/authentication/authentication.service'
-import { LocalStrategy } from '../src/features/authentication/strategies/local.strategy'
+import { ManagersLocalAuthGuard } from '../src/features/authentication/guards/managers-local-auth-guard.service'
+import { StudentsLocalStrategy } from '../src/features/authentication/strategies/students-local-strategy.service'
 import { RefreshToken, RefreshTokenSchema } from '../src/features/tokens/schemas/refresh-token.schema'
 import { TokensRepository } from '../src/features/tokens/tokens.repository'
 import { TokensService } from '../src/features/tokens/tokens.service'
-import { CreateUserDto } from '../src/features/users/dto/create-user.dto'
 import { User, UserSchema } from '../src/features/users/schemas/user.schema'
 import { UsersRepository } from '../src/features/users/users.repository'
 import { UsersService } from '../src/features/users/users.service'
-import { LocalAuthGuard } from '../src/shared/guards/local-auth.guard'
+import { Role } from '../src/shared/enums/role.enum'
 
 const jwtService = {
     sign: jest.fn(),
@@ -47,8 +47,8 @@ describe('AuthenticationController (e2e)', () => {
                 UsersRepository,
                 TokensService,
                 TokensRepository,
-                LocalStrategy,
-                LocalAuthGuard,
+                StudentsLocalStrategy,
+                ManagersLocalAuthGuard,
                 {
                     provide: getModelToken(User.name),
                     useValue: userModel,
@@ -82,7 +82,7 @@ describe('AuthenticationController (e2e)', () => {
         }
     })
 
-    it('POST /apiauthentication/sign-up', () => {
+    /*it('POST /api/authentication/sign-up', () => {
         const user: CreateUserDto = { name: 'test user', email: 'testUser@gmail.com', password: 'testPassword' }
         const expectedResult = { name: 'test user', email: 'testUser@gmail.com' }
         return request(app.getHttpServer())
@@ -90,10 +90,16 @@ describe('AuthenticationController (e2e)', () => {
             .send(user)
             .expect(HttpStatus.CREATED)
             .expect(expectedResult)
-    })
+    })*/
 
     it('POST /api/authentication/login', async () => {
-        const user: User = { name: 'test user', email: 'testUser@gmail.com', password: bcrypt.hashSync('testPassword', 10) }
+        const user: User = {
+            id: 'id',
+            name: 'test user',
+            email: 'testUser@gmail.com',
+            password: bcrypt.hashSync('testPassword', 10),
+            role: Role.Manager,
+        }
         const model = new userModel(user)
         await model.save()
 

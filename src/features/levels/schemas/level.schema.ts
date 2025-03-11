@@ -7,7 +7,7 @@ export type LevelDocument = HydratedDocument<Level>
 
 @Schema()
 export class Level {
-    @Prop({ required: true, unique: true, type: String })
+    @Prop({ unique: true, type: String })
     id: string
 
     @Prop({ required: true, type: String })

@@ -1,12 +1,17 @@
 import { Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
+import * as bcrypt from 'bcryptjs'
 import { v4 as uuidv4 } from 'uuid'
+import { Role } from '../../shared/enums/role.enum'
 import { TokensService } from '../tokens/tokens.service'
+import { UserDocument } from '../users/schemas/user.schema'
+import { UsersService } from '../users/users.service'
 import { AuthenticationResponseDto } from './dto/authentication-response.dto'
 
 @Injectable()
 export class AuthenticationService {
     constructor(
+        private readonly usersService: UsersService,
         private readonly jwtService: JwtService,
         private readonly tokensService: TokensService
     ) {}
@@ -27,6 +32,22 @@ export class AuthenticationService {
         const newTokens = await this.generateUserTokens(foundToken.userId)
         await this.tokensService.remove(refreshToken)
         return newTokens
+    }
+
+    async validateStudent(email: string, password: string): Promise<UserDocument | undefined> {
+        const user = await this.usersService.findByEmail(email)
+        if (user && bcrypt.compareSync(password, user.password) && user.role === Role.Student) {
+            return user
+        }
+        return undefined
+    }
+
+    async validateManager(email: string, password: string): Promise<UserDocument | undefined> {
+        const user = await this.usersService.findByEmail(email)
+        if (user && bcrypt.compareSync(password, user.password) && user.role === Role.Manager) {
+            return user
+        }
+        return undefined
     }
 
     private async generateUserTokens(userId: string): Promise<AuthenticationResponseDto> {

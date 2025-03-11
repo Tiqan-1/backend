@@ -7,7 +7,7 @@ export type ProgramDocument = HydratedDocument<Program>
 
 @Schema()
 export class Program {
-    @Prop({ required: true, unique: true, type: String })
+    @Prop({ unique: true, type: String })
     id: string
 
     @Prop({ required: true, type: String })

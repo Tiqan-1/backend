@@ -1,16 +1,36 @@
 import { Body, Controller, HttpCode, HttpStatus, InternalServerErrorException, Post, Request, UseGuards } from '@nestjs/common'
 import { ApiBasicAuth, ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger'
-import { HydratedDocument } from 'mongoose'
-import { LocalAuthGuard } from '../../shared/guards/local-auth.guard'
-import { AuthenticationService } from '../authentication/authentication.service'
-import { AuthenticationRequestDto } from '../authentication/dto/authentication-request.dto'
-import { AuthenticationResponseDto } from '../authentication/dto/authentication-response.dto'
-import { RefreshTokenRequestDto } from '../authentication/dto/refresh-token-request.dto'
-import { ManagerDocument } from './schemas/manager.schema'
+import { AuthenticationService } from './authentication.service'
+import { AuthenticationRequestDto } from './dto/authentication-request.dto'
+import { AuthenticationResponseDto } from './dto/authentication-response.dto'
+import { RefreshTokenRequestDto } from './dto/refresh-token-request.dto'
+import { ManagersLocalAuthGuard } from './guards/managers-local-auth-guard.service'
+import { StudentsLocalAuthGuard } from './guards/students-local-auth-guard.service'
 
-@Controller('api/managers/authentication')
-export class ManagersAuthenticationController {
+@Controller('api/authentication')
+export class AuthenticationController {
     constructor(private readonly authenticationService: AuthenticationService) {}
+
+    @ApiOperation({
+        summary: 'Logs a student-user in',
+        description: 'Logs a student-user in and returns the tokens to be used in further calls.',
+    })
+    @ApiResponse({ status: HttpStatus.OK, description: 'The user logged in successfully.', type: AuthenticationResponseDto })
+    @ApiResponse({
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        description: 'An internal error occurred while logging the user in.',
+    })
+    @ApiBody({ type: AuthenticationRequestDto })
+    @ApiBasicAuth()
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(StudentsLocalAuthGuard)
+    @Post('login')
+    login(@Request() req: { user: { id: string } }): Promise<AuthenticationResponseDto> | undefined {
+        if (req.user) {
+            return this.authenticationService.login(req.user.id)
+        }
+        throw new InternalServerErrorException('User not found in session.')
+    }
 
     @ApiOperation({
         summary: 'Logs a manager-user in',
@@ -24,17 +44,17 @@ export class ManagersAuthenticationController {
     @ApiBody({ type: AuthenticationRequestDto })
     @ApiBasicAuth()
     @HttpCode(HttpStatus.OK)
-    @UseGuards(LocalAuthGuard)
-    @Post('login')
-    login(@Request() req: { user: HydratedDocument<ManagerDocument> }): Promise<AuthenticationResponseDto> | undefined {
-        if (req.user) {
-            return this.authenticationService.login(req.user.id as string)
+    @UseGuards(ManagersLocalAuthGuard)
+    @Post('manager-login')
+    loginManager(@Request() req: { user: { id: string } }): Promise<AuthenticationResponseDto> | undefined {
+        if (req.user?.id) {
+            return this.authenticationService.login(req.user.id)
         }
         throw new InternalServerErrorException('User not found in session.')
     }
 
     @ApiBody({ type: RefreshTokenRequestDto })
-    @ApiOperation({ summary: 'Logs a manager-user out', description: 'Logs a manager-user out' })
+    @ApiOperation({ summary: 'Logs a user out', description: 'Logs a user out' })
     @ApiResponse({ status: HttpStatus.OK, description: 'The user got logged out successfully.' })
     @HttpCode(HttpStatus.OK)
     @Post('logout')
