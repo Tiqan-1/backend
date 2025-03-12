@@ -1,6 +1,6 @@
 import { Prop, raw, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { CallbackWithoutResultAndOptionalError, HydratedDocument, Types } from 'mongoose'
-import crypto from 'node:crypto'
+import * as crypto from 'node:crypto'
 import { Lesson, LessonSchema } from 'src/features/lessons/schemas/lesson.schema'
 import { Subject } from '../../subjects/schemas/subject.schema'
 
@@ -8,7 +8,7 @@ export type SubjectInstanceDocument = HydratedDocument<SubjectInstance>
 
 @Schema()
 export class SubjectInstance {
-    @Prop({ required: true, unique: true, type: String })
+    @Prop({ unique: true, type: String })
     id: string
 
     @Prop({ required: true, type: Types.ObjectId, ref: 'Subject' })

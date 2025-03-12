@@ -1,13 +1,13 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { CallbackWithoutResultAndOptionalError, HydratedDocument, Types } from 'mongoose'
-import crypto from 'node:crypto'
+import * as crypto from 'node:crypto'
 import { SubjectInstance } from '../../subject-instances/schemas/subject-instance.schema'
 
 export type LevelDocument = HydratedDocument<Level>
 
 @Schema()
 export class Level {
-    @Prop({ required: true, unique: true, type: String })
+    @Prop({ unique: true, type: String })
     id: string
 
     @Prop({ required: true, type: String })

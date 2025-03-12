@@ -1,30 +1,20 @@
-import { Prop, SchemaFactory } from '@nestjs/mongoose'
-import { CallbackWithoutResultAndOptionalError, HydratedDocument, Types } from 'mongoose'
-import crypto from 'node:crypto'
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
+import { HydratedDocument, Types } from 'mongoose'
+import { Role } from '../../../shared/enums/role.enum'
 import { Program } from '../../programs/schemas/program.schema'
 
 export type ManagerDocument = HydratedDocument<Manager>
 
+@Schema()
 export class Manager {
-    @Prop({ required: true, unique: true, type: String })
     id: string
-
-    @Prop({ required: true, type: String })
     name: string
-
-    @Prop({ unique: true, required: true, type: String })
     email: string
-
-    @Prop({ required: true, type: String })
     password: string
+    role: Role
 
     @Prop({ required: true, type: [Types.ObjectId], ref: 'Program', default: [] })
-    subscriptions: Program[]
+    programs: Program[]
 }
 
 export const ManagerSchema = SchemaFactory.createForClass(Manager)
-
-ManagerSchema.pre('save', function (next: CallbackWithoutResultAndOptionalError) {
-    this.id = crypto.createHash('sha256').update(this._id.toString()).digest('hex')
-    next()
-})
