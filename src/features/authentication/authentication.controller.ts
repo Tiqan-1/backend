@@ -56,6 +56,10 @@ export class AuthenticationController {
     @ApiBody({ type: RefreshTokenRequestDto })
     @ApiOperation({ summary: 'Logs a user out', description: 'Logs a user out' })
     @ApiResponse({ status: HttpStatus.OK, description: 'The user got logged out successfully.' })
+    @ApiResponse({
+        status: HttpStatus.NOT_FOUND,
+        description: 'Refresh token is invalid.',
+    })
     @HttpCode(HttpStatus.OK)
     @Post('logout')
     logout(@Body('refreshToken') refreshToken: string): Promise<void> {

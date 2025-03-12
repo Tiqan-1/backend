@@ -3,12 +3,12 @@ import { JwtService } from '@nestjs/jwt'
 import { getModelToken } from '@nestjs/mongoose'
 import { Test, TestingModule } from '@nestjs/testing'
 import * as bcrypt from 'bcryptjs'
-import { MongoMemoryServer } from 'mongodb-memory-server'
-import { connect, Connection, Model } from 'mongoose'
+import { Model } from 'mongoose'
 import * as request from 'supertest'
 import { App } from 'supertest/types'
 import { AuthenticationController } from '../src/features/authentication/authentication.controller'
 import { AuthenticationService } from '../src/features/authentication/authentication.service'
+import { RefreshTokenRequestDto } from '../src/features/authentication/dto/refresh-token-request.dto'
 import { ManagersLocalAuthGuard } from '../src/features/authentication/guards/managers-local-auth-guard.service'
 import { StudentsLocalStrategy } from '../src/features/authentication/strategies/students-local-strategy.service'
 import { RefreshToken, RefreshTokenSchema } from '../src/features/tokens/schemas/refresh-token.schema'
@@ -18,6 +18,7 @@ import { User, UserSchema } from '../src/features/users/schemas/user.schema'
 import { UsersRepository } from '../src/features/users/users.repository'
 import { UsersService } from '../src/features/users/users.service'
 import { Role } from '../src/shared/enums/role.enum'
+import { MongoTestHelper } from '../src/shared/helper/mongo-test.helper'
 
 const jwtService = {
     sign: jest.fn(),
@@ -25,17 +26,14 @@ const jwtService = {
 
 describe('AuthenticationController (e2e)', () => {
     let app: INestApplication<App>
-    let mongoServer: MongoMemoryServer
-    let mongoConnection: Connection
-    let userModel: Model<User>
-    let refreshTokenModel: Model<RefreshToken>
+    let mongoTestHelper: MongoTestHelper
+    let userModel: Model<unknown>
+    let refreshTokenModel: Model<unknown>
 
     beforeAll(async () => {
-        mongoServer = await MongoMemoryServer.create()
-        const uri = mongoServer.getUri()
-        mongoConnection = (await connect(uri)).connection
-        userModel = mongoConnection.model(User.name, UserSchema)
-        refreshTokenModel = mongoConnection.model(RefreshToken.name, RefreshTokenSchema)
+        mongoTestHelper = await MongoTestHelper.instance()
+        userModel = mongoTestHelper.initModel(User.name, UserSchema)
+        refreshTokenModel = mongoTestHelper.initModel(RefreshToken.name, RefreshTokenSchema)
 
         const module: TestingModule = await Test.createTestingModule({
             imports: [],
@@ -68,31 +66,15 @@ describe('AuthenticationController (e2e)', () => {
     })
 
     afterAll(async () => {
-        await mongoConnection.dropDatabase()
-        await mongoConnection.close()
-        await mongoServer.stop()
+        await mongoTestHelper.tearDown()
         await app.close()
     })
 
     afterEach(async () => {
-        const collections = mongoConnection.collections
-        for (const key in collections) {
-            const collection = collections[key]
-            await collection.deleteMany({})
-        }
+        await mongoTestHelper.clearCollections()
     })
 
-    /*it('POST /api/authentication/sign-up', () => {
-        const user: CreateUserDto = { name: 'test user', email: 'testUser@gmail.com', password: 'testPassword' }
-        const expectedResult = { name: 'test user', email: 'testUser@gmail.com' }
-        return request(app.getHttpServer())
-            .post('/api/authentication/sign-up')
-            .send(user)
-            .expect(HttpStatus.CREATED)
-            .expect(expectedResult)
-    })*/
-
-    it('POST /api/authentication/login', async () => {
+    it('POST /api/authentication/login with manager, should return 401', async () => {
         const user: User = {
             id: 'id',
             name: 'test user',
@@ -104,6 +86,54 @@ describe('AuthenticationController (e2e)', () => {
         await model.save()
 
         const body = { email: 'testUser@gmail.com', password: 'testPassword' }
+        return request(app.getHttpServer()).post('/api/authentication/login').send(body).expect(HttpStatus.UNAUTHORIZED)
+    })
+
+    it('POST /api/authentication/login with student, should return 200', async () => {
+        const user: User = {
+            id: 'id',
+            name: 'test user',
+            email: 'testUser@gmail.com',
+            password: bcrypt.hashSync('testPassword', 10),
+            role: Role.Student,
+        }
+        const model = new userModel(user)
+        await model.save()
+
+        const body = { email: 'testUser@gmail.com', password: 'testPassword' }
         return request(app.getHttpServer()).post('/api/authentication/login').send(body).expect(HttpStatus.OK)
+    })
+
+    it('POST /api/authentication/logout with valid token, should return 200', async () => {
+        const token: RefreshToken = {
+            token: 'test token',
+            userId: 'test user id',
+            createdAt: new Date(),
+        }
+        const model = new refreshTokenModel(token)
+        await model.save()
+
+        const body: RefreshTokenRequestDto = { refreshToken: 'test token' }
+        return request(app.getHttpServer()).post('/api/authentication/logout').send(body).expect(HttpStatus.OK)
+    })
+
+    it('POST /api/authentication/logout with invalid token, should return 401', async () => {
+        const body: RefreshTokenRequestDto = { refreshToken: 'test token' }
+
+        return request(app.getHttpServer()).post('/api/authentication/logout').send(body).expect(HttpStatus.NOT_FOUND)
+    })
+
+    it('POST /api/authentication/refresh-tokens, should return 200', async () => {
+        const token: RefreshToken = {
+            token: 'test token',
+            userId: 'test user id',
+            createdAt: new Date(),
+        }
+        const model = new refreshTokenModel(token)
+        await model.save()
+
+        const body: RefreshTokenRequestDto = { refreshToken: 'test token' }
+
+        return request(app.getHttpServer()).post('/api/authentication/refresh-tokens').send(body).expect(HttpStatus.CREATED)
     })
 })

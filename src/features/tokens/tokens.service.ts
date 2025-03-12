@@ -14,14 +14,10 @@ export class TokensService {
     }
 
     findOne(refreshToken: string): Promise<RefreshTokenDocument | undefined> {
-        return this.tokensRepository.findOne({ token: refreshToken, expiryDate: { $gte: new Date() } })
+        return this.tokensRepository.findOne({ token: refreshToken })
     }
 
-    async remove(refreshToken: string): Promise<void> {
-        try {
-            await this.tokensRepository.remove({ token: refreshToken })
-        } catch (error) {
-            console.error('error while removing token', error)
-        }
+    remove(refreshToken: string): Promise<boolean> {
+        return this.tokensRepository.remove({ token: refreshToken })
     }
 }

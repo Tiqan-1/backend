@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common'
+import { Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import * as bcrypt from 'bcryptjs'
 import { v4 as uuidv4 } from 'uuid'
@@ -20,8 +20,11 @@ export class AuthenticationService {
         return this.generateUserTokens(userId)
     }
 
-    logout(refreshToken: string): Promise<void> {
-        return this.tokensService.remove(refreshToken)
+    async logout(refreshToken: string): Promise<void> {
+        const success = await this.tokensService.remove(refreshToken)
+        if (!success) {
+            throw new NotFoundException('invalid refresh token')
+        }
     }
 
     async refreshTokens(refreshToken: string): Promise<AuthenticationResponseDto> {

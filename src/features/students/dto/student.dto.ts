@@ -1,6 +1,6 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { IsEmail, IsString, IsStrongPassword } from 'class-validator'
-import { SubscriptionDto } from 'src/features/subscriptions/dto/subscription.dto'
+import { SubscriptionDto } from '../../subscriptions/dto/subscription.dto'
 import { Gender } from '../enums/gender'
 import { StudentDocument } from '../schemas/student.schema'
 
