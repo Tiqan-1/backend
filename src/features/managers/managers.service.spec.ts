@@ -55,6 +55,7 @@ describe('ManagersService', () => {
             name: 'test manager',
             email: 'manager@email.com',
             programs: [],
+            subjects: [],
         }
 
         const result = await service.create(managerDto)

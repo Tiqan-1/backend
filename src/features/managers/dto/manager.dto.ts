@@ -9,6 +9,7 @@ export class ManagerDto {
         this.name = manager.name
         this.email = manager.email
         this.programs = manager.programs
+        this.subjects = manager.subjects
     }
 
     @ApiProperty({ type: String, example: 'John Doe', description: 'full name of manager' })

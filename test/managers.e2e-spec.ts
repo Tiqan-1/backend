@@ -4,7 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { Model } from 'mongoose'
 import * as request from 'supertest'
 import { App } from 'supertest/types'
-import { SignUpManagerDto } from '../src/features/managers/dto/manager.dto'
+import { ManagerDto, SignUpManagerDto } from '../src/features/managers/dto/manager.dto'
 import { ManagersController } from '../src/features/managers/managers.controller'
 import { ManagersRepository } from '../src/features/managers/managers.repository'
 import { ManagersService } from '../src/features/managers/managers.service'
@@ -50,7 +50,7 @@ describe('ManagersController (e2e)', () => {
 
     it('POST /api/managers/sign-up', () => {
         const user: SignUpManagerDto = { name: 'test user', email: 'testUser@gmail.com', password: 'testPassword' }
-        const expectedResult = { name: 'test user', email: 'testUser@gmail.com', programs: [] }
+        const expectedResult: ManagerDto = { name: 'test user', email: 'testUser@gmail.com', programs: [], subjects: [] }
         return request(app.getHttpServer())
             .post('/api/managers/sign-up')
             .send(user)
