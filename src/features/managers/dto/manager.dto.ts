@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsEmail, IsString, IsStrongPassword } from 'class-validator'
+import { IsEmail, IsString, IsStrongPassword, ValidateNested } from 'class-validator'
 import { ProgramDto } from '../../programs/dto/program.dto'
+import { SubjectDto } from '../../subjects/dto/subject.dto.to'
 import { ManagerDocument } from '../schemas/manager.schema'
 
 export class ManagerDto {
@@ -19,8 +20,12 @@ export class ManagerDto {
     email: string
 
     @ApiProperty({ type: ProgramDto, isArray: true, description: 'active programs created by manager' })
-    @IsEmail()
+    @ValidateNested({ each: true })
     programs: ProgramDto[]
+
+    @ApiProperty({ type: SubjectDto, isArray: true, description: 'subjects created by manager' })
+    @ValidateNested({ each: true })
+    subjects: SubjectDto[]
 }
 
 export class SignUpManagerDto {

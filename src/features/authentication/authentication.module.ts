@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 import { JwtModule } from '@nestjs/jwt'
 import { MongooseModule } from '@nestjs/mongoose'
 import { PassportModule } from '@nestjs/passport'
+import * as dotenv from 'dotenv'
 import { RefreshToken, RefreshTokenSchema } from '../tokens/schemas/refresh-token.schema'
 import { TokensModule } from '../tokens/tokens.module'
 import { UsersModule } from '../users/users.module'
@@ -10,6 +11,8 @@ import { AuthenticationService } from './authentication.service'
 import { JwtStrategy } from './strategies/jwt.strategy'
 import { ManagersLocalStrategy } from './strategies/managers-local-strategy.service'
 import { StudentsLocalStrategy } from './strategies/students-local-strategy.service'
+
+dotenv.config()
 
 @Module({
     imports: [
