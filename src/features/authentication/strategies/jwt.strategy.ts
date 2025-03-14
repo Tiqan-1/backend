@@ -13,9 +13,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         })
     }
 
-    validate(payload: object): { userId: unknown } | undefined {
-        if (payload && 'userId' in payload) {
-            return { userId: payload.userId }
+    validate(payload: object): { userId: unknown; role: unknown } | undefined {
+        if (payload && 'userId' in payload && 'role' in payload) {
+            return { userId: payload.userId, role: payload.role }
         }
     }
 }

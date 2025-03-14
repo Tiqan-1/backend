@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common'
+import { UserDocument } from '../users/schemas/user.schema'
 import { RefreshTokenDocument } from './schemas/refresh-token.schema'
 import { TokensRepository } from './tokens.repository'
 
@@ -6,10 +7,10 @@ import { TokensRepository } from './tokens.repository'
 export class TokensService {
     constructor(private tokensRepository: TokensRepository) {}
 
-    async create(refreshToken: string, userId: string): Promise<void> {
+    async create(refreshToken: string, user: UserDocument): Promise<void> {
         await this.tokensRepository.create({
             token: refreshToken,
-            userId: userId,
+            user,
         })
     }
 

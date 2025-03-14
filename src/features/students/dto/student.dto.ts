@@ -13,7 +13,7 @@ export class SignUpStudentDto {
     @IsEmail()
     email: string
 
-    @ApiProperty({ enum: Gender, example: 'MALE', description: 'gender of student' })
+    @ApiProperty({ enum: Gender, example: Gender.male, description: 'gender of student' })
     @IsEmail()
     gender: Gender
 
