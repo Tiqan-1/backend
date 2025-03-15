@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose'
 import { AuthenticationModule } from './features/authentication/authentication.module'
 import { ManagersModule } from './features/managers/managers.module'
 import { StudentsModule } from './features/students/students.module'
+import { SubjectsModule } from './features/subjects/subjects.module'
 import { TokensModule } from './features/tokens/tokens.module'
 import { UsersModule } from './features/users/users.module'
 
@@ -18,6 +19,8 @@ import { UsersModule } from './features/users/users.module'
         TokensModule,
         ManagersModule,
         StudentsModule,
+        SubjectsModule,
     ],
+    providers: [],
 })
 export class AppModule {}

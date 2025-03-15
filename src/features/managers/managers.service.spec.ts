@@ -1,12 +1,11 @@
 import { getModelToken } from '@nestjs/mongoose'
 import { Test, TestingModule } from '@nestjs/testing'
 import { Model } from 'mongoose'
-import { MongoTestHelper } from '../../shared/helper/mongo-test.helper'
-import { User, UserSchema } from '../users/schemas/user.schema'
+import { MongoTestHelper } from '../../shared/test/helper/mongo-test.helper'
 import { ManagerDto, SignUpManagerDto } from './dto/manager.dto'
 import { ManagersRepository } from './managers.repository'
 import { ManagersService } from './managers.service'
-import { Manager, ManagerSchema } from './schemas/manager.schema'
+import { Manager } from './schemas/manager.schema'
 
 describe('ManagersService', () => {
     let service: ManagersService
@@ -15,8 +14,7 @@ describe('ManagersService', () => {
 
     beforeAll(async () => {
         mongoTestHelper = await MongoTestHelper.instance()
-        const userModel = mongoTestHelper.initModel(User.name, UserSchema)
-        managerModel = userModel.discriminator(Manager.name, ManagerSchema) as Model<Manager>
+        managerModel = mongoTestHelper.initManager()
 
         const module: TestingModule = await Test.createTestingModule({
             providers: [

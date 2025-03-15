@@ -16,8 +16,8 @@ export class AuthenticationService {
         private readonly tokensService: TokensService
     ) {}
 
-    login(userId: string) {
-        return this.generateUserTokens(userId)
+    login(user: UserDocument): Promise<AuthenticationResponseDto> {
+        return this.generateUserTokens(user)
     }
 
     async logout(refreshToken: string): Promise<void> {
@@ -32,7 +32,7 @@ export class AuthenticationService {
         if (!foundToken) {
             throw new UnauthorizedException('Invalid refresh token')
         }
-        const newTokens = await this.generateUserTokens(foundToken.userId)
+        const newTokens = await this.generateUserTokens(foundToken.user)
         await this.tokensService.remove(refreshToken)
         return newTokens
     }
@@ -53,12 +53,12 @@ export class AuthenticationService {
         return undefined
     }
 
-    private async generateUserTokens(userId: string): Promise<AuthenticationResponseDto> {
+    private async generateUserTokens(user: UserDocument): Promise<AuthenticationResponseDto> {
         try {
-            const accessToken = this.jwtService.sign({ userId: userId })
+            const accessToken = this.jwtService.sign({ userId: user.id as string, role: user.role })
             const refreshToken = uuidv4()
 
-            await this.tokensService.create(refreshToken, userId)
+            await this.tokensService.create(refreshToken, user)
 
             return {
                 accessToken: accessToken,

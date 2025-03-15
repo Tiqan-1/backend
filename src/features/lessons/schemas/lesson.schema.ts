@@ -13,7 +13,7 @@ export class Lesson {
     @Prop({ required: true, type: String })
     title: string
 
-    @Prop({ required: true, type: String, enum: [LessonType.pdf, LessonType.other, LessonType.video] })
+    @Prop({ required: true, type: String, enum: LessonType, default: [] })
     Type: LessonType
 
     @Prop({ required: true, type: String })

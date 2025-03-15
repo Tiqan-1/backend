@@ -1,5 +1,6 @@
 import { Body, Controller, HttpCode, HttpStatus, InternalServerErrorException, Post, Request, UseGuards } from '@nestjs/common'
 import { ApiBasicAuth, ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger'
+import { UserDocument } from '../users/schemas/user.schema'
 import { AuthenticationService } from './authentication.service'
 import { AuthenticationRequestDto } from './dto/authentication-request.dto'
 import { AuthenticationResponseDto } from './dto/authentication-response.dto'
@@ -25,9 +26,9 @@ export class AuthenticationController {
     @HttpCode(HttpStatus.OK)
     @UseGuards(StudentsLocalAuthGuard)
     @Post('login')
-    login(@Request() req: { user: { id: string } }): Promise<AuthenticationResponseDto> | undefined {
+    login(@Request() req: { user: UserDocument }): Promise<AuthenticationResponseDto> | undefined {
         if (req.user) {
-            return this.authenticationService.login(req.user.id)
+            return this.authenticationService.login(req.user)
         }
         throw new InternalServerErrorException('User not found in session.')
     }
@@ -46,9 +47,9 @@ export class AuthenticationController {
     @HttpCode(HttpStatus.OK)
     @UseGuards(ManagersLocalAuthGuard)
     @Post('manager-login')
-    loginManager(@Request() req: { user: { id: string } }): Promise<AuthenticationResponseDto> | undefined {
+    loginManager(@Request() req: { user: UserDocument }): Promise<AuthenticationResponseDto> | undefined {
         if (req.user?.id) {
-            return this.authenticationService.login(req.user.id)
+            return this.authenticationService.login(req.user)
         }
         throw new InternalServerErrorException('User not found in session.')
     }

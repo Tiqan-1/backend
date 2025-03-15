@@ -1,11 +1,10 @@
 import { getModelToken } from '@nestjs/mongoose'
 import { Test, TestingModule } from '@nestjs/testing'
 import { Model } from 'mongoose'
-import { MongoTestHelper } from '../../shared/helper/mongo-test.helper'
-import { User, UserSchema } from '../users/schemas/user.schema'
+import { MongoTestHelper } from '../../shared/test/helper/mongo-test.helper'
 import { SignUpStudentDto, StudentDto } from './dto/student.dto'
 import { Gender } from './enums/gender'
-import { Student, StudentSchema } from './schemas/student.schema'
+import { Student } from './schemas/student.schema'
 import { StudentRepository } from './students.repository'
 import { StudentsService } from './students.service'
 
@@ -16,8 +15,7 @@ describe('StudentsService', () => {
 
     beforeAll(async () => {
         mongoTestHelper = await MongoTestHelper.instance()
-        const userModel = mongoTestHelper.initModel(User.name, UserSchema)
-        studentModel = userModel.discriminator(Student.name, StudentSchema) as Model<Student>
+        studentModel = mongoTestHelper.initStudent()
 
         const module: TestingModule = await Test.createTestingModule({
             providers: [

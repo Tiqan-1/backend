@@ -21,7 +21,7 @@ export class Subscription {
     @Prop({ required: true, type: Date })
     subscriptionDate: Date
 
-    @Prop({ required: true, type: String, enum: ['ACTIVE', 'SUCCEEDED', 'FAILED', 'SUSPENDED'] })
+    @Prop({ required: true, type: String, enum: State })
     state: State
 }
 

@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { IsEmail, IsString, IsStrongPassword, ValidateNested } from 'class-validator'
 import { ProgramDto } from '../../programs/dto/program.dto'
-import { SubjectDto } from '../../subjects/dto/subject.dto.to'
+import { SubjectDto } from '../../subjects/dto/subject.dto'
 import { ManagerDocument } from '../schemas/manager.schema'
 
 export class ManagerDto {

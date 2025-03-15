@@ -8,9 +8,8 @@ import { ManagerDto, SignUpManagerDto } from '../src/features/managers/dto/manag
 import { ManagersController } from '../src/features/managers/managers.controller'
 import { ManagersRepository } from '../src/features/managers/managers.repository'
 import { ManagersService } from '../src/features/managers/managers.service'
-import { Manager, ManagerSchema } from '../src/features/managers/schemas/manager.schema'
-import { User, UserSchema } from '../src/features/users/schemas/user.schema'
-import { MongoTestHelper } from '../src/shared/helper/mongo-test.helper'
+import { Manager } from '../src/features/managers/schemas/manager.schema'
+import { MongoTestHelper } from '../src/shared/test/helper/mongo-test.helper'
 
 describe('ManagersController (e2e)', () => {
     let app: INestApplication<App>
@@ -19,8 +18,7 @@ describe('ManagersController (e2e)', () => {
 
     beforeAll(async () => {
         mongoTestHelper = await MongoTestHelper.instance()
-        const userModel = mongoTestHelper.initModel(User.name, UserSchema)
-        managerModel = userModel.discriminator(Manager.name, ManagerSchema) as Model<unknown>
+        managerModel = mongoTestHelper.initManager()
 
         const module: TestingModule = await Test.createTestingModule({
             imports: [],
