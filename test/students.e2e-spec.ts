@@ -6,22 +6,20 @@ import * as request from 'supertest'
 import { App } from 'supertest/types'
 import { SignUpStudentDto, StudentDto } from '../src/features/students/dto/student.dto'
 import { Gender } from '../src/features/students/enums/gender'
-import { Student, StudentSchema } from '../src/features/students/schemas/student.schema'
+import { Student } from '../src/features/students/schemas/student.schema'
 import { StudentsController } from '../src/features/students/students.controller'
 import { StudentRepository } from '../src/features/students/students.repository'
 import { StudentsService } from '../src/features/students/students.service'
-import { User, UserSchema } from '../src/features/users/schemas/user.schema'
-import { MongoTestHelper } from '../src/shared/helper/mongo-test.helper'
+import { MongoTestHelper } from '../src/shared/test/helper/mongo-test.helper'
 
 describe('StudentsController (e2e)', () => {
     let app: INestApplication<App>
     let mongoTestHelper: MongoTestHelper
-    let studentModel: Model<unknown>
+    let studentModel: Model<Student>
 
     beforeAll(async () => {
         mongoTestHelper = await MongoTestHelper.instance()
-        const userModel = mongoTestHelper.initModel(User.name, UserSchema)
-        studentModel = userModel.discriminator(Student.name, StudentSchema) as Model<unknown>
+        studentModel = mongoTestHelper.initStudent()
 
         const module: TestingModule = await Test.createTestingModule({
             imports: [],

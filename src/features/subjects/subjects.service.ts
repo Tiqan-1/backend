@@ -6,7 +6,8 @@ import { SubjectsRepository } from './subjects.repository'
 export class SubjectsService {
     constructor(private readonly repository: SubjectsRepository) {}
 
-    create(subject: CreateSubjectDto): Promise<SubjectDto> {
-        return this.repository.create(subject)
+    async create(subject: CreateSubjectDto): Promise<SubjectDto> {
+        const result = await this.repository.create(subject)
+        return new SubjectDto(result)
     }
 }

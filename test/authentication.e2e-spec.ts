@@ -11,14 +11,14 @@ import { AuthenticationService } from '../src/features/authentication/authentica
 import { RefreshTokenRequestDto } from '../src/features/authentication/dto/refresh-token-request.dto'
 import { ManagersLocalAuthGuard } from '../src/features/authentication/guards/managers-local-auth-guard.service'
 import { StudentsLocalStrategy } from '../src/features/authentication/strategies/students-local-strategy.service'
-import { RefreshToken, RefreshTokenSchema } from '../src/features/tokens/schemas/refresh-token.schema'
+import { RefreshToken } from '../src/features/tokens/schemas/refresh-token.schema'
 import { TokensRepository } from '../src/features/tokens/tokens.repository'
 import { TokensService } from '../src/features/tokens/tokens.service'
-import { User, UserSchema } from '../src/features/users/schemas/user.schema'
+import { User, UserDocument } from '../src/features/users/schemas/user.schema'
 import { UsersRepository } from '../src/features/users/users.repository'
 import { UsersService } from '../src/features/users/users.service'
 import { Role } from '../src/shared/enums/role.enum'
-import { MongoTestHelper } from '../src/shared/helper/mongo-test.helper'
+import { MongoTestHelper } from '../src/shared/test/helper/mongo-test.helper'
 
 const jwtService = {
     sign: jest.fn(),
@@ -27,13 +27,13 @@ const jwtService = {
 describe('AuthenticationController (e2e)', () => {
     let app: INestApplication<App>
     let mongoTestHelper: MongoTestHelper
-    let userModel: Model<unknown>
-    let refreshTokenModel: Model<unknown>
+    let userModel: Model<User>
+    let refreshTokenModel: Model<RefreshToken>
 
     beforeAll(async () => {
         mongoTestHelper = await MongoTestHelper.instance()
-        userModel = mongoTestHelper.initModel(User.name, UserSchema)
-        refreshTokenModel = mongoTestHelper.initModel(RefreshToken.name, RefreshTokenSchema)
+        userModel = mongoTestHelper.initUser()
+        refreshTokenModel = mongoTestHelper.initRefreshToken()
 
         const module: TestingModule = await Test.createTestingModule({
             imports: [],
@@ -104,10 +104,25 @@ describe('AuthenticationController (e2e)', () => {
         return request(app.getHttpServer()).post('/api/authentication/login').send(body).expect(HttpStatus.OK)
     })
 
+    it('POST /api/authentication/manager-login with manager, should return 200', async () => {
+        const user: User = {
+            id: 'id',
+            name: 'test user',
+            email: 'testUser@gmail.com',
+            password: bcrypt.hashSync('testPassword', 10),
+            role: Role.Manager,
+        }
+        const model = new userModel(user)
+        await model.save()
+
+        const body = { email: 'testUser@gmail.com', password: 'testPassword' }
+        return request(app.getHttpServer()).post('/api/authentication/manager-login').send(body).expect(HttpStatus.OK)
+    })
+
     it('POST /api/authentication/logout with valid token, should return 200', async () => {
         const token: RefreshToken = {
             token: 'test token',
-            userId: 'test user id',
+            user: { id: 'userId', name: 'test user' } as UserDocument,
             createdAt: new Date(),
         }
         const model = new refreshTokenModel(token)
@@ -126,7 +141,7 @@ describe('AuthenticationController (e2e)', () => {
     it('POST /api/authentication/refresh-tokens, should return 200', async () => {
         const token: RefreshToken = {
             token: 'test token',
-            userId: 'test user id',
+            user: { id: 'userId', name: 'test user' } as UserDocument,
             createdAt: new Date(),
         }
         const model = new refreshTokenModel(token)
