@@ -10,6 +10,7 @@ import { AuthenticationController } from '../src/features/authentication/authent
 import { AuthenticationService } from '../src/features/authentication/authentication.service'
 import { RefreshTokenRequestDto } from '../src/features/authentication/dto/refresh-token-request.dto'
 import { ManagersLocalAuthGuard } from '../src/features/authentication/guards/managers-local-auth-guard.service'
+import { ManagersLocalStrategy } from '../src/features/authentication/strategies/managers-local-strategy.service'
 import { StudentsLocalStrategy } from '../src/features/authentication/strategies/students-local-strategy.service'
 import { RefreshToken } from '../src/features/tokens/schemas/refresh-token.schema'
 import { TokensRepository } from '../src/features/tokens/tokens.repository'
@@ -46,7 +47,7 @@ describe('AuthenticationController (e2e)', () => {
                 TokensService,
                 TokensRepository,
                 StudentsLocalStrategy,
-                ManagersLocalAuthGuard,
+                ManagersLocalStrategy,
                 {
                     provide: getModelToken(User.name),
                     useValue: userModel,
