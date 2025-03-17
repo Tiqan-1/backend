@@ -10,4 +10,8 @@ export class SubjectsService {
         const result = await this.repository.create(subject)
         return new SubjectDto(result)
     }
+
+    async findAllForUser(user): Promise<SubjectDto[]> {
+        this.repository.findAll()
+    }
 }

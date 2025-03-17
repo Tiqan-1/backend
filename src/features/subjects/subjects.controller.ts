@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common'
 import { ApiHeader, ApiOperation, ApiResponse } from '@nestjs/swagger'
 import { Roles } from '../../shared/decorators/roles.decorator'
 import { Role } from '../../shared/enums/role.enum'
@@ -15,9 +15,19 @@ export class SubjectsController {
     @ApiResponse({ status: 201, type: SubjectDto })
     @Post()
     @Roles(Role.Manager)
-    @ApiHeader({ name: 'Authorization', required: true })
+    @ApiHeader({ name: 'Authorization', required: true, example: 'Bearer ' })
     @UseGuards(JwtAuthGuard, RolesGuard)
     create(@Body() subject: CreateSubjectDto): Promise<SubjectDto> {
         return this.service.create(subject)
+    }
+
+    @ApiOperation({ summary: 'Finds all subjects created by user', description: 'Finds all subjects created by user.' })
+    @ApiResponse({ status: 201, type: SubjectDto, isArray: true })
+    @Get()
+    @Roles(Role.Manager)
+    @ApiHeader({ name: 'Authorization', required: true, example: 'Bearer ' })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    findAllForUser(): Promise<SubjectDto[]> {
+        return this.service.findAllForUser()
     }
 }

@@ -19,6 +19,10 @@ export class SubjectDto {
     @IsString()
     name: string
 
+    @ApiProperty({ type: String, required: true, example: '21332', description: 'id of the creator' })
+    @IsString()
+    createdBy: string
+
     @ApiProperty({ type: String, required: false, example: 'الفقه على المذهب الشافعي' })
     @IsString()
     @IsOptional()
