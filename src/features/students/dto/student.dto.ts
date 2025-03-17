@@ -1,5 +1,5 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
-import { IsEmail, IsString, IsStrongPassword } from 'class-validator'
+import { IsEmail, IsEnum, IsString, IsStrongPassword, ValidateNested } from 'class-validator'
 import { SubscriptionDto } from '../../subscriptions/dto/subscription.dto'
 import { Gender } from '../enums/gender'
 import { StudentDocument } from '../schemas/student.schema'
@@ -14,7 +14,7 @@ export class SignUpStudentDto {
     email: string
 
     @ApiProperty({ enum: Gender, example: Gender.male, description: 'gender of student' })
-    @IsEmail()
+    @IsEnum(Gender)
     gender: Gender
 
     @ApiProperty({ type: String, example: 'p@ssw0rd', description: 'password of student' })
@@ -32,6 +32,6 @@ export class StudentDto extends OmitType(SignUpStudentDto, ['password']) {
     }
 
     @ApiProperty({ type: SubscriptionDto, isArray: true, description: 'subscriptions for student' })
-    @IsEmail()
+    @ValidateNested({ each: true })
     subscriptions: SubscriptionDto[]
 }

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsString } from 'class-validator'
+import { IsEnum, IsString } from 'class-validator'
 import { LessonType } from '../enums/lesson-type.enum'
 
 export class LessonDto {
@@ -12,7 +12,7 @@ export class LessonDto {
     title: string
 
     @ApiProperty({ type: String, enum: LessonType, required: true, example: LessonType.Video })
-    @IsString()
+    @IsEnum(LessonType)
     Type: LessonType
 
     @ApiProperty({ type: String, required: true, example: 'subjectId' })
