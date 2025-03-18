@@ -55,7 +55,7 @@ export class AuthenticationService {
 
     private async generateUserTokens(user: UserDocument): Promise<AuthenticationResponseDto> {
         try {
-            const accessToken = this.jwtService.sign({ userId: user.id as string, role: user.role })
+            const accessToken = this.jwtService.sign({ id: user._id, role: user.role })
             const refreshToken = uuidv4()
 
             await this.tokensService.create(refreshToken, user)

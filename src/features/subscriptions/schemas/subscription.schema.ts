@@ -1,6 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
-import { CallbackWithoutResultAndOptionalError, HydratedDocument, Types } from 'mongoose'
-import * as crypto from 'node:crypto'
+import { HydratedDocument, Types } from 'mongoose'
 import { Level } from '../../levels/schemas/level.schema'
 import { Program } from '../../programs/schemas/program.schema'
 import { State } from '../enums/state.enum'
@@ -9,13 +8,10 @@ export type SubscriptionDocument = HydratedDocument<Subscription>
 
 @Schema()
 export class Subscription {
-    @Prop({ unique: true, type: String })
-    id: string
-
-    @Prop({ required: true, type: Types.ObjectId, ref: 'Program' })
+    @Prop({ required: true, type: Types.ObjectId, ref: Program.name })
     program: Program
 
-    @Prop({ required: true, type: Types.ObjectId, ref: 'Level' })
+    @Prop({ required: true, type: Types.ObjectId, ref: Level.name })
     level: Level
 
     @Prop({ required: true, type: Date })
@@ -26,8 +22,3 @@ export class Subscription {
 }
 
 export const SubscriptionSchema = SchemaFactory.createForClass(Subscription)
-
-SubscriptionSchema.pre('save', function (next: CallbackWithoutResultAndOptionalError) {
-    this.id = crypto.createHash('sha256').update(this._id.toString()).digest('hex')
-    next()
-})

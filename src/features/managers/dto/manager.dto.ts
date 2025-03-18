@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger'
+import { ApiProperty, PickType } from '@nestjs/swagger'
 import { IsEmail, IsString, IsStrongPassword, ValidateNested } from 'class-validator'
 import { ProgramDto } from '../../programs/dto/program.dto'
 import { SubjectDto } from '../../subjects/dto/subject.dto'
@@ -9,7 +9,7 @@ export class ManagerDto {
         this.name = manager.name
         this.email = manager.email
         this.programs = manager.programs
-        this.subjects = manager.subjects
+        this.subjects = manager.subjects?.map(subject => new SubjectDto(subject))
     }
 
     @ApiProperty({ type: String, example: 'John Doe', description: 'full name of manager' })
@@ -29,15 +29,15 @@ export class ManagerDto {
     subjects: SubjectDto[]
 }
 
-export class SignUpManagerDto {
-    @ApiProperty({ type: String, example: 'John Doe', description: 'full name of manager' })
-    @IsString()
-    name: string
+export class simpleManagerDto extends PickType(ManagerDto, ['name', 'email']) {
+    constructor(manager: ManagerDocument) {
+        super()
+        this.name = manager.name
+        this.email = manager.email
+    }
+}
 
-    @ApiProperty({ type: String, example: 'user@email.com', description: 'email of manager' })
-    @IsEmail()
-    email: string
-
+export class SignUpManagerDto extends PickType(ManagerDto, ['name', 'email']) {
     @ApiProperty({ type: String, example: 'p@ssw0rd', description: 'password of manager' })
     @IsStrongPassword({ minLength: 6, minNumbers: 1, minSymbols: 1 })
     password: string

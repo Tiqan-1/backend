@@ -1,8 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { IsEnum, IsString } from 'class-validator'
 import { LessonType } from '../enums/lesson-type.enum'
+import { LessonDocument } from '../schemas/lesson.schema'
 
 export class LessonDto {
+    constructor(lesson: LessonDocument) {
+        this.id = lesson._id.toString()
+        this.title = lesson.title
+        this.type = lesson.Type
+        this.url = lesson.url
+    }
+
     @ApiProperty({ type: String, required: true, example: 'lessonId' })
     @IsString()
     id: string
@@ -13,9 +21,9 @@ export class LessonDto {
 
     @ApiProperty({ type: String, enum: LessonType, required: true, example: LessonType.Video })
     @IsEnum(LessonType)
-    Type: LessonType
+    type: LessonType
 
-    @ApiProperty({ type: String, required: true, example: 'subjectId' })
+    @ApiProperty({ type: String, required: true, example: 'https://url.com' })
     @IsString()
     url: string
 }
