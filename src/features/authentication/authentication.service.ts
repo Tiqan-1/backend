@@ -2,11 +2,11 @@ import { Injectable, InternalServerErrorException, NotFoundException, Unauthoriz
 import { JwtService } from '@nestjs/jwt'
 import * as bcrypt from 'bcryptjs'
 import { v4 as uuidv4 } from 'uuid'
-import { Role } from '../../shared/enums/role.enum'
 import { TokensService } from '../tokens/tokens.service'
 import { UserDocument } from '../users/schemas/user.schema'
 import { UsersService } from '../users/users.service'
 import { AuthenticationResponseDto } from './dto/authentication-response.dto'
+import { Role } from './enums/role.enum'
 
 @Injectable()
 export class AuthenticationService {
@@ -65,8 +65,8 @@ export class AuthenticationService {
                 refreshToken: refreshToken,
             }
         } catch (error) {
-            console.error('error while generating user tokens', error)
-            throw new InternalServerErrorException('An unexpected error occurred')
+            console.error('General Error while generating user tokens.', error)
+            throw new InternalServerErrorException('General Error while generating user tokens.')
         }
     }
 }

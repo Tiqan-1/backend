@@ -16,7 +16,7 @@ export class Subject {
     @Prop({ required: true, type: Types.ObjectId, ref: 'Manager' })
     createdBy: ManagerDocument
 
-    @Prop({ required: true, type: [Types.ObjectId], ref: Lesson.name, default: [] })
+    @Prop({ required: true, type: [Types.ObjectId], ref: Lesson.name })
     lessons: LessonDocument[]
 }
 

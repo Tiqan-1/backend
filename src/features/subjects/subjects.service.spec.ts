@@ -2,7 +2,7 @@ import { getModelToken } from '@nestjs/mongoose'
 import { Test, TestingModule } from '@nestjs/testing'
 import { Model } from 'mongoose'
 import { MongoTestHelper } from '../../shared/test/helper/mongo-test.helper'
-import { TokenUser } from '../../shared/types/token-user'
+import { TokenUser } from '../authentication/types/token-user'
 import { CreateSubjectDto, SubjectDto } from './dto/subject.dto'
 import { Subject } from './schemas/subject.schema'
 import { SubjectsRepository } from './subjects.repository'
@@ -15,8 +15,8 @@ describe('SubjectsService', () => {
 
     beforeAll(async () => {
         mongoTestHelper = await MongoTestHelper.instance()
-        mongoTestHelper.initLesson()
-        subjectModel = mongoTestHelper.initSubject()
+        mongoTestHelper.getLessonModel()
+        subjectModel = mongoTestHelper.getSubjectModel()
         const module: TestingModule = await Test.createTestingModule({
             providers: [SubjectsService, SubjectsRepository, { provide: getModelToken(Subject.name), useValue: subjectModel }],
         }).compile()

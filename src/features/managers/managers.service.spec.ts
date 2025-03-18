@@ -14,7 +14,7 @@ describe('ManagersService', () => {
 
     beforeAll(async () => {
         mongoTestHelper = await MongoTestHelper.instance()
-        managerModel = mongoTestHelper.initManager()
+        managerModel = mongoTestHelper.getManagerModel()
 
         const module: TestingModule = await Test.createTestingModule({
             providers: [

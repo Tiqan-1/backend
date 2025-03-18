@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { HydratedDocument, Types } from 'mongoose'
-import { Role } from '../../../shared/enums/role.enum'
+import { Role } from '../../authentication/enums/role.enum'
 import { Subscription } from '../../subscriptions/schemas/subscription.schema'
 import { Gender } from '../enums/gender'
 

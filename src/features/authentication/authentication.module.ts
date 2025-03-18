@@ -8,6 +8,8 @@ import { TokensModule } from '../tokens/tokens.module'
 import { UsersModule } from '../users/users.module'
 import { AuthenticationController } from './authentication.controller'
 import { AuthenticationService } from './authentication.service'
+import { JwtAuthGuard } from './guards/jwt-auth.guard'
+import { RolesGuard } from './guards/roles.guard'
 import { JwtStrategy } from './strategies/jwt.strategy'
 import { ManagersLocalStrategy } from './strategies/managers-local-strategy.service'
 import { StudentsLocalStrategy } from './strategies/students-local-strategy.service'
@@ -26,7 +28,7 @@ dotenv.config()
         }),
     ],
     controllers: [AuthenticationController],
-    providers: [AuthenticationService, JwtStrategy, StudentsLocalStrategy, ManagersLocalStrategy],
-    exports: [AuthenticationService],
+    providers: [AuthenticationService, JwtStrategy, StudentsLocalStrategy, ManagersLocalStrategy, JwtAuthGuard, RolesGuard],
+    exports: [AuthenticationService, JwtAuthGuard, RolesGuard],
 })
 export class AuthenticationModule {}

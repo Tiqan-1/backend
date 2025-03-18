@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, InternalServerErrorException, Post, Request, UseGuards } from '@nestjs/common'
+import { Body, Controller, HttpCode, HttpStatus, Post, Request, UseGuards } from '@nestjs/common'
 import { ApiBasicAuth, ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger'
 import { UserDocument } from '../users/schemas/user.schema'
 import { AuthenticationService } from './authentication.service'
@@ -17,20 +17,15 @@ export class AuthenticationController {
         description: 'Logs a student-user in and returns the tokens to be used in further calls.',
     })
     @ApiResponse({ status: HttpStatus.OK, description: 'The user logged in successfully.', type: AuthenticationResponseDto })
-    @ApiResponse({
-        status: HttpStatus.INTERNAL_SERVER_ERROR,
-        description: 'An internal error occurred while logging the user in.',
-    })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.' })
     @ApiBody({ type: AuthenticationRequestDto })
     @ApiBasicAuth()
     @HttpCode(HttpStatus.OK)
     @UseGuards(StudentsLocalAuthGuard)
     @Post('login')
     login(@Request() req: { user: UserDocument }): Promise<AuthenticationResponseDto> | undefined {
-        if (req.user) {
-            return this.authenticationService.login(req.user)
-        }
-        throw new InternalServerErrorException('User not found in session.')
+        return this.authenticationService.login(req.user)
     }
 
     @ApiOperation({
@@ -38,20 +33,15 @@ export class AuthenticationController {
         description: 'Logs a manager-user in and returns the tokens to be used in further calls.',
     })
     @ApiResponse({ status: HttpStatus.OK, description: 'The user logged in successfully.', type: AuthenticationResponseDto })
-    @ApiResponse({
-        status: HttpStatus.INTERNAL_SERVER_ERROR,
-        description: 'An internal error occurred while logging the user in.',
-    })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.' })
     @ApiBody({ type: AuthenticationRequestDto })
     @ApiBasicAuth()
     @HttpCode(HttpStatus.OK)
     @UseGuards(ManagersLocalAuthGuard)
     @Post('manager-login')
     loginManager(@Request() req: { user: UserDocument }): Promise<AuthenticationResponseDto> | undefined {
-        if (req.user?.id) {
-            return this.authenticationService.login(req.user)
-        }
-        throw new InternalServerErrorException('User not found in session.')
+        return this.authenticationService.login(req.user)
     }
 
     @ApiBody({ type: RefreshTokenRequestDto })
@@ -61,6 +51,7 @@ export class AuthenticationController {
         status: HttpStatus.NOT_FOUND,
         description: 'Refresh token is invalid.',
     })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.' })
     @HttpCode(HttpStatus.OK)
     @Post('logout')
     logout(@Body('refreshToken') refreshToken: string): Promise<void> {
@@ -70,8 +61,9 @@ export class AuthenticationController {
     @ApiOperation({ summary: 'Refreshes the tokens', description: 'Refreshes the tokens for the session' })
     @ApiBody({ type: RefreshTokenRequestDto })
     @ApiResponse({ status: HttpStatus.OK, description: 'Tokens got refreshed successfully.', type: AuthenticationResponseDto })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An error occurred while refreshing tokens' })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.' })
     @HttpCode(HttpStatus.CREATED)
     @Post('refresh-tokens')
     refreshTokens(@Body('refreshToken') refreshToken: string): Promise<AuthenticationResponseDto> {

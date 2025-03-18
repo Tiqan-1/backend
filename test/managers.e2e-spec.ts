@@ -18,7 +18,7 @@ describe('ManagersController (e2e)', () => {
 
     beforeAll(async () => {
         mongoTestHelper = await MongoTestHelper.instance()
-        managerModel = mongoTestHelper.initManager()
+        managerModel = mongoTestHelper.getManagerModel()
 
         const module: TestingModule = await Test.createTestingModule({
             imports: [],

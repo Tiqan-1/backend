@@ -2,7 +2,6 @@ import { HttpStatus, INestApplication } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { getModelToken } from '@nestjs/mongoose'
 import { Test, TestingModule } from '@nestjs/testing'
-import * as bcrypt from 'bcryptjs'
 import { Model } from 'mongoose'
 import * as request from 'supertest'
 import { App } from 'supertest/types'
@@ -17,7 +16,6 @@ import { TokensService } from '../src/features/tokens/tokens.service'
 import { User, UserDocument } from '../src/features/users/schemas/user.schema'
 import { UsersRepository } from '../src/features/users/users.repository'
 import { UsersService } from '../src/features/users/users.service'
-import { Role } from '../src/shared/enums/role.enum'
 import { MongoTestHelper } from '../src/shared/test/helper/mongo-test.helper'
 
 const jwtService = {
@@ -32,8 +30,8 @@ describe('AuthenticationController (e2e)', () => {
 
     beforeAll(async () => {
         mongoTestHelper = await MongoTestHelper.instance()
-        userModel = mongoTestHelper.initUser()
-        refreshTokenModel = mongoTestHelper.initRefreshToken()
+        userModel = mongoTestHelper.getUserModel()
+        refreshTokenModel = mongoTestHelper.getRefreshTokenModel()
 
         const module: TestingModule = await Test.createTestingModule({
             imports: [],
@@ -75,45 +73,31 @@ describe('AuthenticationController (e2e)', () => {
     })
 
     it('POST /api/authentication/login with manager, should return 401', async () => {
-        const user: User = {
-            name: 'test user',
-            email: 'testUser@gmail.com',
-            password: bcrypt.hashSync('testPassword', 10),
-            role: Role.Manager,
-        }
-        const model = new userModel(user)
-        await model.save()
+        const manager = await mongoTestHelper.createManager()
 
-        const body = { email: 'testUser@gmail.com', password: 'testPassword' }
+        const body = { email: manager.email, password: 'testPassword' }
         return request(app.getHttpServer()).post('/api/authentication/login').send(body).expect(HttpStatus.UNAUTHORIZED)
     })
 
     it('POST /api/authentication/login with student, should return 200', async () => {
-        const user: User = {
-            name: 'test user',
-            email: 'testUser@gmail.com',
-            password: bcrypt.hashSync('testPassword', 10),
-            role: Role.Student,
-        }
-        const model = new userModel(user)
-        await model.save()
+        const student = await mongoTestHelper.createStudent()
 
-        const body = { email: 'testUser@gmail.com', password: 'testPassword' }
+        const body = { email: student.email, password: 'testPassword' }
         return request(app.getHttpServer()).post('/api/authentication/login').send(body).expect(HttpStatus.OK)
     })
 
     it('POST /api/authentication/manager-login with manager, should return 200', async () => {
-        const user: User = {
-            name: 'test user',
-            email: 'testUser@gmail.com',
-            password: bcrypt.hashSync('testPassword', 10),
-            role: Role.Manager,
-        }
-        const model = new userModel(user)
-        await model.save()
+        const manager = await mongoTestHelper.createManager()
 
-        const body = { email: 'testUser@gmail.com', password: 'testPassword' }
+        const body = { email: manager.email, password: 'testPassword' }
         return request(app.getHttpServer()).post('/api/authentication/manager-login').send(body).expect(HttpStatus.OK)
+    })
+
+    it('POST /api/authentication/manager-login with student, should return 401', async () => {
+        const student = await mongoTestHelper.createStudent()
+
+        const body = { email: student.email, password: 'testPassword' }
+        return request(app.getHttpServer()).post('/api/authentication/manager-login').send(body).expect(HttpStatus.UNAUTHORIZED)
     })
 
     it('POST /api/authentication/logout with valid token, should return 200', async () => {
@@ -129,7 +113,7 @@ describe('AuthenticationController (e2e)', () => {
         return request(app.getHttpServer()).post('/api/authentication/logout').send(body).expect(HttpStatus.OK)
     })
 
-    it('POST /api/authentication/logout with invalid token, should return 401', async () => {
+    it('POST /api/authentication/logout with invalid token, should return 404', async () => {
         const body: RefreshTokenRequestDto = { refreshToken: 'test token' }
 
         return request(app.getHttpServer()).post('/api/authentication/logout').send(body).expect(HttpStatus.NOT_FOUND)
@@ -137,16 +121,16 @@ describe('AuthenticationController (e2e)', () => {
 
     it('POST /api/authentication/refresh-tokens, should return 200', async () => {
         const user = await mongoTestHelper.createUser()
-        const token: RefreshToken = {
-            token: 'test token',
-            user,
-            createdAt: new Date(),
-        }
-        const model = new refreshTokenModel(token)
-        await model.save()
+        const refreshToken = await mongoTestHelper.createToken(user)
 
-        const body: RefreshTokenRequestDto = { refreshToken: 'test token' }
+        const body: RefreshTokenRequestDto = { refreshToken }
 
         return request(app.getHttpServer()).post('/api/authentication/refresh-tokens').send(body).expect(HttpStatus.CREATED)
+    })
+
+    it('POST /api/authentication/refresh-tokens with invalid token, should return 401', async () => {
+        const body: RefreshTokenRequestDto = { refreshToken: 'test token' }
+
+        return request(app.getHttpServer()).post('/api/authentication/refresh-tokens').send(body).expect(HttpStatus.UNAUTHORIZED)
     })
 })

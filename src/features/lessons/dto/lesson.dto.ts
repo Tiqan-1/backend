@@ -7,7 +7,7 @@ export class LessonDto {
     constructor(lesson: LessonDocument) {
         this.id = lesson._id.toString()
         this.title = lesson.title
-        this.type = lesson.Type
+        this.type = lesson.type
         this.url = lesson.url
     }
 

@@ -15,7 +15,7 @@ describe('StudentsService', () => {
 
     beforeAll(async () => {
         mongoTestHelper = await MongoTestHelper.instance()
-        studentModel = mongoTestHelper.initStudent()
+        studentModel = mongoTestHelper.getStudentModel()
 
         const module: TestingModule = await Test.createTestingModule({
             providers: [

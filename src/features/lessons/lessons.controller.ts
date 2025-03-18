@@ -1,4 +1,4 @@
 import { Controller } from '@nestjs/common'
 
-@Controller('lessons')
+@Controller('api/lessons')
 export class LessonsController {}

@@ -1,18 +1,27 @@
 import * as bcrypt from 'bcryptjs'
 import { MongoMemoryServer } from 'mongodb-memory-server'
 import { connect, Connection, Model } from 'mongoose'
-import { Lesson, LessonSchema } from '../../../features/lessons/schemas/lesson.schema'
+import { Role } from '../../../features/authentication/enums/role.enum'
+import { LessonType } from '../../../features/lessons/enums/lesson-type.enum'
+import { Lesson, LessonDocument, LessonSchema } from '../../../features/lessons/schemas/lesson.schema'
 import { SignUpManagerDto } from '../../../features/managers/dto/manager.dto'
 import { Manager, ManagerDocument, ManagerSchema } from '../../../features/managers/schemas/manager.schema'
-import { Student, StudentSchema } from '../../../features/students/schemas/student.schema'
-import { Subject, SubjectSchema } from '../../../features/subjects/schemas/subject.schema'
+import { Gender } from '../../../features/students/enums/gender'
+import { Student, StudentDocument, StudentSchema } from '../../../features/students/schemas/student.schema'
+import { Subject, SubjectDocument, SubjectSchema } from '../../../features/subjects/schemas/subject.schema'
 import { RefreshToken, RefreshTokenSchema } from '../../../features/tokens/schemas/refresh-token.schema'
 import { User, UserDocument, UserSchema } from '../../../features/users/schemas/user.schema'
-import { Role } from '../../enums/role.enum'
 
 export class MongoTestHelper {
     private mongoServer: MongoMemoryServer
     private mongoConnection: Connection
+
+    private userModel: Model<User>
+    private managerModel: Model<Manager>
+    private studentModel: Model<Student>
+    private refreshTokenModel: Model<RefreshToken>
+    private subjectModel: Model<Subject>
+    private lessonModel: Model<Lesson>
 
     static async instance(): Promise<MongoTestHelper> {
         const helper = new MongoTestHelper()
@@ -20,40 +29,70 @@ export class MongoTestHelper {
         return helper
     }
 
-    initRefreshToken(): Model<RefreshToken> {
-        return this.mongoConnection.model(RefreshToken.name, RefreshTokenSchema)
+    getRefreshTokenModel(): Model<RefreshToken> {
+        if (!this.refreshTokenModel) {
+            this.refreshTokenModel = this.mongoConnection.model(RefreshToken.name, RefreshTokenSchema)
+        }
+        return this.refreshTokenModel
     }
 
-    initUser(): Model<User> {
-        return this.mongoConnection.model(User.name, UserSchema)
+    getUserModel(): Model<User> {
+        if (!this.userModel) {
+            this.userModel = this.mongoConnection.model(User.name, UserSchema)
+        }
+        return this.userModel
     }
 
-    initManager(): Model<Manager> {
-        const userModel = this.mongoConnection.model(User.name, UserSchema)
-        return userModel.discriminator<Manager>(Manager.name, ManagerSchema)
+    getManagerModel(): Model<Manager> {
+        if (!this.managerModel) {
+            const userModel = this.mongoConnection.model(User.name, UserSchema)
+            this.managerModel = userModel.discriminator<Manager>(Manager.name, ManagerSchema)
+        }
+        return this.managerModel
     }
 
-    initStudent(): Model<Student> {
-        const userModel = this.mongoConnection.model(User.name, UserSchema)
-        return userModel.discriminator<Student>(Student.name, StudentSchema)
+    getStudentModel(): Model<Student> {
+        if (!this.studentModel) {
+            const userModel = this.mongoConnection.model(User.name, UserSchema)
+            this.studentModel = userModel.discriminator<Student>(Student.name, StudentSchema)
+        }
+        return this.studentModel
     }
 
-    initSubject(): Model<Subject> {
-        return this.mongoConnection.model(Subject.name, SubjectSchema)
+    getSubjectModel(): Model<Subject> {
+        if (!this.subjectModel) {
+            this.subjectModel = this.mongoConnection.model(Subject.name, SubjectSchema)
+        }
+        return this.subjectModel
     }
 
-    initLesson(): Model<Lesson> {
-        return this.mongoConnection.model(Lesson.name, LessonSchema)
+    getLessonModel(): Model<Lesson> {
+        if (!this.lessonModel) {
+            this.lessonModel = this.mongoConnection.model(Lesson.name, LessonSchema)
+        }
+        return this.lessonModel
     }
 
-    createManager(): Promise<ManagerDocument> {
+    createManager(id: string = ''): Promise<ManagerDocument> {
         const managerDto: SignUpManagerDto = {
             name: 'test manager',
-            password: 'test password',
-            email: 'manager@email.com',
+            password: bcrypt.hashSync('testPassword', 10),
+            email: `manager${id}@email.com`,
         }
-        const model = this.initManager()
+        const model = this.getManagerModel()
         return model.create(managerDto)
+    }
+
+    createStudent(): Promise<StudentDocument> {
+        const studentDto = {
+            name: 'test student',
+            password: bcrypt.hashSync('testPassword', 10),
+            email: 'student@email.com',
+            gender: Gender.male,
+            role: Role.Student,
+        }
+        const model = this.getStudentModel()
+        return model.create(studentDto)
     }
 
     createUser(): Promise<UserDocument> {
@@ -63,8 +102,40 @@ export class MongoTestHelper {
             password: bcrypt.hashSync('testPassword', 10),
             role: Role.Manager,
         }
-        const model = this.initUser()
+        const model = this.getUserModel()
         return model.create(user)
+    }
+
+    async createToken(user: UserDocument): Promise<string> {
+        const token: RefreshToken = {
+            token: 'test token',
+            user,
+            createdAt: new Date(),
+        }
+        const model = this.getRefreshTokenModel()
+        await model.create(token)
+        return token.token
+    }
+
+    async createLesson(): Promise<LessonDocument> {
+        const lesson: Lesson = {
+            url: 'test url',
+            type: LessonType.Video,
+            title: 'lesson title',
+        }
+        const model = this.getLessonModel()
+        return model.create(lesson)
+    }
+
+    async createSubject(creator: ManagerDocument, lessons: LessonDocument[]): Promise<SubjectDocument> {
+        const subject: Subject = {
+            name: 'subject name',
+            description: 'subject description',
+            createdBy: creator,
+            lessons: lessons,
+        }
+        const model = this.getSubjectModel()
+        return model.create(subject)
     }
 
     async clearCollections(): Promise<void> {

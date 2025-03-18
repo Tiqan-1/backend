@@ -2,12 +2,12 @@ import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { MongooseModule } from '@nestjs/mongoose'
 import { AuthenticationModule } from './features/authentication/authentication.module'
+import { LessonsModule } from './features/lessons/lessons.module'
 import { ManagersModule } from './features/managers/managers.module'
 import { StudentsModule } from './features/students/students.module'
 import { SubjectsModule } from './features/subjects/subjects.module'
 import { TokensModule } from './features/tokens/tokens.module'
 import { UsersModule } from './features/users/users.module'
-import { LessonsModule } from './features/lessons/lessons.module';
 
 @Module({
     imports: [
