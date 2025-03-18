@@ -2,9 +2,15 @@ import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { IsEmail, IsEnum, IsString, IsStrongPassword, ValidateNested } from 'class-validator'
 import { SubscriptionDto } from '../../subscriptions/dto/subscription.dto'
 import { Gender } from '../enums/gender'
-import { StudentDocument } from '../schemas/student.schema'
+import { Student } from '../schemas/student.schema'
 
-export class SignUpStudentDto {
+export class StudentDto {
+    constructor(student: Student) {
+        this.name = student.name
+        this.email = student.email
+        this.subscriptions = student.subscriptions
+        this.gender = student.gender
+    }
     @ApiProperty({ type: String, example: 'John Doe', description: 'full name of student' })
     @IsString()
     name: string
@@ -17,21 +23,13 @@ export class SignUpStudentDto {
     @IsEnum(Gender)
     gender: Gender
 
-    @ApiProperty({ type: String, example: 'p@ssw0rd', description: 'password of student' })
-    @IsStrongPassword({ minLength: 6, minNumbers: 1, minSymbols: 1 })
-    password: string
-}
-
-export class StudentDto extends OmitType(SignUpStudentDto, ['password']) {
-    constructor(student: StudentDocument) {
-        super()
-        this.name = student.name
-        this.email = student.email
-        this.subscriptions = student.subscriptions
-        this.gender = student.gender
-    }
-
     @ApiProperty({ type: SubscriptionDto, isArray: true, description: 'subscriptions for student' })
     @ValidateNested({ each: true })
     subscriptions: SubscriptionDto[]
+}
+
+export class SignUpStudentDto extends OmitType(StudentDto, ['subscriptions']) {
+    @ApiProperty({ type: String, example: 'p@ssw0rd', description: 'password of student' })
+    @IsStrongPassword({ minLength: 6, minNumbers: 1, minSymbols: 1 })
+    password: string
 }

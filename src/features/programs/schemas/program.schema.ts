@@ -1,15 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
-import { CallbackWithoutResultAndOptionalError, HydratedDocument, Types } from 'mongoose'
-import * as crypto from 'node:crypto'
+import { HydratedDocument, Types } from 'mongoose'
 import { Level } from '../../levels/schemas/level.schema'
 
 export type ProgramDocument = HydratedDocument<Program>
 
 @Schema()
 export class Program {
-    @Prop({ unique: true, type: String })
-    id: string
-
     @Prop({ required: true, type: String })
     name: string
 
@@ -34,13 +30,8 @@ export class Program {
     @Prop({ required: false, type: Date })
     registrationEnd?: Date
 
-    @Prop({ required: true, type: [Types.ObjectId], ref: 'Level', default: [] })
+    @Prop({ required: true, type: [Types.ObjectId], ref: Level.name, default: [] })
     levels: Level[]
 }
 
 export const ProgramSchema = SchemaFactory.createForClass(Program)
-
-ProgramSchema.pre('save', function (next: CallbackWithoutResultAndOptionalError) {
-    this.id = crypto.createHash('sha256').update(this._id.toString()).digest('hex')
-    next()
-})

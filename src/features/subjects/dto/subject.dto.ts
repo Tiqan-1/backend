@@ -1,14 +1,16 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { IsOptional, IsString, ValidateNested } from 'class-validator'
 import { LessonDto } from '../../lessons/dto/lesson.dto'
+import { simpleManagerDto } from '../../managers/dto/manager.dto'
 import { SubjectDocument } from '../schemas/subject.schema'
 
 export class SubjectDto {
     constructor(subject: SubjectDocument) {
-        this.id = subject.id as string
+        this.id = subject._id.toString()
         this.name = subject.name
         this.description = subject.description
-        this.lessons = subject.lessons
+        this.createdBy = new simpleManagerDto(subject.createdBy)
+        this.lessons = subject.lessons.map(lesson => new LessonDto(lesson))
     }
 
     @ApiProperty({ type: String, required: true, example: 'subjectId' })
@@ -18,6 +20,10 @@ export class SubjectDto {
     @ApiProperty({ type: String, required: true, example: 'الفقه' })
     @IsString()
     name: string
+
+    @ApiProperty({ type: () => simpleManagerDto, required: true })
+    @ValidateNested()
+    createdBy: simpleManagerDto
 
     @ApiProperty({ type: String, required: false, example: 'الفقه على المذهب الشافعي' })
     @IsString()
@@ -29,7 +35,7 @@ export class SubjectDto {
     lessons: LessonDto[]
 }
 
-export class CreateSubjectDto extends OmitType(SubjectDto, ['id', 'lessons']) {
+export class CreateSubjectDto extends OmitType(SubjectDto, ['id', 'lessons', 'createdBy'] as const) {
     @ApiProperty({ type: String, isArray: true, required: true })
     @IsString({ each: true })
     @IsOptional()

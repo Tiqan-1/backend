@@ -1,10 +1,14 @@
+import * as bcrypt from 'bcryptjs'
 import { MongoMemoryServer } from 'mongodb-memory-server'
 import { connect, Connection, Model } from 'mongoose'
-import { Manager, ManagerSchema } from '../../../features/managers/schemas/manager.schema'
+import { Lesson, LessonSchema } from '../../../features/lessons/schemas/lesson.schema'
+import { SignUpManagerDto } from '../../../features/managers/dto/manager.dto'
+import { Manager, ManagerDocument, ManagerSchema } from '../../../features/managers/schemas/manager.schema'
 import { Student, StudentSchema } from '../../../features/students/schemas/student.schema'
 import { Subject, SubjectSchema } from '../../../features/subjects/schemas/subject.schema'
 import { RefreshToken, RefreshTokenSchema } from '../../../features/tokens/schemas/refresh-token.schema'
-import { User, UserSchema } from '../../../features/users/schemas/user.schema'
+import { User, UserDocument, UserSchema } from '../../../features/users/schemas/user.schema'
+import { Role } from '../../enums/role.enum'
 
 export class MongoTestHelper {
     private mongoServer: MongoMemoryServer
@@ -36,6 +40,31 @@ export class MongoTestHelper {
 
     initSubject(): Model<Subject> {
         return this.mongoConnection.model(Subject.name, SubjectSchema)
+    }
+
+    initLesson(): Model<Lesson> {
+        return this.mongoConnection.model(Lesson.name, LessonSchema)
+    }
+
+    createManager(): Promise<ManagerDocument> {
+        const managerDto: SignUpManagerDto = {
+            name: 'test manager',
+            password: 'test password',
+            email: 'manager@email.com',
+        }
+        const model = this.initManager()
+        return model.create(managerDto)
+    }
+
+    createUser(): Promise<UserDocument> {
+        const user: User = {
+            name: 'test user',
+            email: 'testUser@gmail.com',
+            password: bcrypt.hashSync('testPassword', 10),
+            role: Role.Manager,
+        }
+        const model = this.initUser()
+        return model.create(user)
     }
 
     async clearCollections(): Promise<void> {

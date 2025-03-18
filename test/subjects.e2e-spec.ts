@@ -33,6 +33,7 @@ describe('SubjectsController (e2e)', () => {
     beforeAll(async () => {
         mongoTestHelper = await MongoTestHelper.instance()
         subjectModel = mongoTestHelper.initSubject()
+        mongoTestHelper.initLesson()
         const userModel = mongoTestHelper.initUser()
         const tokenModel = mongoTestHelper.initRefreshToken()
 
@@ -77,7 +78,8 @@ describe('SubjectsController (e2e)', () => {
     })
 
     it('POST /api/subjects/', async () => {
-        const token = jwtService.sign({ userId: 1, role: Role.Manager })
+        const manager = await mongoTestHelper.createManager()
+        const token = jwtService.sign({ id: manager._id, role: Role.Manager })
         const body: CreateSubjectDto = {
             name: 'subject name',
             description: 'description',

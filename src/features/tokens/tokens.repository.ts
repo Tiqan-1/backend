@@ -9,4 +9,12 @@ export class TokensRepository extends RepositoryMongoBase<RefreshTokenDocument> 
     constructor(@InjectModel(RefreshToken.name) refreshTokenModel: Model<RefreshTokenDocument>) {
         super(refreshTokenModel)
     }
+
+    async findOne(filter: object): Promise<RefreshTokenDocument | undefined> {
+        const foundDocument = await this.model.findOne(filter).populate('user').exec()
+        if (!foundDocument) {
+            return undefined
+        }
+        return foundDocument
+    }
 }

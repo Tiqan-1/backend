@@ -9,7 +9,6 @@ import { App } from 'supertest/types'
 import { AuthenticationController } from '../src/features/authentication/authentication.controller'
 import { AuthenticationService } from '../src/features/authentication/authentication.service'
 import { RefreshTokenRequestDto } from '../src/features/authentication/dto/refresh-token-request.dto'
-import { ManagersLocalAuthGuard } from '../src/features/authentication/guards/managers-local-auth-guard.service'
 import { ManagersLocalStrategy } from '../src/features/authentication/strategies/managers-local-strategy.service'
 import { StudentsLocalStrategy } from '../src/features/authentication/strategies/students-local-strategy.service'
 import { RefreshToken } from '../src/features/tokens/schemas/refresh-token.schema'
@@ -77,7 +76,6 @@ describe('AuthenticationController (e2e)', () => {
 
     it('POST /api/authentication/login with manager, should return 401', async () => {
         const user: User = {
-            id: 'id',
             name: 'test user',
             email: 'testUser@gmail.com',
             password: bcrypt.hashSync('testPassword', 10),
@@ -92,7 +90,6 @@ describe('AuthenticationController (e2e)', () => {
 
     it('POST /api/authentication/login with student, should return 200', async () => {
         const user: User = {
-            id: 'id',
             name: 'test user',
             email: 'testUser@gmail.com',
             password: bcrypt.hashSync('testPassword', 10),
@@ -107,7 +104,6 @@ describe('AuthenticationController (e2e)', () => {
 
     it('POST /api/authentication/manager-login with manager, should return 200', async () => {
         const user: User = {
-            id: 'id',
             name: 'test user',
             email: 'testUser@gmail.com',
             password: bcrypt.hashSync('testPassword', 10),
@@ -140,9 +136,10 @@ describe('AuthenticationController (e2e)', () => {
     })
 
     it('POST /api/authentication/refresh-tokens, should return 200', async () => {
+        const user = await mongoTestHelper.createUser()
         const token: RefreshToken = {
             token: 'test token',
-            user: { id: 'userId', name: 'test user' } as UserDocument,
+            user,
             createdAt: new Date(),
         }
         const model = new refreshTokenModel(token)

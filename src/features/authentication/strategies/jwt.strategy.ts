@@ -2,9 +2,10 @@ import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { PassportStrategy } from '@nestjs/passport'
 import { ExtractJwt, Strategy } from 'passport-jwt'
+import { TokenUser } from '../../../shared/types/token-user'
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
+export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     constructor(configService: ConfigService) {
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -13,9 +14,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         })
     }
 
-    validate(payload: object): { userId: unknown; role: unknown } | undefined {
-        if (payload && 'userId' in payload && 'role' in payload) {
-            return { userId: payload.userId, role: payload.role }
-        }
+    validate(payload?: TokenUser): TokenUser | undefined {
+        return payload
     }
 }
