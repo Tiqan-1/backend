@@ -12,6 +12,7 @@ async function bootstrap(): Promise<void> {
         .setTitle('Mubadarat')
         .setDescription('The Mubadarat API description')
         .setVersion('1.0')
+        .addBearerAuth()
         .build()
 
     const documentFactory = () => SwaggerModule.createDocument(app, config)
