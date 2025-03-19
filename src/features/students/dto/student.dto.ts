@@ -11,6 +11,7 @@ export class StudentDto {
         this.subscriptions = student.subscriptions
         this.gender = student.gender
     }
+
     @ApiProperty({ type: String, example: 'John Doe', description: 'full name of student' })
     @IsString()
     name: string
@@ -29,7 +30,7 @@ export class StudentDto {
 }
 
 export class SignUpStudentDto extends OmitType(StudentDto, ['subscriptions']) {
-    @ApiProperty({ type: String, example: 'p@ssw0rd', description: 'password of student' })
+    @ApiProperty({ type: String, example: 'P@ssw0rd', description: 'password of student' })
     @IsStrongPassword({ minLength: 6, minNumbers: 1, minSymbols: 1 })
     password: string
 }

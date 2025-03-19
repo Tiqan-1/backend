@@ -9,7 +9,7 @@ export class ManagerDto {
         this.name = manager.name
         this.email = manager.email
         this.programs = manager.programs
-        this.subjects = manager.subjects?.map(subject => new SubjectDto(subject))
+        this.subjects = SubjectDto.fromDocuments(manager.subjects)
     }
 
     @ApiProperty({ type: String, example: 'John Doe', description: 'full name of manager' })
@@ -38,7 +38,7 @@ export class simpleManagerDto extends PickType(ManagerDto, ['name', 'email']) {
 }
 
 export class SignUpManagerDto extends PickType(ManagerDto, ['name', 'email']) {
-    @ApiProperty({ type: String, example: 'p@ssw0rd', description: 'password of manager' })
+    @ApiProperty({ type: String, example: 'P@ssw0rd', description: 'password of manager' })
     @IsStrongPassword({ minLength: 6, minNumbers: 1, minSymbols: 1 })
     password: string
 }

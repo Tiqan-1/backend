@@ -6,7 +6,7 @@ export class AuthenticationRequestDto {
     @IsString()
     email: string
 
-    @ApiProperty({ type: String, example: 'p@ssw0rd', description: 'password' })
+    @ApiProperty({ type: String, example: 'P@ssw0rd', description: 'password' })
     @IsString()
     password: string
 }

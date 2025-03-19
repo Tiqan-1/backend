@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger'
+import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { IsEnum, IsString } from 'class-validator'
 import { LessonType } from '../enums/lesson-type.enum'
 import { LessonDocument } from '../schemas/lesson.schema'
@@ -9,6 +9,10 @@ export class LessonDto {
         this.title = lesson.title
         this.type = lesson.type
         this.url = lesson.url
+    }
+
+    static fromDocument(lessonDocument: LessonDocument): LessonDto {
+        return new LessonDto(lessonDocument)
     }
 
     @ApiProperty({ type: String, required: true, example: 'lessonId' })
@@ -27,3 +31,5 @@ export class LessonDto {
     @IsString()
     url: string
 }
+
+export class CreateLessonDto extends OmitType(LessonDto, ['id']) {}

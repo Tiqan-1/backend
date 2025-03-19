@@ -14,6 +14,7 @@ export class SubjectsRepository extends RepositoryMongoBase<SubjectDocument> {
         const createdElement = new this.model(element)
         await createdElement.save()
 
+        // called to populate createdBy and lessons
         return (await this.findOne({ _id: createdElement._id })) as SubjectDocument
     }
 
@@ -21,7 +22,7 @@ export class SubjectsRepository extends RepositoryMongoBase<SubjectDocument> {
         const foundDocument: SubjectDocument | null = await this.model
             .findOne(filter)
             .populate('createdBy', 'name email')
-            .populate('lessons')
+            .populate({ path: 'lessons', options: { perDocumentLimit: 10 } })
             .exec()
         if (!foundDocument) {
             return undefined
@@ -29,7 +30,11 @@ export class SubjectsRepository extends RepositoryMongoBase<SubjectDocument> {
         return foundDocument
     }
 
-    findAllByManagerId(managerId: Types.ObjectId): Promise<SubjectDocument[]> {
-        return this.model.find({ createdBy: managerId }).populate('createdBy', 'name email').populate('lessons').exec()
+    findAll(limit = 10, skip = 0): Promise<SubjectDocument[]> {
+        return this.model.find().populate('createdBy', 'name email').limit(limit).skip(skip).exec()
+    }
+
+    async findAllByManagerId(managerId: Types.ObjectId, limit = 10, skip = 0): Promise<SubjectDocument[]> {
+        return this.model.find({ createdBy: managerId }).populate('createdBy', 'name email').limit(limit).skip(skip).exec()
     }
 }

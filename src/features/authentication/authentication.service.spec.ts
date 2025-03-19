@@ -24,7 +24,7 @@ const tokensRepository = {
 describe('AuthenticationService', () => {
     let service: AuthenticationService
 
-    beforeEach(async () => {
+    beforeAll(async () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [AuthenticationService, JwtService, TokensService, TokensRepository, UsersService, UsersRepository],
         })

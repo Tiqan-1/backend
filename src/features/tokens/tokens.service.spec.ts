@@ -11,7 +11,7 @@ const tokensRepository = {
 describe('TokensService', () => {
     let service: TokensService
 
-    beforeEach(async () => {
+    beforeAll(async () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [TokensService, TokensRepository],
         })

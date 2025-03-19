@@ -11,8 +11,8 @@ export class RepositoryMongoBase<T> extends RepositoryBase<T> {
         return (await createdElement.save()) as T
     }
 
-    findAll(): Promise<T[]> {
-        return this.model.find().exec()
+    findAll(limit = 10, skip = 0): Promise<T[]> {
+        return this.model.find().limit(limit).skip(skip).exec()
     }
 
     async findOne(filter: object): Promise<T | undefined> {
