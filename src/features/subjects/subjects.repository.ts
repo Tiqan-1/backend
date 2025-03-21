@@ -22,7 +22,7 @@ export class SubjectsRepository extends RepositoryMongoBase<SubjectDocument> {
         const foundDocument: SubjectDocument | null = await this.model
             .findOne(filter)
             .populate('createdBy', 'name email')
-            .populate({ path: 'lessons', options: { perDocumentLimit: 10 } })
+            .populate({ path: 'lessons', options: { perDocumentLimit: 10, each: true } })
             .exec()
         if (!foundDocument) {
             return undefined

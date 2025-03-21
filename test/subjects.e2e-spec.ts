@@ -1,14 +1,11 @@
 import { HttpStatus, INestApplication } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
-import { JwtModule, JwtService } from '@nestjs/jwt'
+import { JwtService } from '@nestjs/jwt'
 import { getModelToken } from '@nestjs/mongoose'
 import { Test, TestingModule } from '@nestjs/testing'
-import { Types } from 'mongoose'
 import * as request from 'supertest'
 import { App } from 'supertest/types'
 import { Role } from '../src/features/authentication/enums/role.enum'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
-import { TokenUser } from '../src/features/authentication/types/token-user'
 import { LessonsRepository } from '../src/features/lessons/lessons.repository'
 import { Lesson } from '../src/features/lessons/schemas/lesson.schema'
 import { CreateSubjectDto, SubjectDto } from '../src/features/subjects/dto/subject.dto'
@@ -16,9 +13,12 @@ import { Subject } from '../src/features/subjects/schemas/subject.schema'
 import { SubjectsController } from '../src/features/subjects/subjects.controller'
 import { SubjectsRepository } from '../src/features/subjects/subjects.repository'
 import { SubjectsService } from '../src/features/subjects/subjects.service'
+import {
+    ConfigServiceProvider,
+    JwtMockModule,
+    mockJwtStrategyValidation,
+} from '../src/shared/test/helper/jwt-authentication-test.helper'
 import { MongoTestHelper } from '../src/shared/test/helper/mongo-test.helper'
-
-const configService = { get: jest.fn().mockReturnValue('secret') }
 
 describe('SubjectsController (e2e)', () => {
     let app: INestApplication<App>
@@ -29,12 +29,7 @@ describe('SubjectsController (e2e)', () => {
         mongoTestHelper = await MongoTestHelper.instance()
 
         const module: TestingModule = await Test.createTestingModule({
-            imports: [
-                JwtModule.register({
-                    secret: 'secret',
-                    signOptions: { expiresIn: '1d' },
-                }),
-            ],
+            imports: [JwtMockModule],
             controllers: [SubjectsController],
             providers: [
                 SubjectsService,
@@ -42,16 +37,14 @@ describe('SubjectsController (e2e)', () => {
                 LessonsRepository,
                 JwtService,
                 JwtStrategy,
-                { provide: ConfigService, useValue: configService },
+                ConfigServiceProvider,
                 { provide: getModelToken(Subject.name), useValue: mongoTestHelper.getSubjectModel() },
                 { provide: getModelToken(Lesson.name), useValue: mongoTestHelper.getLessonModel() },
             ],
         }).compile()
 
         jwtService = module.get(JwtService)
-        module.get(JwtStrategy).validate = jest
-            .fn()
-            .mockImplementation((payload: TokenUser) => ({ role: payload.role, id: new Types.ObjectId(payload.id) }))
+        mockJwtStrategyValidation(module)
 
         app = module.createNestApplication()
         await app.init()
@@ -93,7 +86,7 @@ describe('SubjectsController (e2e)', () => {
                 ],
             }
 
-            const token = jwtService.sign({ id: manager._id, role: Role.Manager })
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
             const response = await request(app.getHttpServer())
                 .post('/api/subjects')
                 .set('Authorization', `Bearer ${token}`)
@@ -154,7 +147,7 @@ describe('SubjectsController (e2e)', () => {
     describe('GET /api/subjects/user/', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
-            const token = jwtService.sign({ id: manager._id, role: Role.Manager })
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
             const subject1 = await mongoTestHelper.createSubject(manager, [])
             const subject2 = await mongoTestHelper.createSubject(manager, [])
 

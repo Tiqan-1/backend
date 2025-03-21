@@ -1,7 +1,7 @@
-import { Types } from 'mongoose'
+import { ObjectId } from '../../../shared/repository/types'
 import { Role } from '../enums/role.enum'
 
 export type TokenUser = {
-    id: Types.ObjectId
+    id: ObjectId
     role: Role
 }

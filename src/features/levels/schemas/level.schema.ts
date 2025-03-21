@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { HydratedDocument, Types } from 'mongoose'
-import { SubjectInstance } from '../../subject-instances/schemas/subject-instance.schema'
+import { Task, TaskDocument } from '../../tasks/schemas/task.schema'
 
 export type LevelDocument = HydratedDocument<Level>
 
@@ -15,8 +15,8 @@ export class Level {
     @Prop({ required: true, type: Date })
     end: Date
 
-    @Prop({ required: true, type: Types.ObjectId, ref: SubjectInstance.name })
-    subjectInstance: SubjectInstance
+    @Prop({ required: true, type: [Types.ObjectId], ref: Task.name })
+    tasks: TaskDocument[]
 }
 
 export const LevelSchema = SchemaFactory.createForClass(Level)

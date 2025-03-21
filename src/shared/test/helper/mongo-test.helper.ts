@@ -9,6 +9,7 @@ import { Manager, ManagerDocument, ManagerSchema } from '../../../features/manag
 import { Gender } from '../../../features/students/enums/gender'
 import { Student, StudentDocument, StudentSchema } from '../../../features/students/schemas/student.schema'
 import { Subject, SubjectDocument, SubjectSchema } from '../../../features/subjects/schemas/subject.schema'
+import { Task, TaskDocument, TaskSchema } from '../../../features/tasks/schemas/task.schema'
 import { RefreshToken, RefreshTokenSchema } from '../../../features/tokens/schemas/refresh-token.schema'
 import { User, UserDocument, UserSchema } from '../../../features/users/schemas/user.schema'
 
@@ -22,6 +23,7 @@ export class MongoTestHelper {
     private refreshTokenModel: Model<RefreshToken>
     private subjectModel: Model<Subject>
     private lessonModel: Model<Lesson>
+    private taskModel: Model<Task>
 
     static async instance(): Promise<MongoTestHelper> {
         const helper = new MongoTestHelper()
@@ -71,6 +73,13 @@ export class MongoTestHelper {
             this.lessonModel = this.mongoConnection.model(Lesson.name, LessonSchema)
         }
         return this.lessonModel
+    }
+
+    getTaskModel(): Model<Task> {
+        if (!this.taskModel) {
+            this.taskModel = this.mongoConnection.model(Task.name, TaskSchema)
+        }
+        return this.taskModel
     }
 
     createManager(id: string = ''): Promise<ManagerDocument> {
@@ -136,6 +145,15 @@ export class MongoTestHelper {
         }
         const model = this.getSubjectModel()
         return model.create(subject)
+    }
+
+    async createTask(lessons: LessonDocument[]): Promise<TaskDocument> {
+        const task: Task = {
+            date: new Date(),
+            lessons: lessons.map(({ _id }) => _id),
+        }
+        const model = this.getTaskModel()
+        return model.create(task)
     }
 
     async clearCollections(): Promise<void> {

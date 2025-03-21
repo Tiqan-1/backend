@@ -28,6 +28,7 @@ export default tseslint.config(
     {
         rules: {
             semi: ['error', 'never', { beforeStatementContinuationChars: 'any' }],
+            '@typescript-eslint/explicit-function-return-type': 'error',
             '@typescript-eslint/no-explicit-any': 'error',
             '@typescript-eslint/no-floating-promises': 'warn',
             '@typescript-eslint/no-unsafe-argument': 'warn',

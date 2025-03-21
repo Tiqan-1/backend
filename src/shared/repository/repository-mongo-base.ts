@@ -1,4 +1,4 @@
-import { Model } from 'mongoose'
+import { Model, Types } from 'mongoose'
 import { RepositoryBase } from './repository-base'
 
 export class RepositoryMongoBase<T> extends RepositoryBase<T> {
@@ -23,10 +23,18 @@ export class RepositoryMongoBase<T> extends RepositoryBase<T> {
         return undefined
     }
 
-    async update(filter: object, element: T): Promise<T | undefined> {
-        const result = await this.model.replaceOne({ ...filter }, element).exec()
-        if (result.matchedCount === 1) {
-            return element
+    async findById(id: Types.ObjectId): Promise<T | undefined> {
+        const foundElement = await this.model.findById(id).exec()
+        if (foundElement) {
+            return foundElement
+        }
+        return undefined
+    }
+
+    async update(filter: object, updateElement: object): Promise<T | undefined> {
+        const result = await this.model.findOneAndUpdate({ ...filter }, { $set: { ...updateElement } }, { new: true }).exec()
+        if (result) {
+            return result
         }
         return undefined
     }

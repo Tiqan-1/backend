@@ -6,6 +6,7 @@ import { LessonsModule } from './features/lessons/lessons.module'
 import { ManagersModule } from './features/managers/managers.module'
 import { StudentsModule } from './features/students/students.module'
 import { SubjectsModule } from './features/subjects/subjects.module'
+import { TasksModule } from './features/tasks/tasks.module'
 import { TokensModule } from './features/tokens/tokens.module'
 import { UsersModule } from './features/users/users.module'
 
@@ -22,6 +23,7 @@ import { UsersModule } from './features/users/users.module'
         StudentsModule,
         SubjectsModule,
         LessonsModule,
+        TasksModule,
     ],
     providers: [],
 })

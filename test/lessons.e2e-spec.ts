@@ -63,7 +63,7 @@ describe('LessonsController (e2e)', () => {
     describe('POST /api/lessons/', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
-            const token = jwtService.sign({ id: manager._id, role: Role.Manager })
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
             const body: CreateLessonDto = {
                 title: 'lesson test',
                 type: LessonType.Pdf,

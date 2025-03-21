@@ -1,0 +1,27 @@
+import { Injectable } from '@nestjs/common'
+import { InjectModel } from '@nestjs/mongoose'
+import { Model, Types } from 'mongoose'
+import { RepositoryMongoBase } from '../../shared/repository/repository-mongo-base'
+import { Task, TaskDocument } from './schemas/task.schema'
+
+@Injectable()
+export class TasksRepository extends RepositoryMongoBase<TaskDocument> {
+    constructor(@InjectModel(Task.name) model: Model<TaskDocument>) {
+        super(model)
+    }
+
+    async create(element: unknown): Promise<TaskDocument> {
+        return await super.create(element)
+    }
+
+    async findByIdPopulated(id: Types.ObjectId): Promise<TaskDocument | undefined> {
+        const foundDocument: TaskDocument | null = await this.model
+            .findById(id)
+            .populate({ path: 'lessons', options: { perDocumentLimit: 10 } })
+            .exec()
+        if (!foundDocument) {
+            return undefined
+        }
+        return foundDocument
+    }
+}

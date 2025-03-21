@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
-import { Types } from 'mongoose'
 import { HandleBsonErrors } from '../../shared/errors/error-handler'
+import { ObjectId } from '../../shared/repository/types'
 import { TokenUser } from '../authentication/types/token-user'
 import { LessonsRepository } from '../lessons/lessons.repository'
 import { CreateSubjectDto, SubjectDto } from './dto/subject.dto'
@@ -22,8 +22,8 @@ export class SubjectsService {
 
     @HandleBsonErrors()
     async addLessonToSubject(subjectId: string, lessonId: string): Promise<void> {
-        const lesson = await this.lessonsRepository.findOne({ _id: new Types.ObjectId(lessonId) })
-        const subject = await this.subjectsRepository.findOne({ _id: new Types.ObjectId(subjectId) })
+        const lesson = await this.lessonsRepository.findOne({ _id: new ObjectId(lessonId) })
+        const subject = await this.subjectsRepository.findOne({ _id: new ObjectId(subjectId) })
         if (!subject || !lesson) {
             throw new NotFoundException('Subject or Lesson not found.')
         }
@@ -44,7 +44,7 @@ export class SubjectsService {
 
     @HandleBsonErrors()
     async findOne(id: string): Promise<SubjectDto> {
-        const result = await this.subjectsRepository.findOne({ _id: new Types.ObjectId(id) })
+        const result = await this.subjectsRepository.findOne({ _id: new ObjectId(id) })
         if (!result) {
             throw new NotFoundException('Subject not found with the given Id')
         }
