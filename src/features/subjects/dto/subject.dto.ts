@@ -1,5 +1,7 @@
+import { InternalServerErrorException } from '@nestjs/common'
 import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { IsOptional, IsString, ValidateNested } from 'class-validator'
+import { areNotPopulated } from '../../../shared/helper/populated-type.helper'
 import { ObjectId } from '../../../shared/repository/types'
 import { LessonDto } from '../../lessons/dto/lesson.dto'
 import { simpleManagerDto } from '../../managers/dto/manager.dto'
@@ -32,6 +34,9 @@ export class SubjectDto {
         this.name = subject.name
         this.description = subject.description
         this.createdBy = new simpleManagerDto(subject.createdBy)
+        if (areNotPopulated(subject.lessons)) {
+            throw new InternalServerErrorException()
+        }
         this.lessons = subject.lessons.map(lesson => new LessonDto(lesson))
     }
 

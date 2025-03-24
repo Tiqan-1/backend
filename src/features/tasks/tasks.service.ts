@@ -39,7 +39,7 @@ export class TasksService {
     }
 
     @HandleBsonErrors()
-    async delete(id: string): Promise<void> {
+    async remove(id: string): Promise<void> {
         const taskId = new ObjectId(id)
         const deleted = await this.taskRepository.remove({ _id: taskId })
         if (!deleted) {

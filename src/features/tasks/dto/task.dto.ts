@@ -1,7 +1,8 @@
 import { ApiProperty, OmitType, PartialType } from '@nestjs/swagger'
 import { IsDateString, IsNotEmpty, IsString, ValidateNested } from 'class-validator'
+import { arePopulated } from '../../../shared/helper/populated-type.helper'
 import { LessonDto } from '../../lessons/dto/lesson.dto'
-import { areLessonsPopulated, TaskDocument } from '../schemas/task.schema'
+import { TaskDocument } from '../schemas/task.schema'
 
 export class TaskDto {
     @ApiProperty({ type: String, required: true, example: 'taskId' })
@@ -19,7 +20,7 @@ export class TaskDto {
     constructor(document: TaskDocument) {
         this.id = document._id.toString()
         this.date = new Date(document.date)
-        if (areLessonsPopulated(document.lessons)) {
+        if (arePopulated(document.lessons)) {
             this.lessons = document.lessons.map(lesson => LessonDto.fromDocument(lesson))
         } else {
             console.warn('lessons were not populated')

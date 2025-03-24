@@ -1,5 +1,6 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Put, Query, Request, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger'
+import { CreatedDto } from '../../shared/dto/created.dto'
 import { Roles } from '../authentication/decorators/roles.decorator'
 import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
@@ -14,7 +15,7 @@ export class SubjectsController {
     constructor(private readonly service: SubjectsService) {}
 
     @ApiOperation({ summary: 'Creates a subject', description: 'Creates a subject.' })
-    @ApiResponse({ status: HttpStatus.CREATED, type: SubjectDto, description: 'Subject successfully created.' })
+    @ApiResponse({ status: HttpStatus.CREATED, type: CreatedDto, description: 'Subject successfully created.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
     @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
@@ -22,7 +23,7 @@ export class SubjectsController {
     @Post()
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
-    create(@Body() subject: CreateSubjectDto, @Request() request: { user: TokenUser }): Promise<SubjectDto> {
+    create(@Body() subject: CreateSubjectDto, @Request() request: { user: TokenUser }): Promise<CreatedDto> {
         return this.service.create(subject, request.user)
     }
 
@@ -60,11 +61,23 @@ export class SubjectsController {
     }
 
     @ApiOperation({ summary: 'Finds all subjects', description: 'Finds all subjects.' })
-    @ApiQuery({ name: 'limit', type: Number, required: false })
-    @ApiQuery({ name: 'skip', type: Number, required: false })
+    @ApiQuery({
+        name: 'limit',
+        type: Number,
+        required: false,
+        description: 'Controls the number of returned elements',
+        default: 20,
+    })
+    @ApiQuery({
+        name: 'skip',
+        type: Number,
+        required: false,
+        description: 'Controls the number of elements to be skipped (for paging)',
+        default: 0,
+    })
     @ApiResponse({ status: HttpStatus.OK, type: SubjectDto, isArray: true, description: 'Got subjects successfully.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user,' })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user.' })
     @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
     @Get()
     @Roles(Role.Manager)
@@ -76,7 +89,8 @@ export class SubjectsController {
     @ApiOperation({ summary: 'Finds subject by id', description: 'Finds subject by id.' })
     @ApiResponse({ status: HttpStatus.OK, type: SubjectDto, description: 'Got subject successfully.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Subject not found.' })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user.' })
     @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
     @Get('/:id')
     @Roles(Role.Manager)

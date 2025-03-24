@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { HydratedDocument, Types } from 'mongoose'
 import { Level } from '../../levels/schemas/level.schema'
+import { ProgramState } from '../enums/program-state.enum'
 
 export type ProgramDocument = HydratedDocument<Program>
 
@@ -12,11 +13,8 @@ export class Program {
     @Prop({ required: true, type: String })
     description: string
 
-    @Prop({ required: false, type: [String], default: [] })
-    goals: string[]
-
-    @Prop({ required: true, type: Boolean })
-    active: boolean
+    @Prop({ required: true, type: String, enum: ProgramState, default: ProgramState.created })
+    state: ProgramState
 
     @Prop({ required: true, type: Date })
     start: Date
