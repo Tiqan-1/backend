@@ -4,6 +4,7 @@ import { getModelToken } from '@nestjs/mongoose'
 import { Test, TestingModule } from '@nestjs/testing'
 import * as request from 'supertest'
 import { App } from 'supertest/types'
+import { AuthenticationService } from '../src/features/authentication/authentication.service'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
 import { ManagersRepository } from '../src/features/managers/managers.repository'
 import { ManagersService } from '../src/features/managers/managers.service'
@@ -14,6 +15,12 @@ import { ProgramsController } from '../src/features/programs/programs.controller
 import { ProgramsRepository } from '../src/features/programs/programs.repository'
 import { ProgramsService } from '../src/features/programs/programs.service'
 import { Program, ProgramDocument } from '../src/features/programs/schemas/program.schema'
+import { RefreshToken } from '../src/features/tokens/schemas/refresh-token.schema'
+import { TokensRepository } from '../src/features/tokens/tokens.repository'
+import { TokensService } from '../src/features/tokens/tokens.service'
+import { User } from '../src/features/users/schemas/user.schema'
+import { UsersRepository } from '../src/features/users/users.repository'
+import { UsersService } from '../src/features/users/users.service'
 import { CreatedDto } from '../src/shared/dto/created.dto'
 import { ObjectId } from '../src/shared/repository/types'
 import {
@@ -38,11 +45,18 @@ describe('ProgramsController (e2e)', () => {
                 ProgramsRepository,
                 ManagersService,
                 ManagersRepository,
+                AuthenticationService,
+                UsersService,
+                UsersRepository,
+                TokensService,
+                TokensRepository,
                 JwtService,
                 JwtStrategy,
                 ConfigServiceProvider,
                 { provide: getModelToken(Program.name), useValue: mongoTestHelper.getProgramModel() },
                 { provide: getModelToken(Manager.name), useValue: mongoTestHelper.getManagerModel() },
+                { provide: getModelToken(User.name), useValue: mongoTestHelper.getUserModel() },
+                { provide: getModelToken(RefreshToken.name), useValue: mongoTestHelper.getRefreshTokenModel() },
             ],
         }).compile()
 

@@ -4,6 +4,7 @@ import { getModelToken } from '@nestjs/mongoose'
 import { Test, TestingModule } from '@nestjs/testing'
 import * as request from 'supertest'
 import { App } from 'supertest/types'
+import { AuthenticationService } from '../src/features/authentication/authentication.service'
 import { Role } from '../src/features/authentication/enums/role.enum'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
 import { LessonsRepository } from '../src/features/lessons/lessons.repository'
@@ -17,6 +18,12 @@ import { Subject } from '../src/features/subjects/schemas/subject.schema'
 import { SubjectsController } from '../src/features/subjects/subjects.controller'
 import { SubjectsRepository } from '../src/features/subjects/subjects.repository'
 import { SubjectsService } from '../src/features/subjects/subjects.service'
+import { RefreshToken } from '../src/features/tokens/schemas/refresh-token.schema'
+import { TokensRepository } from '../src/features/tokens/tokens.repository'
+import { TokensService } from '../src/features/tokens/tokens.service'
+import { User } from '../src/features/users/schemas/user.schema'
+import { UsersRepository } from '../src/features/users/users.repository'
+import { UsersService } from '../src/features/users/users.service'
 import { CreatedDto } from '../src/shared/dto/created.dto'
 import {
     ConfigServiceProvider,
@@ -41,6 +48,11 @@ describe('SubjectsController (e2e)', () => {
                 SubjectsRepository,
                 LessonsService,
                 LessonsRepository,
+                AuthenticationService,
+                UsersService,
+                UsersRepository,
+                TokensService,
+                TokensRepository,
                 ManagersService,
                 ManagersRepository,
                 JwtService,
@@ -49,6 +61,8 @@ describe('SubjectsController (e2e)', () => {
                 { provide: getModelToken(Subject.name), useValue: mongoTestHelper.getSubjectModel() },
                 { provide: getModelToken(Lesson.name), useValue: mongoTestHelper.getLessonModel() },
                 { provide: getModelToken(Manager.name), useValue: mongoTestHelper.getManagerModel() },
+                { provide: getModelToken(User.name), useValue: mongoTestHelper.getUserModel() },
+                { provide: getModelToken(RefreshToken.name), useValue: mongoTestHelper.getRefreshTokenModel() },
             ],
         }).compile()
 

@@ -2,34 +2,33 @@ import { ConflictException, Injectable, InternalServerErrorException } from '@ne
 import * as bcrypt from 'bcryptjs'
 import { arePopulated } from '../../shared/helper/populated-type.helper'
 import { ObjectId } from '../../shared/repository/types'
+import { AuthenticationService } from '../authentication/authentication.service'
+import { AuthenticationResponseDto } from '../authentication/dto/authentication-response.dto'
 import { ProgramDocument } from '../programs/schemas/program.schema'
 import { SubjectDocument } from '../subjects/schemas/subject.schema'
-import { ManagerDto, SignUpManagerDto } from './dto/manager.dto'
+import { SignUpManagerDto } from './dto/manager.dto'
 import { ManagersRepository } from './managers.repository'
 
 @Injectable()
 export class ManagersService {
-    constructor(private managersRepository: ManagersRepository) {}
+    constructor(
+        private managersRepository: ManagersRepository,
+        private authenticationService: AuthenticationService
+    ) {}
 
-    async create(manager: SignUpManagerDto): Promise<ManagerDto> {
+    async create(manager: SignUpManagerDto): Promise<AuthenticationResponseDto> {
         const duplicate = await this.managersRepository.findOne({ email: manager.email })
         if (duplicate) {
             throw new ConflictException('A user with the same email already exists.')
         }
-        let createdId: ObjectId
         try {
             manager.password = bcrypt.hashSync(manager.password, 10)
             const createdManager = await this.managersRepository.create(manager)
-            createdId = createdManager._id
+            return this.authenticationService.generateUserTokens(createdManager)
         } catch (error) {
             console.error('General Error while creating manager.', error)
             throw new InternalServerErrorException('General Error while creating manager.')
         }
-        const result = await this.managersRepository.findPopulatedById(createdId)
-        if (!result) {
-            throw new InternalServerErrorException('Could not get created manager.')
-        }
-        return new ManagerDto(result)
     }
 
     async addProgram(id: ObjectId, program: ProgramDocument): Promise<void> {

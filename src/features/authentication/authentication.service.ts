@@ -53,7 +53,7 @@ export class AuthenticationService {
         return undefined
     }
 
-    private async generateUserTokens(user: UserDocument): Promise<AuthenticationResponseDto> {
+    async generateUserTokens(user: UserDocument): Promise<AuthenticationResponseDto> {
         try {
             const accessToken = this.jwtService.sign({ id: user._id, role: user.role })
             const refreshToken = uuidv4()
@@ -61,6 +61,8 @@ export class AuthenticationService {
             await this.tokensService.create(refreshToken, user)
 
             return {
+                name: user.name,
+                email: user.email,
                 accessToken: accessToken,
                 refreshToken: refreshToken,
             }
