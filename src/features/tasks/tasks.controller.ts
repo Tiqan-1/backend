@@ -79,6 +79,6 @@ export class TasksController {
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
     delete(@Param('id') id: string): Promise<void> {
-        return this.service.delete(id)
+        return this.service.remove(id)
     }
 }

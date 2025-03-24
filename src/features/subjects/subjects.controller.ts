@@ -60,11 +60,23 @@ export class SubjectsController {
     }
 
     @ApiOperation({ summary: 'Finds all subjects', description: 'Finds all subjects.' })
-    @ApiQuery({ name: 'limit', type: Number, required: false })
-    @ApiQuery({ name: 'skip', type: Number, required: false })
+    @ApiQuery({
+        name: 'limit',
+        type: Number,
+        required: false,
+        description: 'Controls the number of returned elements',
+        default: 20,
+    })
+    @ApiQuery({
+        name: 'skip',
+        type: Number,
+        required: false,
+        description: 'Controls the number of elements to be skipped (for paging)',
+        default: 0,
+    })
     @ApiResponse({ status: HttpStatus.OK, type: SubjectDto, isArray: true, description: 'Got subjects successfully.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user,' })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user.' })
     @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
     @Get()
     @Roles(Role.Manager)
@@ -76,7 +88,8 @@ export class SubjectsController {
     @ApiOperation({ summary: 'Finds subject by id', description: 'Finds subject by id.' })
     @ApiResponse({ status: HttpStatus.OK, type: SubjectDto, description: 'Got subject successfully.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Subject not found.' })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user.' })
     @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
     @Get('/:id')
     @Roles(Role.Manager)
