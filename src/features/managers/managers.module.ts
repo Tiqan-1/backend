@@ -12,7 +12,8 @@ import { Manager, ManagerSchema } from './schemas/manager.schema'
             { name: User.name, schema: UserSchema, discriminators: [{ name: Manager.name, schema: ManagerSchema }] },
         ]),
     ],
-    providers: [ManagersService, ManagersRepository],
     controllers: [ManagersController],
+    providers: [ManagersService, ManagersRepository],
+    exports: [ManagersService],
 })
 export class ManagersModule {}
