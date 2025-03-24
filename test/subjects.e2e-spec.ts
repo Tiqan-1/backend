@@ -7,12 +7,17 @@ import { App } from 'supertest/types'
 import { Role } from '../src/features/authentication/enums/role.enum'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
 import { LessonsRepository } from '../src/features/lessons/lessons.repository'
+import { LessonsService } from '../src/features/lessons/lessons.service'
 import { Lesson } from '../src/features/lessons/schemas/lesson.schema'
+import { ManagersRepository } from '../src/features/managers/managers.repository'
+import { ManagersService } from '../src/features/managers/managers.service'
+import { Manager } from '../src/features/managers/schemas/manager.schema'
 import { CreateSubjectDto, SubjectDto } from '../src/features/subjects/dto/subject.dto'
 import { Subject } from '../src/features/subjects/schemas/subject.schema'
 import { SubjectsController } from '../src/features/subjects/subjects.controller'
 import { SubjectsRepository } from '../src/features/subjects/subjects.repository'
 import { SubjectsService } from '../src/features/subjects/subjects.service'
+import { CreatedDto } from '../src/shared/dto/created.dto'
 import {
     ConfigServiceProvider,
     JwtMockModule,
@@ -34,12 +39,16 @@ describe('SubjectsController (e2e)', () => {
             providers: [
                 SubjectsService,
                 SubjectsRepository,
+                LessonsService,
                 LessonsRepository,
+                ManagersService,
+                ManagersRepository,
                 JwtService,
                 JwtStrategy,
                 ConfigServiceProvider,
                 { provide: getModelToken(Subject.name), useValue: mongoTestHelper.getSubjectModel() },
                 { provide: getModelToken(Lesson.name), useValue: mongoTestHelper.getLessonModel() },
+                { provide: getModelToken(Manager.name), useValue: mongoTestHelper.getManagerModel() },
             ],
         }).compile()
 
@@ -69,23 +78,6 @@ describe('SubjectsController (e2e)', () => {
                 lessonIds: [lesson._id.toString()],
             }
 
-            const expected = {
-                name: body.name,
-                description: body.description,
-                createdBy: {
-                    name: manager.name,
-                    email: manager.email,
-                },
-                lessons: [
-                    {
-                        id: lesson._id.toString(),
-                        title: lesson.title,
-                        type: lesson.type,
-                        url: lesson.url,
-                    },
-                ],
-            }
-
             const token = jwtService.sign({ id: manager._id, role: manager.role })
             const response = await request(app.getHttpServer())
                 .post('/api/subjects')
@@ -93,9 +85,8 @@ describe('SubjectsController (e2e)', () => {
                 .send(body)
                 .expect(HttpStatus.CREATED)
             expect(response.body).toBeDefined()
-            const { id, ...params } = response.body as SubjectDto
+            const { id } = response.body as CreatedDto
             expect(id).toBeDefined()
-            expect(params).toEqual(expected)
         })
 
         it('called with a student, should throw 403', async () => {

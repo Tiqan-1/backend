@@ -2,6 +2,8 @@ import { getModelToken } from '@nestjs/mongoose'
 import { Test, TestingModule } from '@nestjs/testing'
 import { Model } from 'mongoose'
 import { MongoTestHelper } from '../../shared/test/helper/mongo-test.helper'
+import { Program } from '../programs/schemas/program.schema'
+import { Subject } from '../subjects/schemas/subject.schema'
 import { ManagerDto, SignUpManagerDto } from './dto/manager.dto'
 import { ManagersRepository } from './managers.repository'
 import { ManagersService } from './managers.service'
@@ -23,6 +25,14 @@ describe('ManagersService', () => {
                 {
                     provide: getModelToken(Manager.name),
                     useValue: managerModel,
+                },
+                {
+                    provide: getModelToken(Program.name),
+                    useValue: mongoTestHelper.getProgramModel(),
+                },
+                {
+                    provide: getModelToken(Subject.name),
+                    useValue: mongoTestHelper.getSubjectModel(),
                 },
             ],
         }).compile()

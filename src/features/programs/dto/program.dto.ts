@@ -1,26 +1,14 @@
 import { ApiProperty, OmitType, PartialType } from '@nestjs/swagger'
-import { IsBoolean, IsDateString, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator'
+import { IsDateString, IsEnum, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { normalizeDate } from '../../../shared/helper/date.helper'
 import { ObjectId } from '../../../shared/repository/types'
 import { LevelDto } from '../../levels/dto/level.dto'
-import { simpleManagerDto } from '../../managers/dto/manager.dto'
+import { ProgramState } from '../enums/program-state.enum'
 import { ProgramDocument } from '../schemas/program.schema'
 
 const now = normalizeDate(new Date())
 
 export class ProgramDto {
-    constructor(document: ProgramDocument) {
-        this.id = document._id.toString()
-        this.name = document.name
-        this.createdBy = document.createdBy
-        this.description = document.description
-        this.start = document.start
-        this.end = document.end
-        this.registrationStart = document.registrationStart
-        this.registrationEnd = document.registrationEnd
-        this.levels = LevelDto.fromDocuments(document.levels)
-    }
-
     @ApiProperty({ type: String, required: true, example: 'programId' })
     @IsString()
     id: string
@@ -29,24 +17,20 @@ export class ProgramDto {
     @IsString()
     name: string
 
-    @ApiProperty({ type: () => simpleManagerDto, required: true })
-    @ValidateNested()
-    createdBy: simpleManagerDto
-
     @ApiProperty({ type: String, required: false, example: 'برنامج تفاعلي يهدف إلى تأسيس الطالب في العلوم الشرعية' })
     @IsString()
     @IsOptional()
     description?: string
 
-    @ApiProperty({ type: Boolean, required: true })
-    @IsBoolean()
-    active: boolean
+    @ApiProperty({ type: String, enum: ProgramState, required: true })
+    @IsEnum(ProgramState)
+    state: ProgramState
 
     @ApiProperty({ type: Date, required: true, example: now })
     @IsDateString()
     start: Date
 
-    @ApiProperty({ type: Date, required: true, example: new Date(now.setFullYear(now.getFullYear() + 1)) })
+    @ApiProperty({ type: Date, required: true, example: now })
     @IsDateString()
     end: Date
 
@@ -55,12 +39,12 @@ export class ProgramDto {
     @IsDateString()
     registrationStart?: Date
 
-    @ApiProperty({ type: Date, required: true, example: new Date(now.setHours(now.getHours() + 6)) })
+    @ApiProperty({ type: Date, required: true, example: now })
     @IsOptional()
     @IsDateString()
     registrationEnd?: Date
 
-    @ApiProperty({ type: LevelDto, required: true })
+    @ApiProperty({ type: LevelDto, required: true, isArray: true })
     @ValidateNested({ each: true })
     levels: LevelDto[]
 
@@ -69,17 +53,46 @@ export class ProgramDto {
     }
 
     static fromDocument(document: ProgramDocument): ProgramDto {
-        return new ProgramDto(document)
+        return {
+            id: document._id.toString(),
+            name: document.name,
+            state: document.state,
+            description: document.description,
+            start: document.start,
+            end: document.end,
+            registrationStart: document.registrationStart,
+            registrationEnd: document.registrationEnd,
+            levels: LevelDto.fromDocuments(document.levels),
+        }
     }
 }
 
-export class CreateProgramDto extends OmitType(ProgramDto, ['id', 'createdBy', 'levels']) {
-    @ApiProperty({ type: String, required: true })
-    @IsNotEmpty()
+export class StudentProgramDto extends OmitType(ProgramDto, ['state']) {
+    static fromDocuments(foundPrograms: ProgramDocument[]): StudentProgramDto[] {
+        return foundPrograms.map(foundProgram => this.fromDocument(foundProgram))
+    }
+
+    static fromDocument(document: ProgramDocument): StudentProgramDto {
+        return {
+            id: document._id.toString(),
+            name: document.name,
+            description: document.description,
+            start: document.start,
+            end: document.end,
+            registrationStart: document.start,
+            registrationEnd: document.end,
+            levels: LevelDto.fromDocuments(document.levels),
+        }
+    }
+}
+
+export class CreateProgramDto extends OmitType(ProgramDto, ['id', 'state', 'levels']) {
+    @ApiProperty({ type: String, required: false, isArray: true })
+    @IsOptional()
     @ValidateNested({ each: true })
     levelIds: string[]
 
-    static toDocument(dto: CreateProgramDto, creatorId: ObjectId): object {
+    static toDocument(dto: CreateProgramDto): object {
         return {
             name: dto.name,
             description: dto.description,
@@ -87,17 +100,22 @@ export class CreateProgramDto extends OmitType(ProgramDto, ['id', 'createdBy', '
             end: dto.end,
             registrationStart: dto.registrationStart,
             registrationEnd: dto.registrationEnd,
-            levels: dto.levelIds.map(levelId => new ObjectId(levelId)),
-            createdBy: creatorId,
+            levels: dto.levelIds?.map(levelId => new ObjectId(levelId)),
         }
     }
 }
 
 export class UpdateProgramDto extends PartialType(CreateProgramDto) {
+    @ApiProperty({ type: String, enum: ProgramState, required: false })
+    @IsOptional()
+    @IsEnum(ProgramState)
+    state: ProgramState
+
     static toDocument(dto: UpdateProgramDto): object {
         return {
             name: dto.name,
             description: dto.description,
+            state: dto.state,
             start: dto.start,
             end: dto.end,
             registrationStart: dto.registrationStart,

@@ -4,8 +4,12 @@ import { Model } from 'mongoose'
 import { MongoTestHelper } from '../../shared/test/helper/mongo-test.helper'
 import { TokenUser } from '../authentication/types/token-user'
 import { LessonsRepository } from '../lessons/lessons.repository'
+import { LessonsService } from '../lessons/lessons.service'
 import { Lesson } from '../lessons/schemas/lesson.schema'
-import { CreateSubjectDto, SubjectDto } from './dto/subject.dto'
+import { ManagersRepository } from '../managers/managers.repository'
+import { ManagersService } from '../managers/managers.service'
+import { Manager } from '../managers/schemas/manager.schema'
+import { CreateSubjectDto } from './dto/subject.dto'
 import { Subject } from './schemas/subject.schema'
 import { SubjectsRepository } from './subjects.repository'
 import { SubjectsService } from './subjects.service'
@@ -24,9 +28,13 @@ describe('SubjectsService', () => {
             providers: [
                 SubjectsService,
                 SubjectsRepository,
+                LessonsService,
                 LessonsRepository,
+                ManagersService,
+                ManagersRepository,
                 { provide: getModelToken(Subject.name), useValue: subjectModel },
                 { provide: getModelToken(Lesson.name), useValue: lessonModel },
+                { provide: getModelToken(Manager.name), useValue: mongoTestHelper.getManagerModel() },
             ],
         }).compile()
 
@@ -52,21 +60,14 @@ describe('SubjectsService', () => {
             lessonIds: [],
         }
 
-        const expected: Partial<SubjectDto> = {
-            name: 'test subject',
-            description: 'test description',
-            lessons: [],
-        }
+        const expectedName = 'test subject'
+
         const manager = await mongoTestHelper.createManager()
         const tokenUser: TokenUser = { id: manager._id, role: manager.role }
         const result = await service.create(subjectDto, tokenUser)
         expect(result.id).toBeDefined()
-        expect(result.name).toEqual(expected.name)
-        expect(result.description).toEqual(expected.description)
-        expect(result.createdBy).toEqual({ name: manager.name, email: manager.email })
-        expect(result.lessons).toBeDefined()
 
         const savedSubject = await subjectModel.findOne()
-        expect(savedSubject?.name).toEqual(expected.name)
+        expect(savedSubject?.name).toEqual(expectedName)
     })
 })

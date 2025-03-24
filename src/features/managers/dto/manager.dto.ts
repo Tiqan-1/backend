@@ -1,15 +1,20 @@
+import { InternalServerErrorException } from '@nestjs/common'
 import { ApiProperty, PickType } from '@nestjs/swagger'
 import { IsEmail, IsString, IsStrongPassword, ValidateNested } from 'class-validator'
+import { areNotPopulated } from '../../../shared/helper/populated-type.helper'
 import { ProgramDto } from '../../programs/dto/program.dto'
 import { SubjectDto } from '../../subjects/dto/subject.dto'
 import { ManagerDocument } from '../schemas/manager.schema'
 
 export class ManagerDto {
-    constructor(manager: ManagerDocument) {
-        this.name = manager.name
-        this.email = manager.email
-        this.programs = manager.programs
-        this.subjects = SubjectDto.fromDocuments(manager.subjects)
+    constructor(document: ManagerDocument) {
+        this.name = document.name
+        this.email = document.email
+        if (areNotPopulated(document.programs) || areNotPopulated(document.subjects)) {
+            throw new InternalServerErrorException(`Manager's programs or subjects are unexpectedly unpopulated`)
+        }
+        this.programs = ProgramDto.fromDocuments(document.programs)
+        this.subjects = SubjectDto.fromDocuments(document.subjects)
     }
 
     @ApiProperty({ type: String, example: 'John Doe', description: 'full name of manager' })

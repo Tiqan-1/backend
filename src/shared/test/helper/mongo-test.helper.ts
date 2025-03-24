@@ -4,8 +4,11 @@ import { connect, Connection, Model } from 'mongoose'
 import { Role } from '../../../features/authentication/enums/role.enum'
 import { LessonType } from '../../../features/lessons/enums/lesson-type.enum'
 import { Lesson, LessonDocument, LessonSchema } from '../../../features/lessons/schemas/lesson.schema'
+import { LevelDocument } from '../../../features/levels/schemas/level.schema'
 import { SignUpManagerDto } from '../../../features/managers/dto/manager.dto'
 import { Manager, ManagerDocument, ManagerSchema } from '../../../features/managers/schemas/manager.schema'
+import { ProgramState } from '../../../features/programs/enums/program-state.enum'
+import { Program, ProgramDocument, ProgramSchema } from '../../../features/programs/schemas/program.schema'
 import { Gender } from '../../../features/students/enums/gender'
 import { Student, StudentDocument, StudentSchema } from '../../../features/students/schemas/student.schema'
 import { Subject, SubjectDocument, SubjectSchema } from '../../../features/subjects/schemas/subject.schema'
@@ -24,6 +27,7 @@ export class MongoTestHelper {
     private subjectModel: Model<Subject>
     private lessonModel: Model<Lesson>
     private taskModel: Model<Task>
+    private programModel: Model<Program>
 
     static async instance(): Promise<MongoTestHelper> {
         const helper = new MongoTestHelper()
@@ -80,6 +84,13 @@ export class MongoTestHelper {
             this.taskModel = this.mongoConnection.model(Task.name, TaskSchema)
         }
         return this.taskModel
+    }
+
+    getProgramModel(): Model<Program> {
+        if (!this.programModel) {
+            this.programModel = this.mongoConnection.model(Program.name, ProgramSchema)
+        }
+        return this.programModel
     }
 
     createManager(id: string = ''): Promise<ManagerDocument> {
@@ -154,6 +165,22 @@ export class MongoTestHelper {
         }
         const model = this.getTaskModel()
         return model.create(task)
+    }
+
+    async createProgram(levels: LevelDocument[]): Promise<ProgramDocument> {
+        const date = new Date()
+        const program: Program = {
+            name: 'program name',
+            start: new Date(date.valueOf()),
+            state: ProgramState.created,
+            registrationStart: new Date(date.setMonth(date.getMonth() + 1)),
+            registrationEnd: new Date(date.setMonth(date.getMonth() + 2)),
+            end: new Date(date.setFullYear(date.getFullYear() + 1)),
+            description: 'program description',
+            levels: levels,
+        }
+        const model = this.getProgramModel()
+        return model.create(program)
     }
 
     async clearCollections(): Promise<void> {

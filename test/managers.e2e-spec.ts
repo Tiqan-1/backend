@@ -2,6 +2,7 @@ import { HttpStatus, INestApplication } from '@nestjs/common'
 import { getModelToken } from '@nestjs/mongoose'
 import { Test, TestingModule } from '@nestjs/testing'
 import { Model } from 'mongoose'
+import { Subject } from 'rxjs'
 import * as request from 'supertest'
 import { App } from 'supertest/types'
 import { ManagerDto, SignUpManagerDto } from '../src/features/managers/dto/manager.dto'
@@ -9,6 +10,7 @@ import { ManagersController } from '../src/features/managers/managers.controller
 import { ManagersRepository } from '../src/features/managers/managers.repository'
 import { ManagersService } from '../src/features/managers/managers.service'
 import { Manager } from '../src/features/managers/schemas/manager.schema'
+import { Program } from '../src/features/programs/schemas/program.schema'
 import { MongoTestHelper } from '../src/shared/test/helper/mongo-test.helper'
 
 describe('ManagersController (e2e)', () => {
@@ -29,6 +31,14 @@ describe('ManagersController (e2e)', () => {
                 {
                     provide: getModelToken(Manager.name),
                     useValue: managerModel,
+                },
+                {
+                    provide: getModelToken(Subject.name),
+                    useValue: mongoTestHelper.getSubjectModel(),
+                },
+                {
+                    provide: getModelToken(Program.name),
+                    useValue: mongoTestHelper.getProgramModel(),
                 },
             ],
         }).compile()

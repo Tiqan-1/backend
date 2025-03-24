@@ -23,8 +23,6 @@ TaskSchema.pre('save', function (next) {
     next()
 })
 
-export function areLessonsPopulated(
-    lessons: Populated<LessonDocument[]> | Types.ObjectId[]
-): lessons is Populated<LessonDocument[]> {
+export function areLessonsPopulated<T>(lessons: Populated<T[]> | Types.ObjectId[]): lessons is Populated<T[]> {
     return Array.isArray(lessons) && typeof lessons[0] !== 'string'
 }

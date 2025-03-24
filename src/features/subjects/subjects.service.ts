@@ -1,8 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
+import { CreatedDto } from '../../shared/dto/created.dto'
 import { HandleBsonErrors } from '../../shared/errors/error-handler'
+import { arePopulated } from '../../shared/helper/populated-type.helper'
 import { ObjectId } from '../../shared/repository/types'
 import { TokenUser } from '../authentication/types/token-user'
-import { LessonsRepository } from '../lessons/lessons.repository'
+import { LessonsService } from '../lessons/lessons.service'
+import { ManagersService } from '../managers/managers.service'
 import { CreateSubjectDto, SubjectDto } from './dto/subject.dto'
 import { SubjectsRepository } from './subjects.repository'
 
@@ -10,24 +13,30 @@ import { SubjectsRepository } from './subjects.repository'
 export class SubjectsService {
     constructor(
         private readonly subjectsRepository: SubjectsRepository,
-        private readonly lessonsRepository: LessonsRepository
+        private readonly lessonsService: LessonsService,
+        private readonly managersService: ManagersService
     ) {}
 
     @HandleBsonErrors()
-    async create(subject: CreateSubjectDto, manager: TokenUser): Promise<SubjectDto> {
+    async create(subject: CreateSubjectDto, manager: TokenUser): Promise<CreatedDto> {
         const document = CreateSubjectDto.toDocument(subject, manager.id)
-        const result = await this.subjectsRepository.create(document)
-        return SubjectDto.fromDocument(result)
+        const created = await this.subjectsRepository.create(document)
+        await this.managersService.addSubject(manager.id, created)
+        return { id: created._id.toString() }
     }
 
     @HandleBsonErrors()
     async addLessonToSubject(subjectId: string, lessonId: string): Promise<void> {
-        const lesson = await this.lessonsRepository.findOne({ _id: new ObjectId(lessonId) })
-        const subject = await this.subjectsRepository.findOne({ _id: new ObjectId(subjectId) })
-        if (!subject || !lesson) {
+        const lessonObjectId = new ObjectId(lessonId)
+        const hasLesson = await this.lessonsService.hasLesson(lessonObjectId)
+        const subject = await this.subjectsRepository.findById(new ObjectId(subjectId))
+        if (!subject || !hasLesson) {
             throw new NotFoundException('Subject or Lesson not found.')
         }
-        subject.lessons.push(lesson)
+        if (arePopulated(subject.lessons)) {
+            throw new InternalServerErrorException(`Subject's lessons are unexpectedly populated`)
+        }
+        subject.lessons.push(lessonObjectId)
         await subject.save()
     }
 

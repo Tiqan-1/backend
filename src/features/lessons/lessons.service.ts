@@ -12,6 +12,11 @@ export class LessonsService {
         return LessonDto.fromDocument(lessonDocument)
     }
 
+    async hasLesson(id: ObjectId): Promise<boolean> {
+        const lesson = await this.repository.findById(id)
+        return !!lesson
+    }
+
     async validateLessonIds(lessonIds: string[]): Promise<ObjectId[]> {
         const lessonsObjectIds = lessonIds.map(id => new ObjectId(id))
         const lessons = await this.repository.findManyByIds(lessonsObjectIds)

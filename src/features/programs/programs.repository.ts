@@ -9,4 +9,11 @@ export class ProgramsRepository extends RepositoryMongoBase<ProgramDocument> {
     constructor(@InjectModel(Program.name) model: Model<ProgramDocument>) {
         super(model)
     }
+
+    async find(filter: object, limit: number = 20, skip: number = 0): Promise<ProgramDocument[] | undefined> {
+        const found = await this.model.find(filter).limit(limit).skip(skip)
+        if (found) {
+            return found
+        }
+    }
 }

@@ -2,28 +2,56 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { HandleBsonErrors } from '../../shared/errors/error-handler'
 import { ObjectId } from '../../shared/repository/types'
-import { CreateProgramDto, ProgramDto, UpdateProgramDto } from './dto/program.dto'
+import { ManagersService } from '../managers/managers.service'
+import { CreateProgramDto, ProgramDto, StudentProgramDto, UpdateProgramDto } from './dto/program.dto'
+import { ProgramState } from './enums/program-state.enum'
 import { ProgramsRepository } from './programs.repository'
 
 @Injectable()
 export class ProgramsService {
-    constructor(private readonly programsRepository: ProgramsRepository) {}
+    constructor(
+        private readonly programsRepository: ProgramsRepository,
+        private readonly managersService: ManagersService
+    ) {}
 
     @HandleBsonErrors()
     async create(createProgramDto: CreateProgramDto, creatorId: ObjectId): Promise<CreatedDto> {
-        const document = CreateProgramDto.toDocument(createProgramDto, creatorId)
+        const document = CreateProgramDto.toDocument(createProgramDto)
         const created = await this.programsRepository.create(document)
+
+        await this.managersService.addProgram(creatorId, created)
+
         return { id: created._id.toString() }
     }
 
     @HandleBsonErrors()
-    async findAll(limit?: number, skip?: number): Promise<ProgramDto[]> {
+    async findAllForStudents(limit?: number, skip?: number): Promise<StudentProgramDto[]> {
+        const filter = { state: { $in: [ProgramState.published] } }
+        const foundPrograms = await this.programsRepository.find(filter, limit, skip)
+        if (!foundPrograms) {
+            return []
+        }
+        return StudentProgramDto.fromDocuments(foundPrograms)
+    }
+
+    @HandleBsonErrors()
+    async findAllForManagers(limit?: number, skip?: number): Promise<ProgramDto[]> {
         const foundPrograms = await this.programsRepository.findAll(limit, skip)
         return ProgramDto.fromDocuments(foundPrograms)
     }
 
     @HandleBsonErrors()
-    async findOne(id: string): Promise<ProgramDto> {
+    async findOneForStudents(id: string): Promise<StudentProgramDto> {
+        const programId = new ObjectId(id)
+        const found = await this.programsRepository.findById(programId)
+        if (!found) {
+            throw new NotFoundException('Program not found')
+        }
+        return StudentProgramDto.fromDocument(found)
+    }
+
+    @HandleBsonErrors()
+    async findOneForManagers(id: string): Promise<ProgramDto> {
         const programId = new ObjectId(id)
         const found = await this.programsRepository.findById(programId)
         if (!found) {
