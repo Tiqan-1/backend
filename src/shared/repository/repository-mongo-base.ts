@@ -15,6 +15,10 @@ export class RepositoryMongoBase<T> extends RepositoryBase<T> {
         return this.model.find().limit(limit).skip(skip).exec()
     }
 
+    findManyByIds(ids: Types.ObjectId[]): Promise<T[]> {
+        return this.model.find({ _id: { $in: ids } }).exec()
+    }
+
     async findOne(filter: object): Promise<T | undefined> {
         const foundElement = await this.model.findOne({ ...filter }).exec()
         if (foundElement) {

@@ -31,6 +31,10 @@ export class TaskDto {
     static fromDocument(document: TaskDocument): TaskDto {
         return new TaskDto(document)
     }
+
+    static fromDocuments(tasks: TaskDocument[]): TaskDto[] {
+        return tasks.map(task => this.fromDocument(task))
+    }
 }
 
 export class CreateTaskDto extends OmitType(TaskDto, ['id', 'lessons']) {

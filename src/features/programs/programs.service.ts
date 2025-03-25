@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
+import { Types } from 'mongoose'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { HandleBsonErrors } from '../../shared/errors/error-handler'
 import { ObjectId } from '../../shared/repository/types'
@@ -77,5 +78,15 @@ export class ProgramsService {
         if (!deleted) {
             throw new NotFoundException('Task not found.')
         }
+    }
+
+    @HandleBsonErrors()
+    async addLevel(programId: string, level: Types.ObjectId): Promise<void> {
+        const found = await this.programsRepository.findById(new ObjectId(programId))
+        if (!found) {
+            throw new NotFoundException('Program not found')
+        }
+        ;(found.levels as ObjectId[]).push(level)
+        await found.save()
     }
 }

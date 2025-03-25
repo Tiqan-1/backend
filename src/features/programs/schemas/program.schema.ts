@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
-import { HydratedDocument, Types } from 'mongoose'
-import { Level } from '../../levels/schemas/level.schema'
+import { HydratedDocument } from 'mongoose'
+import { ObjectId, Populated } from '../../../shared/repository/types'
+import { Level, LevelDocument } from '../../levels/schemas/level.schema'
 import { ProgramState } from '../enums/program-state.enum'
 
 export type ProgramDocument = HydratedDocument<Program>
@@ -28,8 +29,8 @@ export class Program {
     @Prop({ required: false, type: Date })
     registrationEnd?: Date
 
-    @Prop({ required: true, type: [Types.ObjectId], ref: Level.name, default: [] })
-    levels: Level[]
+    @Prop({ required: true, type: [ObjectId], ref: Level.name, default: [] })
+    levels: ObjectId[] | Populated<LevelDocument[]>
 }
 
 export const ProgramSchema = SchemaFactory.createForClass(Program)

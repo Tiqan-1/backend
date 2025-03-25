@@ -10,5 +10,6 @@ import { Program, ProgramSchema } from './schemas/program.schema'
     imports: [MongooseModule.forFeature([{ name: Program.name, schema: ProgramSchema }]), ManagersModule],
     controllers: [ProgramsController],
     providers: [ProgramsService, ProgramsRepository],
+    exports: [ProgramsService],
 })
 export class ProgramsModule {}

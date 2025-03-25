@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common'
+import { HandleBsonErrors } from '../../shared/errors/error-handler'
 import { ObjectId } from '../../shared/repository/types'
 import { CreateLessonDto, LessonDto } from './dto/lesson.dto'
 import { LessonsRepository } from './lessons.repository'
@@ -17,6 +18,7 @@ export class LessonsService {
         return !!lesson
     }
 
+    @HandleBsonErrors()
     async validateLessonIds(lessonIds: string[]): Promise<ObjectId[]> {
         const lessonsObjectIds = lessonIds.map(id => new ObjectId(id))
         const lessons = await this.repository.findManyByIds(lessonsObjectIds)

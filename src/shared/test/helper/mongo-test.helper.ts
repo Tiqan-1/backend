@@ -4,7 +4,7 @@ import { connect, Connection, Model } from 'mongoose'
 import { Role } from '../../../features/authentication/enums/role.enum'
 import { LessonType } from '../../../features/lessons/enums/lesson-type.enum'
 import { Lesson, LessonDocument, LessonSchema } from '../../../features/lessons/schemas/lesson.schema'
-import { LevelDocument } from '../../../features/levels/schemas/level.schema'
+import { Level, LevelDocument, LevelSchema } from '../../../features/levels/schemas/level.schema'
 import { SignUpManagerDto } from '../../../features/managers/dto/manager.dto'
 import { Manager, ManagerDocument, ManagerSchema } from '../../../features/managers/schemas/manager.schema'
 import { ProgramState } from '../../../features/programs/enums/program-state.enum'
@@ -15,6 +15,7 @@ import { Subject, SubjectDocument, SubjectSchema } from '../../../features/subje
 import { Task, TaskDocument, TaskSchema } from '../../../features/tasks/schemas/task.schema'
 import { RefreshToken, RefreshTokenSchema } from '../../../features/tokens/schemas/refresh-token.schema'
 import { User, UserDocument, UserSchema } from '../../../features/users/schemas/user.schema'
+import { ObjectId } from '../../repository/types'
 
 export class MongoTestHelper {
     private mongoServer: MongoMemoryServer
@@ -28,6 +29,7 @@ export class MongoTestHelper {
     private lessonModel: Model<Lesson>
     private taskModel: Model<Task>
     private programModel: Model<Program>
+    private levelModel: Model<Level>
 
     static async instance(): Promise<MongoTestHelper> {
         const helper = new MongoTestHelper()
@@ -93,6 +95,13 @@ export class MongoTestHelper {
         return this.programModel
     }
 
+    getLevelModel(): Model<Level> {
+        if (!this.levelModel) {
+            this.levelModel = this.mongoConnection.model(Level.name, LevelSchema)
+        }
+        return this.levelModel
+    }
+
     createManager(id: string = ''): Promise<ManagerDocument> {
         const managerDto: SignUpManagerDto = {
             name: 'test manager',
@@ -147,7 +156,7 @@ export class MongoTestHelper {
         return model.create(lesson)
     }
 
-    async createSubject(creator: ManagerDocument, lessons: LessonDocument[]): Promise<SubjectDocument> {
+    async createSubject(creator: ManagerDocument, lessons: ObjectId[]): Promise<SubjectDocument> {
         const subject: Subject = {
             name: 'subject name',
             description: 'subject description',
@@ -158,7 +167,7 @@ export class MongoTestHelper {
         return model.create(subject)
     }
 
-    async createTask(lessons: LessonDocument[]): Promise<TaskDocument> {
+    async createTask(lessons: ObjectId[]): Promise<TaskDocument> {
         const task: Task = {
             date: new Date(),
             lessons: lessons.map(({ _id }) => _id),
@@ -167,7 +176,7 @@ export class MongoTestHelper {
         return model.create(task)
     }
 
-    async createProgram(levels: LevelDocument[]): Promise<ProgramDocument> {
+    async createProgram(levels: ObjectId[]): Promise<ProgramDocument> {
         const date = new Date()
         const program: Program = {
             name: 'program name',
@@ -181,6 +190,18 @@ export class MongoTestHelper {
         }
         const model = this.getProgramModel()
         return model.create(program)
+    }
+
+    async createLevel(tasks: ObjectId[]): Promise<LevelDocument> {
+        const date = new Date()
+        const level: Level = {
+            name: 'level name',
+            start: new Date(date.valueOf()),
+            end: new Date(date.setFullYear(date.getFullYear() + 1)),
+            tasks: tasks,
+        }
+        const model = this.getLevelModel()
+        return model.create(level)
     }
 
     async clearCollections(): Promise<void> {

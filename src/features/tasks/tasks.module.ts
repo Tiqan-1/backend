@@ -10,5 +10,6 @@ import { TasksService } from './tasks.service'
     imports: [MongooseModule.forFeature([{ name: Task.name, schema: TaskSchema }]), LessonsModule],
     controllers: [TasksController],
     providers: [TasksService, TasksRepository],
+    exports: [TasksService],
 })
 export class TasksModule {}

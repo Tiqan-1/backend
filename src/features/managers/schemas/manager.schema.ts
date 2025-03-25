@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
-import { HydratedDocument, Types } from 'mongoose'
+import { HydratedDocument } from 'mongoose'
 import { ObjectId, Populated } from '../../../shared/repository/types'
 import { Role } from '../../authentication/enums/role.enum'
 import { Program, ProgramDocument } from '../../programs/schemas/program.schema'
@@ -14,10 +14,10 @@ export class Manager {
     password: string
     role: Role
 
-    @Prop({ required: true, type: [Types.ObjectId], ref: Program.name, default: [] })
+    @Prop({ required: true, type: [ObjectId], ref: Program.name, default: [] })
     programs: ObjectId[] | Populated<ProgramDocument[]>
 
-    @Prop({ required: true, type: [Types.ObjectId], ref: Subject.name, default: [] })
+    @Prop({ required: true, type: [ObjectId], ref: Subject.name, default: [] })
     subjects: ObjectId[] | Populated<SubjectDocument[]>
 }
 

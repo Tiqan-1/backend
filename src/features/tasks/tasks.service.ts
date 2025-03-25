@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { HandleBsonErrors } from '../../shared/errors/error-handler'
 import { ObjectId } from '../../shared/repository/types'
@@ -55,5 +55,15 @@ export class TasksService {
             throw new NotFoundException('Task not found.')
         }
         return TaskDto.fromDocument(found)
+    }
+
+    @HandleBsonErrors()
+    async validateTaskIds(taskIds: string[] = []): Promise<ObjectId[]> {
+        const tasksObjectIds = taskIds.map(id => new ObjectId(id))
+        const tasks = await this.taskRepository.findManyByIds(tasksObjectIds)
+        if (!tasks || tasks.length !== taskIds.length) {
+            throw new BadRequestException('some tasks not found with the given taskIds')
+        }
+        return tasksObjectIds
     }
 }

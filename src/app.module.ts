@@ -10,6 +10,7 @@ import { SubjectsModule } from './features/subjects/subjects.module'
 import { TasksModule } from './features/tasks/tasks.module'
 import { TokensModule } from './features/tokens/tokens.module'
 import { UsersModule } from './features/users/users.module'
+import { LevelsModule } from './features/levels/levels.module';
 
 @Module({
     imports: [
@@ -26,6 +27,7 @@ import { UsersModule } from './features/users/users.module'
         LessonsModule,
         TasksModule,
         ProgramsModule,
+        LevelsModule,
     ],
     providers: [],
 })
