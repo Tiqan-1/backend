@@ -1,13 +1,11 @@
 import { Module } from '@nestjs/common'
-import { MongooseModule } from '@nestjs/mongoose'
-import { LessonsModule } from '../lessons/lessons.module'
-import { Task, TaskSchema } from './schemas/task.schema'
+import { SharedDocumentsModule } from '../../shared/documents-validator/shared-documents.module'
 import { TasksController } from './tasks.controller'
 import { TasksRepository } from './tasks.repository'
 import { TasksService } from './tasks.service'
 
 @Module({
-    imports: [MongooseModule.forFeature([{ name: Task.name, schema: TaskSchema }]), LessonsModule],
+    imports: [SharedDocumentsModule],
     controllers: [TasksController],
     providers: [TasksService, TasksRepository],
     exports: [TasksService],

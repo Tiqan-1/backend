@@ -1,5 +1,5 @@
 import { ApiProperty, OmitType, PartialType } from '@nestjs/swagger'
-import { IsDateString, IsNotEmpty, IsString, ValidateNested } from 'class-validator'
+import { IsDateString, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { arePopulated } from '../../../shared/helper/populated-type.helper'
 import { LessonDto } from '../../lessons/dto/lesson.dto'
 import { TaskDocument } from '../schemas/task.schema'
@@ -38,10 +38,10 @@ export class TaskDto {
 }
 
 export class CreateTaskDto extends OmitType(TaskDto, ['id', 'lessons']) {
-    @ApiProperty({ type: String, isArray: true, required: true })
-    @IsNotEmpty()
+    @ApiProperty({ type: String, isArray: true, required: false })
+    @IsOptional()
     @IsString({ each: true })
-    lessonIds: string[]
+    lessonIds?: string[]
 }
 
 export class UpdateTaskDto extends PartialType(CreateTaskDto) {}

@@ -1,34 +1,25 @@
 import { HttpStatus, INestApplication } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
-import { getModelToken } from '@nestjs/mongoose'
 import { Test, TestingModule } from '@nestjs/testing'
 import * as request from 'supertest'
 import { App } from 'supertest/types'
 import { AuthenticationService } from '../src/features/authentication/authentication.service'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
-import { LessonsRepository } from '../src/features/lessons/lessons.repository'
-import { LessonsService } from '../src/features/lessons/lessons.service'
-import { Lesson } from '../src/features/lessons/schemas/lesson.schema'
 import { CreateLevelDto, LevelDto } from '../src/features/levels/dto/level.dto'
 import { LevelsController } from '../src/features/levels/levels.controller'
 import { LevelsRepository } from '../src/features/levels/levels.repository'
 import { LevelsService } from '../src/features/levels/levels.service'
-import { Level, LevelDocument } from '../src/features/levels/schemas/level.schema'
+import { LevelDocument } from '../src/features/levels/schemas/level.schema'
 import { ManagersRepository } from '../src/features/managers/managers.repository'
 import { ManagersService } from '../src/features/managers/managers.service'
-import { Manager } from '../src/features/managers/schemas/manager.schema'
 import { ProgramsRepository } from '../src/features/programs/programs.repository'
 import { ProgramsService } from '../src/features/programs/programs.service'
-import { Program, ProgramDocument } from '../src/features/programs/schemas/program.schema'
-import { Task } from '../src/features/tasks/schemas/task.schema'
-import { TasksRepository } from '../src/features/tasks/tasks.repository'
-import { TasksService } from '../src/features/tasks/tasks.service'
-import { RefreshToken } from '../src/features/tokens/schemas/refresh-token.schema'
+import { ProgramDocument } from '../src/features/programs/schemas/program.schema'
 import { TokensRepository } from '../src/features/tokens/tokens.repository'
 import { TokensService } from '../src/features/tokens/tokens.service'
-import { User } from '../src/features/users/schemas/user.schema'
 import { UsersRepository } from '../src/features/users/users.repository'
 import { UsersService } from '../src/features/users/users.service'
+import { SharedDocumentsService } from '../src/shared/documents-validator/shared-documents.service'
 import { CreatedDto } from '../src/shared/dto/created.dto'
 import {
     ConfigServiceProvider,
@@ -53,8 +44,6 @@ describe('LevelsController', () => {
                 LevelsRepository,
                 ProgramsService,
                 ProgramsRepository,
-                TasksService,
-                TasksRepository,
                 ManagersService,
                 ManagersRepository,
                 AuthenticationService,
@@ -62,18 +51,11 @@ describe('LevelsController', () => {
                 UsersRepository,
                 TokensService,
                 TokensRepository,
-                LessonsService,
-                LessonsRepository,
+                SharedDocumentsService,
                 JwtStrategy,
                 JwtService,
                 ConfigServiceProvider,
-                { provide: getModelToken(Level.name), useValue: mongoTestHelper.getLevelModel() },
-                { provide: getModelToken(Program.name), useValue: mongoTestHelper.getProgramModel() },
-                { provide: getModelToken(Manager.name), useValue: mongoTestHelper.getManagerModel() },
-                { provide: getModelToken(User.name), useValue: mongoTestHelper.getUserModel() },
-                { provide: getModelToken(RefreshToken.name), useValue: mongoTestHelper.getRefreshTokenModel() },
-                { provide: getModelToken(Task.name), useValue: mongoTestHelper.getTaskModel() },
-                { provide: getModelToken(Lesson.name), useValue: mongoTestHelper.getLessonModel() },
+                ...mongoTestHelper.providers,
             ],
         }).compile()
 

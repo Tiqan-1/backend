@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { Types } from 'mongoose'
+import { SharedDocumentsService } from '../../shared/documents-validator/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { HandleBsonErrors } from '../../shared/errors/error-handler'
 import { ObjectId } from '../../shared/repository/types'
@@ -12,13 +13,15 @@ import { ProgramsRepository } from './programs.repository'
 export class ProgramsService {
     constructor(
         private readonly programsRepository: ProgramsRepository,
-        private readonly managersService: ManagersService
+        private readonly managersService: ManagersService,
+        private readonly documentsService: SharedDocumentsService
     ) {}
 
-    @HandleBsonErrors()
     async create(createProgramDto: CreateProgramDto, creatorId: ObjectId): Promise<CreatedDto> {
+        const levels = (await this.documentsService.getLevels(createProgramDto.levelIds))?.map(level => level._id)
         const document = CreateProgramDto.toDocument(createProgramDto)
-        const created = await this.programsRepository.create(document)
+        const createObject = levels ? { ...document, levels } : { ...document }
+        const created = await this.programsRepository.create(createObject)
 
         await this.managersService.addProgram(creatorId, created)
 
@@ -64,7 +67,9 @@ export class ProgramsService {
     @HandleBsonErrors()
     async update(id: string, updateProgramDto: UpdateProgramDto): Promise<void> {
         const programId = new ObjectId(id)
-        const updateObject = UpdateProgramDto.toDocument(updateProgramDto)
+        const levels = await this.documentsService.getLevels(updateProgramDto.levelIds)
+        const document = UpdateProgramDto.toDocument(updateProgramDto)
+        const updateObject = levels ? { ...document, levels } : { ...document }
         const updated = await this.programsRepository.update({ _id: programId }, updateObject)
         if (!updated) {
             throw new NotFoundException('Program not found')

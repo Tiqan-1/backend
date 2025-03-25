@@ -1,6 +1,5 @@
 import { HttpStatus, INestApplication } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
-import { getModelToken } from '@nestjs/mongoose'
 import { Test, TestingModule } from '@nestjs/testing'
 import * as request from 'supertest'
 import { App } from 'supertest/types'
@@ -8,21 +7,19 @@ import { AuthenticationService } from '../src/features/authentication/authentica
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
 import { ManagersRepository } from '../src/features/managers/managers.repository'
 import { ManagersService } from '../src/features/managers/managers.service'
-import { Manager, ManagerDocument } from '../src/features/managers/schemas/manager.schema'
+import { ManagerDocument } from '../src/features/managers/schemas/manager.schema'
 import { CreateProgramDto, ProgramDto } from '../src/features/programs/dto/program.dto'
 import { ProgramState } from '../src/features/programs/enums/program-state.enum'
 import { ProgramsController } from '../src/features/programs/programs.controller'
 import { ProgramsRepository } from '../src/features/programs/programs.repository'
 import { ProgramsService } from '../src/features/programs/programs.service'
-import { Program, ProgramDocument } from '../src/features/programs/schemas/program.schema'
-import { RefreshToken } from '../src/features/tokens/schemas/refresh-token.schema'
+import { ProgramDocument } from '../src/features/programs/schemas/program.schema'
 import { TokensRepository } from '../src/features/tokens/tokens.repository'
 import { TokensService } from '../src/features/tokens/tokens.service'
-import { User } from '../src/features/users/schemas/user.schema'
 import { UsersRepository } from '../src/features/users/users.repository'
 import { UsersService } from '../src/features/users/users.service'
+import { SharedDocumentsService } from '../src/shared/documents-validator/shared-documents.service'
 import { CreatedDto } from '../src/shared/dto/created.dto'
-import { ObjectId } from '../src/shared/repository/types'
 import {
     ConfigServiceProvider,
     JwtMockModule,
@@ -52,11 +49,9 @@ describe('ProgramsController (e2e)', () => {
                 TokensRepository,
                 JwtService,
                 JwtStrategy,
+                SharedDocumentsService,
                 ConfigServiceProvider,
-                { provide: getModelToken(Program.name), useValue: mongoTestHelper.getProgramModel() },
-                { provide: getModelToken(Manager.name), useValue: mongoTestHelper.getManagerModel() },
-                { provide: getModelToken(User.name), useValue: mongoTestHelper.getUserModel() },
-                { provide: getModelToken(RefreshToken.name), useValue: mongoTestHelper.getRefreshTokenModel() },
+                ...mongoTestHelper.providers,
             ],
         }).compile()
 
@@ -81,7 +76,6 @@ describe('ProgramsController (e2e)', () => {
             const token = jwtService.sign({ id: manager._id, role: manager.role })
 
             const date = new Date()
-            const levelId = new ObjectId().toString()
             const body: CreateProgramDto = {
                 name: 'program name',
                 start: new Date(date.valueOf()),
@@ -89,7 +83,6 @@ describe('ProgramsController (e2e)', () => {
                 registrationEnd: new Date(date.setMonth(date.getMonth() + 2)),
                 end: new Date(date.setFullYear(date.getFullYear() + 1)),
                 description: 'program description',
-                levelIds: [levelId],
             }
 
             const response = await request(app.getHttpServer())
@@ -113,21 +106,10 @@ describe('ProgramsController (e2e)', () => {
             const student = await mongoTestHelper.createStudent()
             const token = jwtService.sign({ id: student._id, role: student.role })
 
-            const date = new Date()
-            const levelId = new ObjectId().toString()
-            const body: CreateProgramDto = {
-                name: 'program name',
-                start: new Date(date.valueOf()),
-                registrationStart: new Date(date.setMonth(date.getMonth() + 1)),
-                registrationEnd: new Date(date.setMonth(date.getMonth() + 2)),
-                end: new Date(date.setFullYear(date.getFullYear() + 1)),
-                description: 'program description',
-                levelIds: [levelId],
-            }
             await request(app.getHttpServer())
                 .post('/api/programs/managers')
                 .set('Authorization', `Bearer ${token}`)
-                .send(body)
+                .send({})
                 .expect(HttpStatus.FORBIDDEN)
         })
     })

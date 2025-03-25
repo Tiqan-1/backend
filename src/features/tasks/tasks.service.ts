@@ -1,8 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import { SharedDocumentsService } from '../../shared/documents-validator/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { HandleBsonErrors } from '../../shared/errors/error-handler'
 import { ObjectId } from '../../shared/repository/types'
-import { LessonsService } from '../lessons/lessons.service'
 import { CreateTaskDto, TaskDto, UpdateTaskDto } from './dto/task.dto'
 import { TasksRepository } from './tasks.repository'
 
@@ -10,16 +10,12 @@ import { TasksRepository } from './tasks.repository'
 export class TasksService {
     constructor(
         private readonly taskRepository: TasksRepository,
-        private readonly lessonsService: LessonsService
+        private readonly documentsService: SharedDocumentsService
     ) {}
 
-    @HandleBsonErrors()
     async create(task: CreateTaskDto): Promise<CreatedDto> {
-        const lessonsObjectIds = await this.lessonsService.validateLessonIds(task.lessonIds)
-        const createObject = {
-            date: task.date,
-            lessons: lessonsObjectIds,
-        }
+        const lessons = (await this.documentsService.getLessons(task.lessonIds))?.map(lesson => lesson._id) ?? []
+        const createObject = lessons ? { date: task.date, lessons } : { date: task.date }
         const document = await this.taskRepository.create(createObject)
         return { id: document._id.toString() }
     }
@@ -27,11 +23,8 @@ export class TasksService {
     @HandleBsonErrors()
     async update(id: string, task: UpdateTaskDto): Promise<void> {
         const taskId = new ObjectId(id)
-        const lessonsObjectIds = task.lessonIds && (await this.lessonsService.validateLessonIds(task.lessonIds))
-        const updateObject = {
-            date: task.date,
-            lessons: lessonsObjectIds,
-        }
+        const lessons = (await this.documentsService.getLessons(task.lessonIds))?.map(lesson => lesson._id)
+        const updateObject = lessons ? { date: task.date, lessons } : { date: task.date }
         const updated = await this.taskRepository.update({ _id: taskId }, updateObject)
         if (!updated) {
             throw new NotFoundException('Task not found.')

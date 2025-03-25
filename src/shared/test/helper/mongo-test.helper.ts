@@ -1,3 +1,5 @@
+import { Provider } from '@nestjs/common'
+import { getModelToken } from '@nestjs/mongoose'
 import * as bcrypt from 'bcryptjs'
 import { MongoMemoryServer } from 'mongodb-memory-server'
 import { connect, Connection, Model } from 'mongoose'
@@ -12,6 +14,7 @@ import { Program, ProgramDocument, ProgramSchema } from '../../../features/progr
 import { Gender } from '../../../features/students/enums/gender'
 import { Student, StudentDocument, StudentSchema } from '../../../features/students/schemas/student.schema'
 import { Subject, SubjectDocument, SubjectSchema } from '../../../features/subjects/schemas/subject.schema'
+import { Subscription, SubscriptionSchema } from '../../../features/subscriptions/schemas/subscription.schema'
 import { Task, TaskDocument, TaskSchema } from '../../../features/tasks/schemas/task.schema'
 import { RefreshToken, RefreshTokenSchema } from '../../../features/tokens/schemas/refresh-token.schema'
 import { User, UserDocument, UserSchema } from '../../../features/users/schemas/user.schema'
@@ -30,11 +33,27 @@ export class MongoTestHelper {
     private taskModel: Model<Task>
     private programModel: Model<Program>
     private levelModel: Model<Level>
+    private subscriptionModel: Model<Subscription>
 
     static async instance(): Promise<MongoTestHelper> {
         const helper = new MongoTestHelper()
         await helper.initMongoMemoryServer()
         return helper
+    }
+
+    get providers(): Provider[] {
+        return [
+            { provide: getModelToken(Lesson.name), useValue: this.getLessonModel() },
+            { provide: getModelToken(Task.name), useValue: this.getTaskModel() },
+            { provide: getModelToken(Level.name), useValue: this.getLevelModel() },
+            { provide: getModelToken(Program.name), useValue: this.getProgramModel() },
+            { provide: getModelToken(Manager.name), useValue: this.getManagerModel() },
+            { provide: getModelToken(Subject.name), useValue: this.getSubjectModel() },
+            { provide: getModelToken(Student.name), useValue: this.getStudentModel() },
+            { provide: getModelToken(RefreshToken.name), useValue: this.getRefreshTokenModel() },
+            { provide: getModelToken(Subscription.name), useValue: this.getSubscriptionModel() },
+            { provide: getModelToken(User.name), useValue: this.getUserModel() },
+        ]
     }
 
     getRefreshTokenModel(): Model<RefreshToken> {
@@ -100,6 +119,13 @@ export class MongoTestHelper {
             this.levelModel = this.mongoConnection.model(Level.name, LevelSchema)
         }
         return this.levelModel
+    }
+
+    getSubscriptionModel(): Model<Subscription> {
+        if (!this.subscriptionModel) {
+            this.subscriptionModel = this.mongoConnection.model(Subscription.name, SubscriptionSchema)
+        }
+        return this.subscriptionModel
     }
 
     createManager(id: string = ''): Promise<ManagerDocument> {

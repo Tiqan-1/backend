@@ -1,14 +1,12 @@
 import { Module } from '@nestjs/common'
-import { MongooseModule } from '@nestjs/mongoose'
+import { SharedDocumentsModule } from '../../shared/documents-validator/shared-documents.module'
 import { ProgramsModule } from '../programs/programs.module'
-import { TasksModule } from '../tasks/tasks.module'
 import { LevelsController } from './levels.controller'
 import { LevelsRepository } from './levels.repository'
 import { LevelsService } from './levels.service'
-import { Level, LevelSchema } from './schemas/level.schema'
 
 @Module({
-    imports: [MongooseModule.forFeature([{ name: Level.name, schema: LevelSchema }]), ProgramsModule, TasksModule],
+    imports: [ProgramsModule, SharedDocumentsModule],
     controllers: [LevelsController],
     providers: [LevelsService, LevelsRepository],
 })

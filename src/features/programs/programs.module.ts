@@ -1,13 +1,12 @@
 import { Module } from '@nestjs/common'
-import { MongooseModule } from '@nestjs/mongoose'
+import { SharedDocumentsModule } from '../../shared/documents-validator/shared-documents.module'
 import { ManagersModule } from '../managers/managers.module'
 import { ProgramsController } from './programs.controller'
 import { ProgramsRepository } from './programs.repository'
 import { ProgramsService } from './programs.service'
-import { Program, ProgramSchema } from './schemas/program.schema'
 
 @Module({
-    imports: [MongooseModule.forFeature([{ name: Program.name, schema: ProgramSchema }]), ManagersModule],
+    imports: [ManagersModule, SharedDocumentsModule],
     controllers: [ProgramsController],
     providers: [ProgramsService, ProgramsRepository],
     exports: [ProgramsService],

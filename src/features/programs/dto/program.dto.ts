@@ -1,7 +1,7 @@
 import { ApiProperty, OmitType, PartialType } from '@nestjs/swagger'
 import { IsDateString, IsEnum, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { normalizeDate } from '../../../shared/helper/date.helper'
-import { ObjectId, Populated } from '../../../shared/repository/types'
+import { Populated } from '../../../shared/repository/types'
 import { LevelDto } from '../../levels/dto/level.dto'
 import { LevelDocument } from '../../levels/schemas/level.schema'
 import { ProgramState } from '../enums/program-state.enum'
@@ -91,7 +91,7 @@ export class CreateProgramDto extends OmitType(ProgramDto, ['id', 'state', 'leve
     @ApiProperty({ type: String, required: false, isArray: true })
     @IsOptional()
     @ValidateNested({ each: true })
-    levelIds: string[]
+    levelIds?: string[]
 
     static toDocument(dto: CreateProgramDto): object {
         return {
@@ -101,7 +101,6 @@ export class CreateProgramDto extends OmitType(ProgramDto, ['id', 'state', 'leve
             end: dto.end,
             registrationStart: dto.registrationStart,
             registrationEnd: dto.registrationEnd,
-            levels: dto.levelIds?.map(levelId => new ObjectId(levelId)),
         }
     }
 }
@@ -121,7 +120,6 @@ export class UpdateProgramDto extends PartialType(CreateProgramDto) {
             end: dto.end,
             registrationStart: dto.registrationStart,
             registrationEnd: dto.registrationEnd,
-            levels: dto.levelIds?.map(levelId => new ObjectId(levelId)),
         }
     }
 }

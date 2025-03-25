@@ -50,7 +50,7 @@ export class SubjectDto {
 }
 
 export class CreateSubjectDto extends OmitType(SubjectDto, ['id', 'lessons', 'createdBy'] as const) {
-    @ApiProperty({ type: String, isArray: true, required: true })
+    @ApiProperty({ type: String, isArray: true, required: false })
     @IsString({ each: true })
     @IsOptional()
     lessonIds?: string[]

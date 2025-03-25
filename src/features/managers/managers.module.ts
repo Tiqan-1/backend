@@ -1,19 +1,12 @@
 import { Module } from '@nestjs/common'
-import { MongooseModule } from '@nestjs/mongoose'
+import { SharedDocumentsModule } from '../../shared/documents-validator/shared-documents.module'
 import { AuthenticationModule } from '../authentication/authentication.module'
-import { User, UserSchema } from '../users/schemas/user.schema'
 import { ManagersController } from './managers.controller'
 import { ManagersRepository } from './managers.repository'
 import { ManagersService } from './managers.service'
-import { Manager, ManagerSchema } from './schemas/manager.schema'
 
 @Module({
-    imports: [
-        AuthenticationModule,
-        MongooseModule.forFeature([
-            { name: User.name, schema: UserSchema, discriminators: [{ name: Manager.name, schema: ManagerSchema }] },
-        ]),
-    ],
+    imports: [AuthenticationModule, SharedDocumentsModule],
     controllers: [ManagersController],
     providers: [ManagersService, ManagersRepository],
     exports: [ManagersService],

@@ -9,7 +9,7 @@ export function HandleBsonErrors() {
         _target: object, // The prototype of the class
         propertyKey: string, // The name of the method being decorated
         descriptor: TypedPropertyDescriptor<T> // Typed descriptor for the method
-    ) {
+    ): TypedPropertyDescriptor<T> {
         // Retain the original method
         const originalMethod = descriptor.value as unknown as (...args: unknown[]) => Promise<unknown>
 

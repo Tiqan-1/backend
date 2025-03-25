@@ -1,18 +1,16 @@
 import { HttpStatus, INestApplication } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
-import { getModelToken } from '@nestjs/mongoose'
 import { Test, TestingModule } from '@nestjs/testing'
 import * as request from 'supertest'
 import { App } from 'supertest/types'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
 import { LessonsRepository } from '../src/features/lessons/lessons.repository'
 import { LessonsService } from '../src/features/lessons/lessons.service'
-import { Lesson } from '../src/features/lessons/schemas/lesson.schema'
 import { CreateTaskDto, UpdateTaskDto } from '../src/features/tasks/dto/task.dto'
-import { Task } from '../src/features/tasks/schemas/task.schema'
 import { TasksController } from '../src/features/tasks/tasks.controller'
 import { TasksRepository } from '../src/features/tasks/tasks.repository'
 import { TasksService } from '../src/features/tasks/tasks.service'
+import { SharedDocumentsService } from '../src/shared/documents-validator/shared-documents.service'
 import { CreatedDto } from '../src/shared/dto/created.dto'
 import { ObjectId } from '../src/shared/repository/types'
 import {
@@ -38,11 +36,11 @@ describe('TasksController (e2e)', () => {
                 TasksRepository,
                 LessonsService,
                 LessonsRepository,
+                SharedDocumentsService,
                 JwtService,
                 JwtStrategy,
                 ConfigServiceProvider,
-                { provide: getModelToken(Task.name), useValue: mongoTestHelper.getTaskModel() },
-                { provide: getModelToken(Lesson.name), useValue: mongoTestHelper.getLessonModel() },
+                ...mongoTestHelper.providers,
             ],
         }).compile()
 

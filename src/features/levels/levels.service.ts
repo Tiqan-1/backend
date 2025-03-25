@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
+import { SharedDocumentsService } from '../../shared/documents-validator/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { HandleBsonErrors } from '../../shared/errors/error-handler'
 import { ObjectId } from '../../shared/repository/types'
 import { ProgramsService } from '../programs/programs.service'
-import { TasksService } from '../tasks/tasks.service'
 import { CreateLevelDto, LevelDto, UpdateLevelDto } from './dto/level.dto'
 import { LevelsRepository } from './levels.repository'
 import { LevelDocument } from './schemas/level.schema'
@@ -13,12 +13,12 @@ export class LevelsService {
     constructor(
         private readonly levelsRepository: LevelsRepository,
         private readonly programsService: ProgramsService,
-        private readonly tasksService: TasksService
+        private readonly documentsService: SharedDocumentsService
     ) {}
 
     async create(dto: CreateLevelDto): Promise<CreatedDto> {
         const { programId, taskIds, ...createDocument } = dto
-        const tasks = await this.tasksService.validateTaskIds(taskIds)
+        const tasks = (await this.documentsService.getTasks(taskIds))?.map(task => task._id) ?? []
         const created = await this.levelsRepository.create({ ...createDocument, tasks })
         await this.programsService.addLevel(programId, created._id)
         return { id: created._id.toString() }
@@ -37,8 +37,9 @@ export class LevelsService {
     @HandleBsonErrors()
     async update(id: string, dto: UpdateLevelDto): Promise<void> {
         const { taskIds, ...updateDocument } = dto
-        const tasks = await this.tasksService.validateTaskIds(taskIds)
-        const updated = await this.levelsRepository.update({ _id: new ObjectId(id) }, { ...updateDocument, tasks })
+        const tasks = (await this.documentsService.getTasks(taskIds))?.map(task => task._id)
+        const updateObject = tasks ? { ...updateDocument, tasks } : { ...updateDocument }
+        const updated = await this.levelsRepository.update({ _id: new ObjectId(id) }, updateObject)
         if (!updated) {
             throw new NotFoundException('Level Not Found')
         }
