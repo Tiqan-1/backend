@@ -14,7 +14,12 @@ import { Program, ProgramDocument, ProgramSchema } from '../../../features/progr
 import { Gender } from '../../../features/students/enums/gender'
 import { Student, StudentDocument, StudentSchema } from '../../../features/students/schemas/student.schema'
 import { Subject, SubjectDocument, SubjectSchema } from '../../../features/subjects/schemas/subject.schema'
-import { Subscription, SubscriptionSchema } from '../../../features/subscriptions/schemas/subscription.schema'
+import { State } from '../../../features/subscriptions/enums/state.enum'
+import {
+    Subscription,
+    SubscriptionDocument,
+    SubscriptionSchema,
+} from '../../../features/subscriptions/schemas/subscription.schema'
 import { Task, TaskDocument, TaskSchema } from '../../../features/tasks/schemas/task.schema'
 import { RefreshToken, RefreshTokenSchema } from '../../../features/tokens/schemas/refresh-token.schema'
 import { User, UserDocument, UserSchema } from '../../../features/users/schemas/user.schema'
@@ -138,16 +143,17 @@ export class MongoTestHelper {
         return model.create(managerDto)
     }
 
-    createStudent(): Promise<StudentDocument> {
-        const studentDto = {
+    createStudent(subscriptionIds: ObjectId[] = []): Promise<StudentDocument> {
+        const student: Student = {
             name: 'test student',
             password: bcrypt.hashSync('testPassword', 10),
             email: 'student@email.com',
             gender: Gender.male,
             role: Role.Student,
+            subscriptions: subscriptionIds,
         }
         const model = this.getStudentModel()
-        return model.create(studentDto)
+        return model.create(student)
     }
 
     createUser(): Promise<UserDocument> {
@@ -228,6 +234,17 @@ export class MongoTestHelper {
         }
         const model = this.getLevelModel()
         return model.create(level)
+    }
+
+    async createSubscription(programId: ObjectId, levelId: ObjectId): Promise<SubscriptionDocument> {
+        const subscription: Subscription = {
+            program: programId,
+            level: levelId,
+            subscriptionDate: new Date(),
+            state: State.active,
+        }
+        const model = this.getSubscriptionModel()
+        return model.create(subscription)
     }
 
     async clearCollections(): Promise<void> {

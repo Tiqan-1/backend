@@ -1,6 +1,7 @@
 export enum State {
-    Active = 'active',
-    Succeeded = 'succeeded',
-    Failed = 'failed',
-    Suspended = 'suspended',
+    active = 'active',
+    suspended = 'suspended',
+    deleted = 'deleted',
+    succeeded = 'succeeded',
+    failed = 'failed',
 }

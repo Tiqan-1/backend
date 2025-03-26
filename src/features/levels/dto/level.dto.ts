@@ -26,7 +26,7 @@ export class LevelDto {
     @ValidateNested({ each: true })
     tasks: TaskDto[]
 
-    static fromDocuments(levels: LevelDocument[]): LevelDto[] {
+    static fromDocuments(levels: LevelDocument[] = []): LevelDto[] {
         return levels.map(level => this.fromDocument(level))
     }
 

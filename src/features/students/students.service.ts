@@ -1,16 +1,24 @@
-import { ConflictException, Injectable, InternalServerErrorException } from '@nestjs/common'
+import { ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
 import * as bcrypt from 'bcryptjs'
+import { CreatedDto } from '../../shared/dto/created.dto'
+import { HandleBsonErrors } from '../../shared/errors/error-handler'
+import { ObjectId } from '../../shared/repository/types'
 import { AuthenticationService } from '../authentication/authentication.service'
 import { AuthenticationResponseDto } from '../authentication/dto/authentication-response.dto'
 import { Role } from '../authentication/enums/role.enum'
+import { CreateSubscriptionDto, SubscriptionDto } from '../subscriptions/dto/subscription.dto'
+import { State } from '../subscriptions/enums/state.enum'
+import { SubscriptionsService } from '../subscriptions/subscriptions.service'
 import { SignUpStudentDto } from './dto/student.dto'
+import { StudentDocument } from './schemas/student.schema'
 import { StudentRepository } from './students.repository'
 
 @Injectable()
 export class StudentsService {
     constructor(
         private readonly studentRepository: StudentRepository,
-        private readonly authenticationService: AuthenticationService
+        private readonly authenticationService: AuthenticationService,
+        private readonly subscriptionsService: SubscriptionsService
     ) {}
 
     async create(student: SignUpStudentDto): Promise<AuthenticationResponseDto> {
@@ -26,5 +34,51 @@ export class StudentsService {
             console.error('Error while creating user', error)
             throw new InternalServerErrorException('General Error while creating student.')
         }
+    }
+
+    @HandleBsonErrors()
+    async createSubscription(createSubscriptionDto: CreateSubscriptionDto, studentId: ObjectId): Promise<CreatedDto> {
+        const student = await this.loadStudent(studentId)
+        const created = await this.subscriptionsService.create(createSubscriptionDto)
+        ;(student.subscriptions as ObjectId[]).push(new ObjectId(created.id))
+        await student.save()
+
+        return created
+    }
+
+    @HandleBsonErrors()
+    async suspendSubscription(subscriptionId: string, studentId: ObjectId): Promise<void> {
+        const subscriptionObjectId = new ObjectId(subscriptionId)
+        const student = await this.loadStudent(studentId)
+        const hasSubscription = (student.subscriptions as ObjectId[]).includes(subscriptionObjectId)
+        if (!hasSubscription) {
+            throw new NotFoundException('Student does not have subscription with the given id.')
+        }
+        await this.subscriptionsService.update(subscriptionId, { state: State.suspended })
+    }
+
+    async getSubscriptions(studentId: ObjectId): Promise<SubscriptionDto[]> {
+        const student = await this.loadStudent(studentId)
+        return this.subscriptionsService.getMany(student.subscriptions as ObjectId[])
+    }
+
+    @HandleBsonErrors()
+    async removeSubscription(subscriptionId: string, studentId: ObjectId): Promise<void> {
+        const student = await this.loadStudent(studentId)
+        const indexOfSubscription = (student.subscriptions as ObjectId[]).findIndex(id => id.toString() === subscriptionId)
+        if (indexOfSubscription === -1) {
+            throw new NotFoundException('Student does not have subscription with the given id.')
+        }
+        ;(student.subscriptions as ObjectId[]).splice(indexOfSubscription, 1)
+        await student.save()
+        await this.subscriptionsService.update(subscriptionId, { state: State.deleted })
+    }
+
+    private async loadStudent(studentId: ObjectId): Promise<StudentDocument> {
+        const student = await this.studentRepository.findById(studentId)
+        if (!student) {
+            throw new InternalServerErrorException('Student not found.')
+        }
+        return student
     }
 }

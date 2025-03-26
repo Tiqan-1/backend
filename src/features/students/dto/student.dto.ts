@@ -1,5 +1,6 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { IsEmail, IsEnum, IsString, IsStrongPassword, ValidateNested } from 'class-validator'
+import { arePopulated } from '../../../shared/helper/populated-type.helper'
 import { SubscriptionDto } from '../../subscriptions/dto/subscription.dto'
 import { Gender } from '../enums/gender'
 import { Student } from '../schemas/student.schema'
@@ -8,7 +9,7 @@ export class StudentDto {
     constructor(student: Student) {
         this.name = student.name
         this.email = student.email
-        this.subscriptions = student.subscriptions
+        this.subscriptions = arePopulated(student.subscriptions) ? SubscriptionDto.fromDocuments(student.subscriptions) : []
         this.gender = student.gender
     }
 

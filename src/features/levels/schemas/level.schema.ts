@@ -16,7 +16,7 @@ export class Level {
     @Prop({ required: true, type: Date })
     end: Date
 
-    @Prop({ required: true, type: [ObjectId], ref: Task.name })
+    @Prop({ required: true, type: [ObjectId], ref: Task.name, default: [] })
     tasks: ObjectId[] | Populated<TaskDocument[]>
 }
 

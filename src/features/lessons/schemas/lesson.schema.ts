@@ -9,7 +9,7 @@ export class Lesson {
     @Prop({ required: true, type: String })
     title: string
 
-    @Prop({ required: true, type: String, enum: LessonType, default: [] })
+    @Prop({ required: true, type: String, enum: LessonType })
     type: LessonType
 
     @Prop({ required: true, type: String })

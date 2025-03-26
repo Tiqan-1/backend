@@ -32,7 +32,7 @@ export class TaskDto {
         return new TaskDto(document)
     }
 
-    static fromDocuments(tasks: TaskDocument[]): TaskDto[] {
+    static fromDocuments(tasks: TaskDocument[] = []): TaskDto[] {
         return tasks.map(task => this.fromDocument(task))
     }
 }

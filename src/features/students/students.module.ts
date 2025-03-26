@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common'
 import { SharedDocumentsModule } from '../../shared/documents-validator/shared-documents.module'
 import { AuthenticationModule } from '../authentication/authentication.module'
+import { SubscriptionsModule } from '../subscriptions/subscriptions.module'
 import { StudentsController } from './students.controller'
 import { StudentRepository } from './students.repository'
 import { StudentsService } from './students.service'
 
 @Module({
-    imports: [AuthenticationModule, SharedDocumentsModule],
+    imports: [AuthenticationModule, SharedDocumentsModule, SubscriptionsModule],
     providers: [StudentsService, StudentRepository],
     controllers: [StudentsController],
 })

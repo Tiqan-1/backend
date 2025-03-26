@@ -8,6 +8,7 @@ import { ManagersModule } from './features/managers/managers.module'
 import { ProgramsModule } from './features/programs/programs.module'
 import { StudentsModule } from './features/students/students.module'
 import { SubjectsModule } from './features/subjects/subjects.module'
+import { SubscriptionsModule } from './features/subscriptions/subscriptions.module'
 import { TasksModule } from './features/tasks/tasks.module'
 import { TokensModule } from './features/tokens/tokens.module'
 import { UsersModule } from './features/users/users.module'
@@ -30,6 +31,7 @@ import { SharedDocumentsModule } from './shared/documents-validator/shared-docum
         ProgramsModule,
         LevelsModule,
         SharedDocumentsModule,
+        SubscriptionsModule,
     ],
     providers: [],
 })

@@ -1,6 +1,7 @@
 import { ApiProperty, OmitType, PartialType } from '@nestjs/swagger'
 import { IsDateString, IsEnum, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { normalizeDate } from '../../../shared/helper/date.helper'
+import { arePopulated } from '../../../shared/helper/populated-type.helper'
 import { Populated } from '../../../shared/repository/types'
 import { LevelDto } from '../../levels/dto/level.dto'
 import { LevelDocument } from '../../levels/schemas/level.schema'
@@ -35,12 +36,12 @@ export class ProgramDto {
     @IsDateString()
     end: Date
 
-    @ApiProperty({ type: Date, required: true, example: now })
+    @ApiProperty({ type: Date, required: false, example: now })
     @IsOptional()
     @IsDateString()
     registrationStart?: Date
 
-    @ApiProperty({ type: Date, required: true, example: now })
+    @ApiProperty({ type: Date, required: false, example: now })
     @IsOptional()
     @IsDateString()
     registrationEnd?: Date
@@ -49,7 +50,7 @@ export class ProgramDto {
     @ValidateNested({ each: true })
     levels: LevelDto[]
 
-    static fromDocuments(foundPrograms: ProgramDocument[]): ProgramDto[] {
+    static fromDocuments(foundPrograms: ProgramDocument[] = []): ProgramDto[] {
         return foundPrograms.map(document => this.fromDocument(document))
     }
 
@@ -63,13 +64,13 @@ export class ProgramDto {
             end: document.end,
             registrationStart: document.registrationStart,
             registrationEnd: document.registrationEnd,
-            levels: LevelDto.fromDocuments(document.levels as Populated<LevelDocument[]>),
+            levels: arePopulated(document.levels) ? LevelDto.fromDocuments(document.levels) : [],
         }
     }
 }
 
 export class StudentProgramDto extends OmitType(ProgramDto, ['state']) {
-    static fromDocuments(foundPrograms: ProgramDocument[]): StudentProgramDto[] {
+    static fromDocuments(foundPrograms: ProgramDocument[] = []): StudentProgramDto[] {
         return foundPrograms.map(foundProgram => this.fromDocument(foundProgram))
     }
 

@@ -44,7 +44,7 @@ export class SubjectDto {
         return new SubjectDto(subject)
     }
 
-    static fromDocuments(subjects: SubjectDocument[]): SubjectDto[] {
+    static fromDocuments(subjects: SubjectDocument[] = []): SubjectDto[] {
         return subjects.map(subject => new SubjectDto(subject))
     }
 }
