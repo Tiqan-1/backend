@@ -12,7 +12,7 @@ import { StudentDocument } from '../src/features/students/schemas/student.schema
 import { StudentsController } from '../src/features/students/students.controller'
 import { StudentRepository } from '../src/features/students/students.repository'
 import { StudentsService } from '../src/features/students/students.service'
-import { CreateSubscriptionDto, SubscriptionDto } from '../src/features/subscriptions/dto/subscription.dto'
+import { CreateSubscriptionDto, StudentSubscriptionDto } from '../src/features/subscriptions/dto/subscription.dto'
 import { State } from '../src/features/subscriptions/enums/state.enum'
 import { SubscriptionDocument } from '../src/features/subscriptions/schemas/subscription.schema'
 import { SubscriptionsRepository } from '../src/features/subscriptions/subscriptions.repository'
@@ -144,10 +144,16 @@ describe('StudentsController (e2e)', () => {
                 .expect(HttpStatus.OK)
 
             expect(response.body).toBeDefined()
-            const { id, level: levelDto, program: programDto, state, subscriptionDate } = (response.body as SubscriptionDto[])[0]
+            const {
+                id,
+                level: levelDto,
+                program: programDto,
+                state,
+                subscriptionDate,
+            } = (response.body as StudentSubscriptionDto[])[0]
             expect(id).toEqual(subscription._id.toString())
             expect(programDto?.id).toEqual(program._id.toString())
-            expect(programDto?.levels).toBeUndefined()
+            expect(programDto?.levelIds).toEqual([level._id.toString()])
             expect(levelDto?.id).toEqual(level._id.toString())
             expect(levelDto?.tasks[0].id).toEqual(task._id.toString())
             expect(levelDto?.tasks[0].lessons[0].id).toEqual(lesson._id.toString())

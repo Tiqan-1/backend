@@ -1,7 +1,7 @@
 import { ApiProperty, OmitType, PartialType } from '@nestjs/swagger'
 import { IsDateString, IsEnum, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { normalizeDate } from '../../../shared/helper/date.helper'
-import { arePopulated } from '../../../shared/helper/populated-type.helper'
+import { areNotPopulated, arePopulated } from '../../../shared/helper/populated-type.helper'
 import { Populated } from '../../../shared/repository/types'
 import { LevelDto } from '../../levels/dto/level.dto'
 import { LevelDocument } from '../../levels/schemas/level.schema'
@@ -89,6 +89,11 @@ export class StudentProgramDto extends OmitType(ProgramDto, ['state']) {
 }
 
 export class StudentProgramUnpopulatedDto extends OmitType(StudentProgramDto, ['levels']) {
+    @ApiProperty({ type: String, required: false, isArray: true })
+    @IsOptional()
+    @ValidateNested({ each: true })
+    levelIds?: string[]
+
     static fromDocument(document: ProgramDocument): StudentProgramUnpopulatedDto {
         return {
             id: document._id.toString(),
@@ -98,6 +103,7 @@ export class StudentProgramUnpopulatedDto extends OmitType(StudentProgramDto, ['
             end: document.end,
             registrationStart: document.start,
             registrationEnd: document.end,
+            levelIds: areNotPopulated(document.levels) ? document.levels.map(id => id.toString()) : [],
         }
     }
 }
