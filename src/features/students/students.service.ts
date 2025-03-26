@@ -6,7 +6,7 @@ import { ObjectId } from '../../shared/repository/types'
 import { AuthenticationService } from '../authentication/authentication.service'
 import { AuthenticationResponseDto } from '../authentication/dto/authentication-response.dto'
 import { Role } from '../authentication/enums/role.enum'
-import { CreateSubscriptionDto, SubscriptionDto } from '../subscriptions/dto/subscription.dto'
+import { CreateSubscriptionDto, StudentSubscriptionDto } from '../subscriptions/dto/subscription.dto'
 import { State } from '../subscriptions/enums/state.enum'
 import { SubscriptionsService } from '../subscriptions/subscriptions.service'
 import { SignUpStudentDto } from './dto/student.dto'
@@ -57,9 +57,9 @@ export class StudentsService {
         await this.subscriptionsService.update(subscriptionId, { state: State.suspended })
     }
 
-    async getSubscriptions(studentId: ObjectId): Promise<SubscriptionDto[]> {
+    async getSubscriptions(studentId: ObjectId): Promise<StudentSubscriptionDto[]> {
         const student = await this.loadStudent(studentId)
-        return this.subscriptionsService.getMany(student.subscriptions as ObjectId[])
+        return this.subscriptionsService.getManyForStudent(student.subscriptions as ObjectId[])
     }
 
     @HandleBsonErrors()

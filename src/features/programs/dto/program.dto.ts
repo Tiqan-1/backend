@@ -88,6 +88,20 @@ export class StudentProgramDto extends OmitType(ProgramDto, ['state']) {
     }
 }
 
+export class StudentProgramUnpopulatedDto extends OmitType(StudentProgramDto, ['levels']) {
+    static fromDocument(document: ProgramDocument): StudentProgramUnpopulatedDto {
+        return {
+            id: document._id.toString(),
+            name: document.name,
+            description: document.description,
+            start: document.start,
+            end: document.end,
+            registrationStart: document.start,
+            registrationEnd: document.end,
+        }
+    }
+}
+
 export class CreateProgramDto extends OmitType(ProgramDto, ['id', 'state', 'levels']) {
     @ApiProperty({ type: String, required: false, isArray: true })
     @IsOptional()

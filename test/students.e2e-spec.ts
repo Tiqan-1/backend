@@ -147,7 +147,7 @@ describe('StudentsController (e2e)', () => {
             const { id, level: levelDto, program: programDto, state, subscriptionDate } = (response.body as SubscriptionDto[])[0]
             expect(id).toEqual(subscription._id.toString())
             expect(programDto?.id).toEqual(program._id.toString())
-            expect(programDto?.levels).toEqual([{ id: level._id.toString(), tasks: [] }])
+            expect(programDto?.levels).toBeUndefined()
             expect(levelDto?.id).toEqual(level._id.toString())
             expect(levelDto?.tasks[0].id).toEqual(task._id.toString())
             expect(levelDto?.tasks[0].lessons[0].id).toEqual(lesson._id.toString())

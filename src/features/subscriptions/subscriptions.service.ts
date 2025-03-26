@@ -4,7 +4,7 @@ import { CreatedDto } from '../../shared/dto/created.dto'
 import { ObjectId } from '../../shared/repository/types'
 import { LevelDocument } from '../levels/schemas/level.schema'
 import { ProgramDocument } from '../programs/schemas/program.schema'
-import { CreateSubscriptionDto, SubscriptionDto, UpdateSubscriptionDto } from './dto/subscription.dto'
+import { CreateSubscriptionDto, StudentSubscriptionDto, SubscriptionDto, UpdateSubscriptionDto } from './dto/subscription.dto'
 import { SubscriptionDocument } from './schemas/subscription.schema'
 import { SubscriptionsRepository } from './subscriptions.repository'
 
@@ -46,8 +46,8 @@ export class SubscriptionsService {
         }
     }
 
-    async getMany(subscriptionIds: ObjectId[]): Promise<SubscriptionDto[]> {
+    async getManyForStudent(subscriptionIds: ObjectId[]): Promise<StudentSubscriptionDto[]> {
         const subscriptions: SubscriptionDocument[] = await this.repository.findManyByIdsPopulated(subscriptionIds)
-        return SubscriptionDto.fromDocuments(subscriptions)
+        return StudentSubscriptionDto.fromDocuments(subscriptions)
     }
 }

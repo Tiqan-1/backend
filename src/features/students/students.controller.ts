@@ -4,7 +4,7 @@ import { CreatedDto } from '../../shared/dto/created.dto'
 import { AuthenticationResponseDto } from '../authentication/dto/authentication-response.dto'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { TokenUser } from '../authentication/types/token-user'
-import { CreateSubscriptionDto, SubscriptionDto } from '../subscriptions/dto/subscription.dto'
+import { CreateSubscriptionDto, StudentSubscriptionDto } from '../subscriptions/dto/subscription.dto'
 import { SignUpStudentDto } from './dto/student.dto'
 import { StudentsService } from './students.service'
 
@@ -58,14 +58,19 @@ export class StudentsController {
     }
 
     @ApiOperation({ summary: 'Gets subscriptions', description: 'Gets subscriptions of the student.' })
-    @ApiResponse({ status: HttpStatus.OK, type: SubscriptionDto, isArray: true, description: 'Got subscriptions successfully.' })
+    @ApiResponse({
+        status: HttpStatus.OK,
+        type: StudentSubscriptionDto,
+        isArray: true,
+        description: 'Got subscriptions successfully.',
+    })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
     @Get('subscriptions')
     @HttpCode(HttpStatus.OK)
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
-    getSubscriptions(@Request() request: { user: TokenUser }): Promise<SubscriptionDto[]> {
+    getSubscriptions(@Request() request: { user: TokenUser }): Promise<StudentSubscriptionDto[]> {
         return this.service.getSubscriptions(request.user.id)
     }
 
