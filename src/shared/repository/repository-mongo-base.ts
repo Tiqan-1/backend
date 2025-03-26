@@ -1,5 +1,6 @@
-import { Model, Types } from 'mongoose'
+import { Model } from 'mongoose'
 import { RepositoryBase } from './repository-base'
+import { ObjectId } from './types'
 
 export class RepositoryMongoBase<T> extends RepositoryBase<T> {
     constructor(protected model: Model<T>) {
@@ -15,7 +16,7 @@ export class RepositoryMongoBase<T> extends RepositoryBase<T> {
         return this.model.find().limit(limit).skip(skip).exec()
     }
 
-    findManyByIds(ids: Types.ObjectId[]): Promise<T[]> {
+    findManyByIds(ids: ObjectId[]): Promise<T[]> {
         return this.model.find({ _id: { $in: ids } }).exec()
     }
 
@@ -27,7 +28,7 @@ export class RepositoryMongoBase<T> extends RepositoryBase<T> {
         return undefined
     }
 
-    async findById(id: Types.ObjectId): Promise<T | undefined> {
+    async findById(id: ObjectId): Promise<T | undefined> {
         const foundElement = await this.model.findById(id).exec()
         if (foundElement) {
             return foundElement

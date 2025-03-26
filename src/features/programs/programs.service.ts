@@ -1,5 +1,4 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
-import { Types } from 'mongoose'
 import { SharedDocumentsService } from '../../shared/documents-validator/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { HandleBsonErrors } from '../../shared/errors/error-handler'
@@ -86,7 +85,7 @@ export class ProgramsService {
     }
 
     @HandleBsonErrors()
-    async addLevel(programId: string, level: Types.ObjectId): Promise<void> {
+    async addLevel(programId: string, level: ObjectId): Promise<void> {
         const found = await this.programsRepository.findById(new ObjectId(programId))
         if (!found) {
             throw new NotFoundException('Program not found')

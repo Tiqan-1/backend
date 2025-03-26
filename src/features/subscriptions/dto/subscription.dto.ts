@@ -1,4 +1,4 @@
-import { ApiProperty, PartialType } from '@nestjs/swagger'
+import { ApiProperty } from '@nestjs/swagger'
 import { IsDateString, IsEnum, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { isPopulated } from '../../../shared/helper/populated-type.helper'
 import { LevelDto } from '../../levels/dto/level.dto'
@@ -54,9 +54,8 @@ export class CreateSubscriptionDto {
     levelId: string
 }
 
-export class UpdateSubscriptionDto extends PartialType(CreateSubscriptionDto) {
-    @ApiProperty({ type: String, required: false, enum: State, example: 'subjectId' })
-    @IsOptional()
+export class UpdateSubscriptionDto {
+    @ApiProperty({ type: String, required: true, enum: State, example: 'subjectId' })
     @IsEnum(State)
-    state?: State
+    state: State
 }

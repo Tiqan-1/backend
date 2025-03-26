@@ -35,20 +35,7 @@ export class SubscriptionsService {
         return SubscriptionDto.fromDocument(found)
     }
 
-    async update(id: string, { programId, levelId, state }: UpdateSubscriptionDto): Promise<void> {
-        const program = await this.sharedDocumentsService.getProgram(programId)
-        const level = await this.sharedDocumentsService.getLevel(levelId)
-
-        const updateObject: Record<string, unknown> = {}
-        if (program) {
-            updateObject.program = program
-        }
-        if (level) {
-            updateObject.level = level
-        }
-        if (state) {
-            updateObject.state = state
-        }
+    async update(id: string, updateObject: UpdateSubscriptionDto): Promise<void> {
         await this.repository.update({ _id: new ObjectId(id) }, updateObject)
     }
 

@@ -6,7 +6,7 @@ import { Manager, ManagerSchema } from '../../features/managers/schemas/manager.
 import { Program, ProgramSchema } from '../../features/programs/schemas/program.schema'
 import { Student, StudentSchema } from '../../features/students/schemas/student.schema'
 import { Subject, SubjectSchema } from '../../features/subjects/schemas/subject.schema'
-import { Subscription } from '../../features/subscriptions/schemas/subscription.schema'
+import { Subscription, SubscriptionSchema } from '../../features/subscriptions/schemas/subscription.schema'
 import { Task, TaskSchema } from '../../features/tasks/schemas/task.schema'
 import { User, UserSchema } from '../../features/users/schemas/user.schema'
 import { SharedDocumentsService } from './shared-documents.service'
@@ -18,7 +18,7 @@ import { SharedDocumentsService } from './shared-documents.service'
         MongooseModule.forFeature([{ name: Task.name, schema: TaskSchema }]),
         MongooseModule.forFeature([{ name: Level.name, schema: LevelSchema }]),
         MongooseModule.forFeature([{ name: Program.name, schema: ProgramSchema }]),
-        MongooseModule.forFeature([{ name: Subscription.name, schema: SubjectSchema }]),
+        MongooseModule.forFeature([{ name: Subscription.name, schema: SubscriptionSchema }]),
         MongooseModule.forFeature([
             { name: User.name, schema: UserSchema, discriminators: [{ name: Manager.name, schema: ManagerSchema }] },
         ]),
