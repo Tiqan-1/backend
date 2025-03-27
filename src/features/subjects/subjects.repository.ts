@@ -32,10 +32,16 @@ export class SubjectsRepository extends RepositoryMongoBase<SubjectDocument> {
     }
 
     findAll(limit = 10, skip = 0): Promise<SubjectDocument[]> {
-        return this.model.find().populate('createdBy', 'name email').limit(limit).skip(skip).exec()
+        return this.model.find().populate('createdBy', 'name email').populate('lessons').limit(limit).skip(skip).exec()
     }
 
     async findAllByManagerId(managerId: ObjectId, limit = 10, skip = 0): Promise<SubjectDocument[]> {
-        return this.model.find({ createdBy: managerId }).populate('createdBy', 'name email').limit(limit).skip(skip).exec()
+        return this.model
+            .find({ createdBy: managerId })
+            .populate('createdBy', 'name email')
+            .populate('lessons')
+            .limit(limit)
+            .skip(skip)
+            .exec()
     }
 }

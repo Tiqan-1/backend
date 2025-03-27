@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Put, Query, Request, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Query, Request, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { Roles } from '../authentication/decorators/roles.decorator'
@@ -6,6 +6,7 @@ import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { RolesGuard } from '../authentication/guards/roles.guard'
 import { TokenUser } from '../authentication/types/token-user'
+import { CreateLessonDto, LessonDto } from '../lessons/dto/lesson.dto'
 import { CreateSubjectDto, SubjectDto } from './dto/subject.dto'
 import { SubjectsService } from './subjects.service'
 
@@ -14,7 +15,11 @@ import { SubjectsService } from './subjects.service'
 export class SubjectsController {
     constructor(private readonly service: SubjectsService) {}
 
-    @ApiOperation({ summary: 'Creates a subject', description: 'Creates a subject.' })
+    @ApiOperation({
+        summary: 'Creates a subject',
+        description: 'Deprecated: use POST api/managers/subjects instead.',
+        deprecated: true,
+    })
     @ApiResponse({ status: HttpStatus.CREATED, type: CreatedDto, description: 'Subject successfully created.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
@@ -24,25 +29,14 @@ export class SubjectsController {
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
     create(@Body() subject: CreateSubjectDto, @Request() request: { user: TokenUser }): Promise<CreatedDto> {
-        return this.service.create(subject, request.user)
+        return this.service.create(subject, request.user.id)
     }
 
-    @ApiOperation({ summary: 'Adds a lesson to a subject', description: 'Adds a lesson to a subject.' })
-    @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Lesson successfully added.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
-    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'given subjectId or lessonId are not valid.' })
-    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'subject or lesson were not found.' })
-    @Put(':subjectId/:lessonId')
-    @HttpCode(HttpStatus.NO_CONTENT)
-    @Roles(Role.Manager)
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    addLessonToSubject(@Param('subjectId') subjectId: string, @Param('lessonId') lessonId: string): Promise<void> {
-        return this.service.addLessonToSubject(subjectId, lessonId)
-    }
-
-    @ApiOperation({ summary: 'Finds all subjects created by user', description: 'Finds all subjects created by user.' })
+    @ApiOperation({
+        summary: 'Finds all subjects created by user',
+        description: 'Deprecated: use GET api/managers/subjects instead.',
+        deprecated: true,
+    })
     @ApiQuery({ name: 'limit', type: String, required: false })
     @ApiQuery({ name: 'skip', type: String, required: false })
     @ApiResponse({ status: HttpStatus.OK, type: SubjectDto, isArray: true, description: 'Got subjects successfully.' })
@@ -97,5 +91,51 @@ export class SubjectsController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     findOne(@Param('id') id: string): Promise<SubjectDto> {
         return this.service.findOne(id)
+    }
+
+    @ApiOperation({ summary: 'Creates a lesson', description: 'Creates a lesson and adds it to the subject.' })
+    @ApiResponse({
+        status: HttpStatus.CREATED,
+        type: CreatedDto,
+        description: 'Lesson successfully created and added to the subject.',
+    })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
+    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request is not valid.' })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Subject not found.' })
+    @Post(':subjectId/lessons')
+    @HttpCode(HttpStatus.CREATED)
+    @Roles(Role.Manager)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    createLesson(@Param('subjectId') subjectId: string, @Body() createLessonDto: CreateLessonDto): Promise<CreatedDto> {
+        return this.service.createLesson(subjectId, createLessonDto)
+    }
+
+    @ApiOperation({ summary: 'Gets lessons of the subject.', description: `Gets lessons of the subject.` })
+    @ApiResponse({ status: HttpStatus.OK, type: LessonDto, isArray: true, description: 'Got lessons successfully.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
+    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
+    @Get(':subjectId/lessons')
+    @Roles(Role.Manager)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @ApiBearerAuth()
+    getLessons(@Param('subjectId') subjectId: string): Promise<LessonDto[]> {
+        return this.service.getLessons(subjectId)
+    }
+
+    @ApiOperation({ summary: 'Removes a lesson', description: 'Removes a lesson from the subject.' })
+    @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Lesson successfully removed.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
+    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Subject or Lesson not found.' })
+    @Delete(':subjectId/lessons/:lessonId')
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @Roles(Role.Manager)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    removeLessons(@Param('subjectId') subjectId: string, @Param('lessonId') lessonId: string): Promise<void> {
+        return this.service.removeLesson(subjectId, lessonId)
     }
 }

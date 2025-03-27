@@ -60,7 +60,7 @@ describe('SubscriptionsController (e2e)', () => {
             const manager = await mongoTestHelper.createManager()
             const token = jwtService.sign({ id: manager._id, role: manager.role })
             const level = await mongoTestHelper.createLevel([])
-            const program = await mongoTestHelper.createProgram([level._id])
+            const program = await mongoTestHelper.createProgram([level._id], manager._id)
             const subscription1 = await mongoTestHelper.createSubscription(program._id, level._id)
             const subscription2 = await mongoTestHelper.createSubscription(program._id, level._id)
 
@@ -93,7 +93,7 @@ describe('SubscriptionsController (e2e)', () => {
             const manager = await mongoTestHelper.createManager()
             const token = jwtService.sign({ id: manager._id, role: manager.role })
             const level = await mongoTestHelper.createLevel([])
-            const program = await mongoTestHelper.createProgram([level._id])
+            const program = await mongoTestHelper.createProgram([level._id], manager._id)
             const subscription = await mongoTestHelper.createSubscription(program._id, level._id)
 
             const response = await request(app.getHttpServer())
@@ -122,7 +122,7 @@ describe('SubscriptionsController (e2e)', () => {
             const manager = await mongoTestHelper.createManager()
             const token = jwtService.sign({ id: manager._id, role: manager.role })
             const level = await mongoTestHelper.createLevel([])
-            const program = await mongoTestHelper.createProgram([level._id])
+            const program = await mongoTestHelper.createProgram([level._id], manager._id)
             const subscription = await mongoTestHelper.createSubscription(program._id, level._id)
 
             const body: UpdateSubscriptionDto = {
@@ -158,7 +158,7 @@ describe('SubscriptionsController (e2e)', () => {
             const manager = await mongoTestHelper.createManager()
             const token = jwtService.sign({ id: manager._id, role: manager.role })
             const level = await mongoTestHelper.createLevel([])
-            const program = await mongoTestHelper.createProgram([level._id])
+            const program = await mongoTestHelper.createProgram([level._id], manager._id)
             const subscription = await mongoTestHelper.createSubscription(program._id, level._id)
 
             await request(app.getHttpServer())

@@ -3,27 +3,27 @@ import { SharedDocumentsService } from '../../shared/documents-validator/shared-
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { HandleBsonErrors } from '../../shared/errors/error-handler'
 import { ObjectId } from '../../shared/repository/types'
-import { ManagersService } from '../managers/managers.service'
+import { CreateLevelDto, LevelDto } from '../levels/dto/level.dto'
+import { LevelsService } from '../levels/levels.service'
+import { LevelDocument } from '../levels/schemas/level.schema'
 import { CreateProgramDto, ProgramDto, StudentProgramDto, UpdateProgramDto } from './dto/program.dto'
 import { ProgramState } from './enums/program-state.enum'
 import { ProgramsRepository } from './programs.repository'
+import { ProgramDocument } from './schemas/program.schema'
 
 @Injectable()
 export class ProgramsService {
     constructor(
         private readonly programsRepository: ProgramsRepository,
-        private readonly managersService: ManagersService,
+        private readonly levelsService: LevelsService,
         private readonly documentsService: SharedDocumentsService
     ) {}
 
-    async create(createProgramDto: CreateProgramDto, creatorId: ObjectId): Promise<CreatedDto> {
+    async create(createProgramDto: CreateProgramDto, createdBy: ObjectId): Promise<CreatedDto> {
         const levels = (await this.documentsService.getLevels(createProgramDto.levelIds))?.map(level => level._id)
-        const document = CreateProgramDto.toDocument(createProgramDto)
+        const document = CreateProgramDto.toDocument(createProgramDto, createdBy)
         const createObject = levels ? { ...document, levels } : { ...document }
         const created = await this.programsRepository.create(createObject)
-
-        await this.managersService.addProgram(creatorId, created)
-
         return { id: created._id.toString() }
     }
 
@@ -43,23 +43,13 @@ export class ProgramsService {
         return ProgramDto.fromDocuments(foundPrograms)
     }
 
-    @HandleBsonErrors()
     async findOneForStudents(id: string): Promise<StudentProgramDto> {
-        const programId = new ObjectId(id)
-        const found = await this.programsRepository.findById(programId)
-        if (!found) {
-            throw new NotFoundException('Program not found')
-        }
+        const found = await this.loadProgram(id)
         return StudentProgramDto.fromDocument(found)
     }
 
-    @HandleBsonErrors()
     async findOneForManagers(id: string): Promise<ProgramDto> {
-        const programId = new ObjectId(id)
-        const found = await this.programsRepository.findById(programId)
-        if (!found) {
-            throw new NotFoundException('Program not found')
-        }
+        const found = await this.loadProgram(id)
         return ProgramDto.fromDocument(found)
     }
 
@@ -85,12 +75,38 @@ export class ProgramsService {
     }
 
     @HandleBsonErrors()
-    async addLevel(programId: string, level: ObjectId): Promise<void> {
-        const found = await this.programsRepository.findById(new ObjectId(programId))
-        if (!found) {
+    async createLevel(programId: string, createLevelDto: CreateLevelDto): Promise<CreatedDto> {
+        const program = await this.loadProgram(programId)
+        const level = await this.levelsService.create(createLevelDto)
+        ;(program.levels as ObjectId[]).push(new ObjectId(level.id))
+        await program.save()
+        return level
+    }
+
+    async getLevels(id: string): Promise<LevelDto[]> {
+        const program = await this.loadProgram(id)
+        await program.populate({ path: 'levels', populate: { path: 'tasks', populate: { path: 'lessons' } } })
+        return LevelDto.fromDocuments(program.levels as LevelDocument[])
+    }
+
+    @HandleBsonErrors()
+    async removeLevel(programId: string, levelId: string): Promise<void> {
+        const program = await this.loadProgram(programId)
+        const levelIndex = program.levels.findIndex(id => id._id.toString() === levelId)
+        if (levelIndex === -1) {
+            throw new NotFoundException('Level not found.')
+        }
+        ;(program.levels as ObjectId[]).splice(levelIndex, 1)
+        await this.levelsService.remove(levelId)
+        await program.save()
+    }
+
+    @HandleBsonErrors()
+    private async loadProgram(id: string): Promise<ProgramDocument> {
+        const program = await this.programsRepository.findById(new ObjectId(id))
+        if (!program) {
             throw new NotFoundException('Program not found')
         }
-        ;(found.levels as ObjectId[]).push(level)
-        await found.save()
+        return program
     }
 }

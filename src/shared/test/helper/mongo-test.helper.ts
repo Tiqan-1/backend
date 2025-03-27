@@ -188,11 +188,11 @@ export class MongoTestHelper {
         return model.create(lesson)
     }
 
-    async createSubject(creator: ManagerDocument, lessons: ObjectId[]): Promise<SubjectDocument> {
+    async createSubject(lessons: ObjectId[], createdBy: ObjectId): Promise<SubjectDocument> {
         const subject: Subject = {
             name: 'subject name',
             description: 'subject description',
-            createdBy: creator,
+            createdBy: createdBy,
             lessons: lessons,
         }
         const model = this.getSubjectModel()
@@ -208,7 +208,7 @@ export class MongoTestHelper {
         return model.create(task)
     }
 
-    async createProgram(levels: ObjectId[]): Promise<ProgramDocument> {
+    async createProgram(levels: ObjectId[], createdBy: ObjectId): Promise<ProgramDocument> {
         const date = new Date()
         const program: Program = {
             name: 'program name',
@@ -218,7 +218,8 @@ export class MongoTestHelper {
             registrationEnd: new Date(date.setMonth(date.getMonth() + 2)),
             end: new Date(date.setFullYear(date.getFullYear() + 1)),
             description: 'program description',
-            levels: levels,
+            levels,
+            createdBy,
         }
         const model = this.getProgramModel()
         return model.create(program)

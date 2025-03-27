@@ -2,9 +2,11 @@ import { ApiProperty, OmitType, PartialType } from '@nestjs/swagger'
 import { IsDateString, IsEnum, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { normalizeDate } from '../../../shared/helper/date.helper'
 import { areNotPopulated, arePopulated } from '../../../shared/helper/populated-type.helper'
-import { Populated } from '../../../shared/repository/types'
+import { ObjectId, Populated } from '../../../shared/repository/types'
 import { LevelDto } from '../../levels/dto/level.dto'
 import { LevelDocument } from '../../levels/schemas/level.schema'
+import { SimpleManagerDto } from '../../managers/dto/manager.dto'
+import { ManagerDocument } from '../../managers/schemas/manager.schema'
 import { ProgramState } from '../enums/program-state.enum'
 import { ProgramDocument } from '../schemas/program.schema'
 
@@ -19,10 +21,13 @@ export class ProgramDto {
     @IsString()
     name: string
 
-    @ApiProperty({ type: String, required: false, example: 'برنامج تفاعلي يهدف إلى تأسيس الطالب في العلوم الشرعية' })
+    @ApiProperty({ type: String, required: true, example: 'برنامج تفاعلي يهدف إلى تأسيس الطالب في العلوم الشرعية' })
     @IsString()
-    @IsOptional()
-    description?: string
+    description: string
+
+    @ApiProperty({ type: () => SimpleManagerDto, required: true })
+    @ValidateNested()
+    createdBy: SimpleManagerDto
 
     @ApiProperty({ type: String, enum: ProgramState, required: true })
     @IsEnum(ProgramState)
@@ -62,6 +67,7 @@ export class ProgramDto {
             description: document.description,
             start: document.start,
             end: document.end,
+            createdBy: SimpleManagerDto.fromDocument(document.createdBy as ManagerDocument),
             registrationStart: document.registrationStart,
             registrationEnd: document.registrationEnd,
             levels: arePopulated(document.levels) ? LevelDto.fromDocuments(document.levels) : [],
@@ -81,6 +87,7 @@ export class StudentProgramDto extends OmitType(ProgramDto, ['state']) {
             description: document.description,
             start: document.start,
             end: document.end,
+            createdBy: SimpleManagerDto.fromDocument(document.createdBy as ManagerDocument),
             registrationStart: document.start,
             registrationEnd: document.end,
             levels: LevelDto.fromDocuments(document.levels as Populated<LevelDocument[]>),
@@ -101,6 +108,7 @@ export class StudentProgramUnpopulatedDto extends OmitType(StudentProgramDto, ['
             description: document.description,
             start: document.start,
             end: document.end,
+            createdBy: SimpleManagerDto.fromDocument(document.createdBy as ManagerDocument),
             registrationStart: document.start,
             registrationEnd: document.end,
             levelIds: areNotPopulated(document.levels) ? document.levels.map(id => id.toString()) : [],
@@ -108,13 +116,13 @@ export class StudentProgramUnpopulatedDto extends OmitType(StudentProgramDto, ['
     }
 }
 
-export class CreateProgramDto extends OmitType(ProgramDto, ['id', 'state', 'levels']) {
+export class CreateProgramDto extends OmitType(ProgramDto, ['id', 'state', 'levels', 'createdBy']) {
     @ApiProperty({ type: String, required: false, isArray: true })
     @IsOptional()
     @ValidateNested({ each: true })
     levelIds?: string[]
 
-    static toDocument(dto: CreateProgramDto): object {
+    static toDocument(dto: CreateProgramDto, createdBy: ObjectId): object {
         return {
             name: dto.name,
             description: dto.description,
@@ -122,6 +130,7 @@ export class CreateProgramDto extends OmitType(ProgramDto, ['id', 'state', 'leve
             end: dto.end,
             registrationStart: dto.registrationStart,
             registrationEnd: dto.registrationEnd,
+            createdBy,
         }
     }
 }

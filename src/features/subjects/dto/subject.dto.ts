@@ -1,9 +1,9 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { IsOptional, IsString, ValidateNested } from 'class-validator'
 import { arePopulated } from '../../../shared/helper/populated-type.helper'
-import { ObjectId } from '../../../shared/repository/types'
 import { LessonDto } from '../../lessons/dto/lesson.dto'
-import { simpleManagerDto } from '../../managers/dto/manager.dto'
+import { SimpleManagerDto } from '../../managers/dto/manager.dto'
+import { ManagerDocument } from '../../managers/schemas/manager.schema'
 import { SubjectDocument } from '../schemas/subject.schema'
 
 export class SubjectDto {
@@ -15,9 +15,9 @@ export class SubjectDto {
     @IsString()
     name: string
 
-    @ApiProperty({ type: () => simpleManagerDto, required: true })
+    @ApiProperty({ type: () => SimpleManagerDto, required: true })
     @ValidateNested()
-    createdBy: simpleManagerDto
+    createdBy: SimpleManagerDto
 
     @ApiProperty({ type: String, required: false, example: 'الفقه على المذهب الشافعي' })
     @IsString()
@@ -32,7 +32,7 @@ export class SubjectDto {
         this.id = subject._id.toString()
         this.name = subject.name
         this.description = subject.description
-        this.createdBy = new simpleManagerDto(subject.createdBy)
+        this.createdBy = SimpleManagerDto.fromDocument(subject.createdBy as ManagerDocument)
         this.lessons = arePopulated(subject.lessons) ? subject.lessons.map(lesson => new LessonDto(lesson)) : []
     }
 
@@ -45,17 +45,4 @@ export class SubjectDto {
     }
 }
 
-export class CreateSubjectDto extends OmitType(SubjectDto, ['id', 'lessons', 'createdBy'] as const) {
-    @ApiProperty({ type: String, isArray: true, required: false })
-    @IsString({ each: true })
-    @IsOptional()
-    lessonIds?: string[]
-
-    static toDocument(subject: CreateSubjectDto, managerId: ObjectId): unknown {
-        return {
-            ...subject,
-            createdBy: managerId,
-            lessons: subject.lessonIds?.map(lessonId => new ObjectId(lessonId)),
-        }
-    }
-}
+export class CreateSubjectDto extends OmitType(SubjectDto, ['id', 'lessons', 'createdBy'] as const) {}

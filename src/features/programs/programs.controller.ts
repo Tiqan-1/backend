@@ -6,6 +6,7 @@ import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { RolesGuard } from '../authentication/guards/roles.guard'
 import { TokenUser } from '../authentication/types/token-user'
+import { CreateLevelDto, LevelDto } from '../levels/dto/level.dto'
 import { CreateProgramDto, ProgramDto, StudentProgramDto, UpdateProgramDto } from './dto/program.dto'
 import { ProgramsService } from './programs.service'
 
@@ -14,7 +15,11 @@ import { ProgramsService } from './programs.service'
 export class ProgramsController {
     constructor(private readonly programsService: ProgramsService) {}
 
-    @ApiOperation({ summary: 'Creates a program', description: 'Creates a program.' })
+    @ApiOperation({
+        summary: 'Creates a program',
+        description: 'Deprecated: use POST api/managers/programs instead.',
+        deprecated: true,
+    })
     @ApiResponse({ status: HttpStatus.CREATED, type: CreatedDto, description: 'Program successfully created.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
@@ -28,7 +33,7 @@ export class ProgramsController {
         return this.programsService.create(createProgramDto, request.user.id)
     }
 
-    @ApiOperation({ summary: 'Finds all programs', description: 'Finds all programs.' })
+    @ApiOperation({ summary: 'Finds all programs.', description: 'Finds all programs.' })
     @ApiQuery({
         name: 'limit',
         type: Number,
@@ -54,7 +59,7 @@ export class ProgramsController {
 
     @ApiOperation({
         summary: 'Finds all programs (enriched for managers)',
-        description: 'Finds all programs (enriched for managers).',
+        description: 'Finds all programs (enriched for managers)',
     })
     @ApiQuery({
         name: 'limit',
@@ -74,7 +79,7 @@ export class ProgramsController {
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user,' })
     @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
-    @Get('managers')
+    @Get('enriched')
     @UseGuards(JwtAuthGuard)
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
@@ -82,7 +87,7 @@ export class ProgramsController {
         return this.programsService.findAllForManagers(limit, skip)
     }
 
-    @ApiOperation({ summary: 'Finds program by id', description: 'Finds program by id.' })
+    @ApiOperation({ summary: 'Finds program by id.', description: 'Finds program by id.' })
     @ApiResponse({ status: HttpStatus.OK, type: StudentProgramDto, description: 'Got program successfully.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Program not found.' })
@@ -102,7 +107,7 @@ export class ProgramsController {
     @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Program not found.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user.' })
     @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
-    @Get('managers/:id')
+    @Get('enriched/:id')
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
     findOneForManagers(@Param('id') id: string): Promise<ProgramDto> {
@@ -116,7 +121,7 @@ export class ProgramsController {
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
     @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
     @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.' })
-    @Put('managers/:id')
+    @Put(':id')
     @HttpCode(HttpStatus.NO_CONTENT)
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
@@ -130,11 +135,52 @@ export class ProgramsController {
     @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Program not found.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
     @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
-    @Delete('managers/:id')
+    @Delete(':id')
     @HttpCode(HttpStatus.NO_CONTENT)
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
     remove(@Param('id') id: string): Promise<void> {
         return this.programsService.remove(id)
+    }
+
+    @ApiOperation({ summary: 'Creates a level', description: 'Creates a level and adds it to the program.' })
+    @ApiResponse({ status: HttpStatus.CREATED, type: CreatedDto, description: 'Level successfully created.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
+    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Program not found.' })
+    @Post(':programId/levels')
+    @HttpCode(HttpStatus.CREATED)
+    @Roles(Role.Manager)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    createLevel(@Body() createLevelDto: CreateLevelDto, @Param('programId') programId: string): Promise<CreatedDto> {
+        return this.programsService.createLevel(programId, createLevelDto)
+    }
+
+    @ApiOperation({ summary: 'Gets levels of the program', description: `Gets levels of the program.` })
+    @ApiResponse({ status: HttpStatus.OK, type: LevelDto, isArray: true, description: 'Got levels successfully.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
+    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
+    @Get(':programId/levels')
+    @Roles(Role.Manager)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @ApiBearerAuth()
+    getLevels(@Param('programId') programId: string): Promise<LevelDto[]> {
+        return this.programsService.getLevels(programId)
+    }
+
+    @ApiOperation({ summary: 'Removes a level', description: 'Removes a level from the program.' })
+    @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Level successfully removed.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
+    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Program not found.' })
+    @Delete(':programId/levels/:levelId')
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @Roles(Role.Manager)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    removeProgram(@Param('levelId') levelId: string, @Param('programId') programId: string): Promise<void> {
+        return this.programsService.removeLevel(programId, levelId)
     }
 }

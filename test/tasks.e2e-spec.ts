@@ -60,6 +60,7 @@ describe('TasksController (e2e)', () => {
         await mongoTestHelper.clearCollections()
     })
 
+    /** @deprecated */
     describe('POST /api/tasks/', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()

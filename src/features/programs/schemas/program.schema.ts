@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { HydratedDocument } from 'mongoose'
 import { ObjectId, Populated } from '../../../shared/repository/types'
 import { Level, LevelDocument } from '../../levels/schemas/level.schema'
+import { ManagerDocument } from '../../managers/schemas/manager.schema'
 import { ProgramState } from '../enums/program-state.enum'
 
 export type ProgramDocument = HydratedDocument<Program>
@@ -13,6 +14,9 @@ export class Program {
 
     @Prop({ required: true, type: String })
     description: string
+
+    @Prop({ required: true, type: ObjectId, ref: 'Manager' })
+    createdBy: ObjectId | Populated<ManagerDocument>
 
     @Prop({ required: true, type: String, enum: ProgramState, default: ProgramState.created })
     state: ProgramState

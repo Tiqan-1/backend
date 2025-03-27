@@ -34,11 +34,18 @@ export class ManagerDto {
     subjects: SubjectDto[]
 }
 
-export class simpleManagerDto extends PickType(ManagerDto, ['name', 'email']) {
+export class SimpleManagerDto extends PickType(ManagerDto, ['name', 'email']) {
     constructor(manager: ManagerDocument) {
         super()
         this.name = manager.name
         this.email = manager.email
+    }
+
+    static fromDocument(createdBy: ManagerDocument): SimpleManagerDto {
+        return {
+            name: createdBy.name,
+            email: createdBy.email,
+        }
     }
 }
 

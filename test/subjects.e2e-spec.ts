@@ -3,19 +3,18 @@ import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
 import * as request from 'supertest'
 import { App } from 'supertest/types'
-import { AuthenticationService } from '../src/features/authentication/authentication.service'
 import { Role } from '../src/features/authentication/enums/role.enum'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
-import { ManagersRepository } from '../src/features/managers/managers.repository'
-import { ManagersService } from '../src/features/managers/managers.service'
+import { CreateLessonDto, LessonDto } from '../src/features/lessons/dto/lesson.dto'
+import { LessonType } from '../src/features/lessons/enums/lesson-type.enum'
+import { LessonsRepository } from '../src/features/lessons/lessons.repository'
+import { LessonsService } from '../src/features/lessons/lessons.service'
+import { LessonDocument } from '../src/features/lessons/schemas/lesson.schema'
 import { CreateSubjectDto, SubjectDto } from '../src/features/subjects/dto/subject.dto'
+import { SubjectDocument } from '../src/features/subjects/schemas/subject.schema'
 import { SubjectsController } from '../src/features/subjects/subjects.controller'
 import { SubjectsRepository } from '../src/features/subjects/subjects.repository'
 import { SubjectsService } from '../src/features/subjects/subjects.service'
-import { TokensRepository } from '../src/features/tokens/tokens.repository'
-import { TokensService } from '../src/features/tokens/tokens.service'
-import { UsersRepository } from '../src/features/users/users.repository'
-import { UsersService } from '../src/features/users/users.service'
 import { SharedDocumentsService } from '../src/shared/documents-validator/shared-documents.service'
 import { CreatedDto } from '../src/shared/dto/created.dto'
 import {
@@ -39,15 +38,9 @@ describe('SubjectsController (e2e)', () => {
             providers: [
                 SubjectsService,
                 SubjectsRepository,
-                AuthenticationService,
-                UsersService,
-                UsersRepository,
-                TokensService,
-                TokensRepository,
-                ManagersService,
-                ManagersRepository,
+                LessonsService,
+                LessonsRepository,
                 SharedDocumentsService,
-                JwtService,
                 JwtStrategy,
                 ConfigServiceProvider,
                 ...mongoTestHelper.providers,
@@ -73,11 +66,9 @@ describe('SubjectsController (e2e)', () => {
     describe('POST /api/subjects/', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
-            const lesson = await mongoTestHelper.createLesson()
             const body: CreateSubjectDto = {
                 name: 'subject name',
                 description: 'description',
-                lessonIds: [lesson._id.toString()],
             }
 
             const token = jwtService.sign({ id: manager._id, role: manager.role })
@@ -97,7 +88,6 @@ describe('SubjectsController (e2e)', () => {
             const body: CreateSubjectDto = {
                 name: 'subject name',
                 description: 'description',
-                lessonIds: ['1', '2'],
             }
             await request(app.getHttpServer())
                 .post('/api/subjects')
@@ -111,8 +101,8 @@ describe('SubjectsController (e2e)', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
             const token = jwtService.sign({ id: manager._id.toString(), role: Role.Manager })
-            const subject1 = await mongoTestHelper.createSubject(manager, [])
-            const subject2 = await mongoTestHelper.createSubject(manager, [])
+            const subject1 = await mongoTestHelper.createSubject([], manager._id)
+            const subject2 = await mongoTestHelper.createSubject([], manager._id)
 
             const response = await request(app.getHttpServer())
                 .get('/api/subjects')
@@ -141,8 +131,8 @@ describe('SubjectsController (e2e)', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
             const token = jwtService.sign({ id: manager._id, role: manager.role })
-            const subject1 = await mongoTestHelper.createSubject(manager, [])
-            const subject2 = await mongoTestHelper.createSubject(manager, [])
+            const subject1 = await mongoTestHelper.createSubject([], manager._id)
+            const subject2 = await mongoTestHelper.createSubject([], manager._id)
 
             const response = await request(app.getHttpServer())
                 .get('/api/subjects/user')
@@ -160,10 +150,10 @@ describe('SubjectsController (e2e)', () => {
         it('should only return subjects of user', async () => {
             const manager1 = await mongoTestHelper.createManager('1')
             const token = jwtService.sign({ id: manager1._id, role: Role.Manager })
-            const subject1 = await mongoTestHelper.createSubject(manager1, [])
+            const subject1 = await mongoTestHelper.createSubject([], manager1._id)
 
             const manager2 = await mongoTestHelper.createManager('2')
-            await mongoTestHelper.createSubject(manager2, [])
+            await mongoTestHelper.createSubject([], manager2._id)
 
             const response = await request(app.getHttpServer())
                 .get('/api/subjects/user')
@@ -191,7 +181,7 @@ describe('SubjectsController (e2e)', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
             const token = jwtService.sign({ id: manager._id.toString(), role: Role.Manager })
-            const subject = await mongoTestHelper.createSubject(manager, [])
+            const subject = await mongoTestHelper.createSubject([], manager._id)
 
             await request(app.getHttpServer())
                 .get(`/api/subjects/${subject._id.toString()}`)
@@ -214,7 +204,7 @@ describe('SubjectsController (e2e)', () => {
             const student = await mongoTestHelper.createStudent()
             const manager = await mongoTestHelper.createManager()
             const token = jwtService.sign({ id: student._id.toString(), role: Role.Student })
-            const subject = await mongoTestHelper.createSubject(manager, [])
+            const subject = await mongoTestHelper.createSubject([], manager._id)
 
             await request(app.getHttpServer())
                 .get(`/api/subjects/${subject._id.toString()}`)
@@ -223,76 +213,102 @@ describe('SubjectsController (e2e)', () => {
         })
     })
 
-    describe('PUT /api/subjects/:subjectId/:lessonId', () => {
+    describe('POST /api/subjects/:id/lessons', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
-            const token = jwtService.sign({ id: manager._id.toString(), role: Role.Manager })
-            const subject = await mongoTestHelper.createSubject(manager, [])
-            const lesson = await mongoTestHelper.createLesson()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+            const subject = await mongoTestHelper.createSubject([], manager._id)
+
+            const body: CreateLessonDto = {
+                url: 'test url',
+                type: LessonType.Pdf,
+                title: 'test title',
+            }
+
+            const response = await request(app.getHttpServer())
+                .post(`/api/subjects/${subject._id.toString()}/lessons`)
+                .set('Authorization', `Bearer ${token}`)
+                .send(body)
+                .expect(HttpStatus.CREATED)
+
+            const { id } = response.body as CreatedDto
+            expect(id).toBeDefined()
+
+            const created = (await mongoTestHelper.getLessonModel().findOne()) as LessonDocument
+            expect(created).toBeDefined()
+            expect(created.url).toEqual(body.url)
+            expect(created.type).toEqual(body.type)
+            expect(created.title).toEqual(body.title)
+
+            const updated = (await mongoTestHelper.getSubjectModel().findOne()) as SubjectDocument
+            expect(updated).toBeDefined()
+            expect(updated.lessons.length).toEqual(1)
+        })
+
+        it('should fail if called by a student', async () => {
+            const student = await mongoTestHelper.createStudent()
+            const token = jwtService.sign({ id: student._id, role: student.role })
 
             await request(app.getHttpServer())
-                .put(`/api/subjects/${subject._id.toString()}/${lesson._id.toString()}`)
+                .post(`/api/subjects/anyId/lessons`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({})
+                .expect(HttpStatus.FORBIDDEN)
+        })
+    })
+
+    describe('GET /api/subjects/:id/lessons', () => {
+        it('should succeed', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+            const lesson = await mongoTestHelper.createLesson()
+            const subject = await mongoTestHelper.createSubject([lesson._id], manager._id)
+
+            const response = await request(app.getHttpServer())
+                .get(`/api/subjects/${subject._id.toString()}/lessons`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.OK)
+
+            const [receivedLesson] = response.body as LessonDto[]
+            expect(receivedLesson).toBeDefined()
+            expect(receivedLesson.id).toEqual(lesson._id.toString())
+            expect(receivedLesson.url).toEqual(lesson.url)
+        })
+
+        it('should fail if called by a student', async () => {
+            const student = await mongoTestHelper.createStudent()
+            const token = jwtService.sign({ id: student._id, role: student.role })
+
+            await request(app.getHttpServer())
+                .get(`/api/subjects/anyId/lessons`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.FORBIDDEN)
+        })
+    })
+
+    describe('DELETE /api/subjects/:subjectId/lessons/:lessonId', () => {
+        it('should succeed', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+            const lesson = await mongoTestHelper.createLesson()
+            const subject = await mongoTestHelper.createSubject([lesson._id], manager._id)
+
+            await request(app.getHttpServer())
+                .delete(`/api/subjects/${subject._id.toString()}/lessons/${lesson._id.toString()}`)
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.NO_CONTENT)
+
+            const updated = (await mongoTestHelper.getSubjectModel().findOne()) as SubjectDocument
+            expect(updated).toBeDefined()
+            expect(updated.lessons.length).toEqual(0)
         })
 
-        it('should fail with 404 if subject does not exist', async () => {
-            const manager = await mongoTestHelper.createManager()
-            const token = jwtService.sign({ id: manager._id.toString(), role: Role.Manager })
-            await mongoTestHelper.createSubject(manager, [])
-            const lesson = await mongoTestHelper.createLesson()
-
-            await request(app.getHttpServer())
-                .put(`/api/subjects/${manager._id.toString()}/${lesson._id.toString()}`)
-                .set('Authorization', `Bearer ${token}`)
-                .expect(HttpStatus.NOT_FOUND)
-        })
-
-        it('should fail with 404 if lesson does not exist', async () => {
-            const manager = await mongoTestHelper.createManager()
-            const token = jwtService.sign({ id: manager._id.toString(), role: Role.Manager })
-            const subject = await mongoTestHelper.createSubject(manager, [])
-            await mongoTestHelper.createLesson()
-
-            await request(app.getHttpServer())
-                .put(`/api/subjects/${subject._id.toString()}/${manager._id.toString()}`)
-                .set('Authorization', `Bearer ${token}`)
-                .expect(HttpStatus.NOT_FOUND)
-        })
-
-        it('should fail with 400 if invalid subjectId is given', async () => {
-            const manager = await mongoTestHelper.createManager()
-            const token = jwtService.sign({ id: manager._id.toString(), role: Role.Manager })
-            await mongoTestHelper.createSubject(manager, [])
-            const lesson = await mongoTestHelper.createLesson()
-
-            await request(app.getHttpServer())
-                .put(`/api/subjects/strangeId/${lesson._id.toString()}`)
-                .set('Authorization', `Bearer ${token}`)
-                .expect(HttpStatus.BAD_REQUEST)
-        })
-
-        it('should fail with 400 if invalid lessonId is given', async () => {
-            const manager = await mongoTestHelper.createManager()
-            const token = jwtService.sign({ id: manager._id.toString(), role: Role.Manager })
-            await mongoTestHelper.createSubject(manager, [])
-            const lesson = await mongoTestHelper.createLesson()
-
-            await request(app.getHttpServer())
-                .put(`/api/subjects/strangeId/${lesson._id.toString()}`)
-                .set('Authorization', `Bearer ${token}`)
-                .expect(HttpStatus.BAD_REQUEST)
-        })
-
-        it('should fail with 403 if called by student', async () => {
+        it('should fail if called by a student', async () => {
             const student = await mongoTestHelper.createStudent()
-            const token = jwtService.sign({ id: student._id.toString(), role: student.role })
-            const manager = await mongoTestHelper.createManager()
-            const subject = await mongoTestHelper.createSubject(manager, [])
-            const lesson = await mongoTestHelper.createLesson()
+            const token = jwtService.sign({ id: student._id, role: student.role })
 
             await request(app.getHttpServer())
-                .put(`/api/subjects/${subject._id.toString()}/${lesson._id.toString()}`)
+                .delete(`/api/subjects/anyId/lessons/anyId`)
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.FORBIDDEN)
         })

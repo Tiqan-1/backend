@@ -105,7 +105,7 @@ describe('StudentsController (e2e)', () => {
             const student = await mongoTestHelper.createStudent()
             const token = jwtService.sign({ id: student._id, role: student.role })
             const level = await mongoTestHelper.createLevel([])
-            const program = await mongoTestHelper.createProgram([])
+            const program = await mongoTestHelper.createProgram([], student._id)
 
             const body: CreateSubscriptionDto = {
                 programId: program._id.toString(),
@@ -130,10 +130,11 @@ describe('StudentsController (e2e)', () => {
 
     describe('GET /api/students/subscriptions', () => {
         it('should succeed', async () => {
+            const manager = await mongoTestHelper.createManager()
             const lesson = await mongoTestHelper.createLesson()
             const task = await mongoTestHelper.createTask([lesson._id])
             const level = await mongoTestHelper.createLevel([task._id])
-            const program = await mongoTestHelper.createProgram([level._id])
+            const program = await mongoTestHelper.createProgram([level._id], manager._id)
             const subscription = await mongoTestHelper.createSubscription(program._id, level._id)
             const student = await mongoTestHelper.createStudent([subscription._id])
             const token = jwtService.sign({ id: student._id, role: student.role })
@@ -164,8 +165,9 @@ describe('StudentsController (e2e)', () => {
 
     describe('PUT /api/students/subscriptions/:id/suspend', () => {
         it('should succeed', async () => {
+            const manager = await mongoTestHelper.createManager()
             const level = await mongoTestHelper.createLevel([])
-            const program = await mongoTestHelper.createProgram([])
+            const program = await mongoTestHelper.createProgram([], manager._id)
             const subscription = await mongoTestHelper.createSubscription(program._id, level._id)
             const student = await mongoTestHelper.createStudent([subscription._id])
             const token = jwtService.sign({ id: student._id, role: student.role })
@@ -182,8 +184,9 @@ describe('StudentsController (e2e)', () => {
 
     describe('DELETE /api/students/subscriptions/:id', () => {
         it('should succeed', async () => {
+            const manager = await mongoTestHelper.createManager()
             const level = await mongoTestHelper.createLevel([])
-            const program = await mongoTestHelper.createProgram([])
+            const program = await mongoTestHelper.createProgram([], manager._id)
             const subscription = await mongoTestHelper.createSubscription(program._id, level._id)
             const student = await mongoTestHelper.createStudent([subscription._id])
             const token = jwtService.sign({ id: student._id, role: student.role })

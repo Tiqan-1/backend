@@ -3,21 +3,21 @@ import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
 import * as request from 'supertest'
 import { App } from 'supertest/types'
-import { AuthenticationService } from '../src/features/authentication/authentication.service'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
-import { ManagersRepository } from '../src/features/managers/managers.repository'
-import { ManagersService } from '../src/features/managers/managers.service'
-import { ManagerDocument } from '../src/features/managers/schemas/manager.schema'
+import { LessonsRepository } from '../src/features/lessons/lessons.repository'
+import { LessonsService } from '../src/features/lessons/lessons.service'
+import { CreateLevelDto, LevelDto } from '../src/features/levels/dto/level.dto'
+import { LevelsRepository } from '../src/features/levels/levels.repository'
+import { LevelsService } from '../src/features/levels/levels.service'
+import { LevelDocument } from '../src/features/levels/schemas/level.schema'
 import { CreateProgramDto, ProgramDto } from '../src/features/programs/dto/program.dto'
 import { ProgramState } from '../src/features/programs/enums/program-state.enum'
 import { ProgramsController } from '../src/features/programs/programs.controller'
 import { ProgramsRepository } from '../src/features/programs/programs.repository'
 import { ProgramsService } from '../src/features/programs/programs.service'
 import { ProgramDocument } from '../src/features/programs/schemas/program.schema'
-import { TokensRepository } from '../src/features/tokens/tokens.repository'
-import { TokensService } from '../src/features/tokens/tokens.service'
-import { UsersRepository } from '../src/features/users/users.repository'
-import { UsersService } from '../src/features/users/users.service'
+import { TasksRepository } from '../src/features/tasks/tasks.repository'
+import { TasksService } from '../src/features/tasks/tasks.service'
 import { SharedDocumentsService } from '../src/shared/documents-validator/shared-documents.service'
 import { CreatedDto } from '../src/shared/dto/created.dto'
 import {
@@ -40,14 +40,12 @@ describe('ProgramsController (e2e)', () => {
             providers: [
                 ProgramsService,
                 ProgramsRepository,
-                ManagersService,
-                ManagersRepository,
-                AuthenticationService,
-                UsersService,
-                UsersRepository,
-                TokensService,
-                TokensRepository,
-                JwtService,
+                LevelsService,
+                LevelsRepository,
+                TasksService,
+                TasksRepository,
+                LessonsService,
+                LessonsRepository,
                 JwtStrategy,
                 SharedDocumentsService,
                 ConfigServiceProvider,
@@ -70,6 +68,7 @@ describe('ProgramsController (e2e)', () => {
         await mongoTestHelper.clearCollections()
     })
 
+    /** @deprecated */
     describe('POST /api/programs/managers', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
@@ -97,9 +96,7 @@ describe('ProgramsController (e2e)', () => {
             const created = (await mongoTestHelper.getProgramModel().findOne()) as ProgramDocument
             expect(created).toBeDefined()
             expect(created._id.toString()).toEqual(id)
-
-            const creator = (await mongoTestHelper.getManagerModel().findOne()) as ManagerDocument
-            expect(creator.programs[0]).toEqual(created._id)
+            expect(created.createdBy).toEqual(manager._id)
         })
 
         it('should fail with 403 if called by a student', async () => {
@@ -126,12 +123,12 @@ describe('ProgramsController (e2e)', () => {
         })
     })
 
-    describe('GET /api/programs/managers', () => {
+    describe('GET /api/programs/enriched', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
             const token = jwtService.sign({ id: manager._id, role: manager.role })
             await request(app.getHttpServer())
-                .get('/api/programs/managers')
+                .get('/api/programs/enriched')
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.OK)
                 .expect([])
@@ -141,7 +138,7 @@ describe('ProgramsController (e2e)', () => {
             const student = await mongoTestHelper.createStudent()
             const token = jwtService.sign({ id: student._id, role: student.role })
             await request(app.getHttpServer())
-                .get('/api/programs/managers')
+                .get('/api/programs/enriched')
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.FORBIDDEN)
         })
@@ -151,7 +148,8 @@ describe('ProgramsController (e2e)', () => {
         it('should succeed', async () => {
             const student = await mongoTestHelper.createStudent()
             const token = jwtService.sign({ id: student._id, role: student.role })
-            const program = await mongoTestHelper.createProgram([])
+            const manager = await mongoTestHelper.createManager()
+            const program = await mongoTestHelper.createProgram([], manager._id)
 
             const response = await request(app.getHttpServer())
                 .get(`/api/programs/${program._id.toString()}`)
@@ -164,14 +162,14 @@ describe('ProgramsController (e2e)', () => {
         })
     })
 
-    describe('GET /api/programs/managers/:id', () => {
+    describe('GET /api/programs/enriched/:id', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
             const token = jwtService.sign({ id: manager._id, role: manager.role })
-            const program = await mongoTestHelper.createProgram([])
+            const program = await mongoTestHelper.createProgram([], manager._id)
 
             const response = await request(app.getHttpServer())
-                .get(`/api/programs/managers/${program._id.toString()}`)
+                .get(`/api/programs/enriched/${program._id.toString()}`)
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.OK)
             expect(response.body).toBeDefined()
@@ -183,27 +181,28 @@ describe('ProgramsController (e2e)', () => {
         it('should fail with 403 if called by a student', async () => {
             const student = await mongoTestHelper.createStudent()
             const token = jwtService.sign({ id: student._id, role: student.role })
-            const program = await mongoTestHelper.createProgram([])
+            const manager = await mongoTestHelper.createManager()
+            const program = await mongoTestHelper.createProgram([], manager._id)
 
             await request(app.getHttpServer())
-                .get(`/api/programs/managers/${program._id.toString()}`)
+                .get(`/api/programs/enriched/${program._id.toString()}`)
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.FORBIDDEN)
         })
     })
 
-    describe('PUT /api/programs/managers/:id', () => {
+    describe('PUT /api/programs/:id', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
             const token = jwtService.sign({ id: manager._id, role: manager.role })
-            const program = await mongoTestHelper.createProgram([])
+            const program = await mongoTestHelper.createProgram([], manager._id)
 
             const updateBody = {
                 state: ProgramState.published,
             }
 
             await request(app.getHttpServer())
-                .put(`/api/programs/managers/${program._id.toString()}`)
+                .put(`/api/programs/${program._id.toString()}`)
                 .set('Authorization', `Bearer ${token}`)
                 .send(updateBody)
                 .expect(HttpStatus.NO_CONTENT)
@@ -215,23 +214,24 @@ describe('ProgramsController (e2e)', () => {
         it('should fail with 403 if called by a student', async () => {
             const student = await mongoTestHelper.createStudent()
             const token = jwtService.sign({ id: student._id, role: student.role })
-            const program = await mongoTestHelper.createProgram([])
+            const manager = await mongoTestHelper.createManager()
+            const program = await mongoTestHelper.createProgram([], manager._id)
 
             await request(app.getHttpServer())
-                .put(`/api/programs/managers/${program._id.toString()}`)
+                .put(`/api/programs/${program._id.toString()}`)
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.FORBIDDEN)
         })
     })
 
-    describe('DELETE /api/programs/managers/:id', () => {
+    describe('DELETE /api/programs/:id', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
             const token = jwtService.sign({ id: manager._id, role: manager.role })
-            const program = await mongoTestHelper.createProgram([])
+            const program = await mongoTestHelper.createProgram([], manager._id)
 
             await request(app.getHttpServer())
-                .delete(`/api/programs/managers/${program._id.toString()}`)
+                .delete(`/api/programs/${program._id.toString()}`)
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.NO_CONTENT)
 
@@ -242,10 +242,119 @@ describe('ProgramsController (e2e)', () => {
         it('should fail with 403 if called by a student', async () => {
             const student = await mongoTestHelper.createStudent()
             const token = jwtService.sign({ id: student._id, role: student.role })
-            const program = await mongoTestHelper.createProgram([])
+            const manager = await mongoTestHelper.createManager()
+            const program = await mongoTestHelper.createProgram([], manager._id)
 
             await request(app.getHttpServer())
-                .delete(`/api/programs/managers/${program._id.toString()}`)
+                .delete(`/api/programs/${program._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.FORBIDDEN)
+        })
+    })
+
+    describe('POST /api/programs/:id/levels', () => {
+        it('should succeed', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+            const program = await mongoTestHelper.createProgram([], manager._id)
+
+            const body: CreateLevelDto = {
+                name: 'level name',
+                start: new Date(),
+                end: new Date(),
+            }
+
+            const response = await request(app.getHttpServer())
+                .post(`/api/programs/${program._id.toString()}/levels`)
+                .set('Authorization', `Bearer ${token}`)
+                .send(body)
+                .expect(HttpStatus.CREATED)
+
+            const { id } = response.body as CreatedDto
+            expect(id).toBeDefined()
+
+            const created = (await mongoTestHelper.getLevelModel().findOne()) as LevelDocument
+            expect(created).toBeDefined()
+            expect(created.start).toEqual(body.start)
+            expect(created.end).toEqual(body.end)
+
+            const updated = (await mongoTestHelper.getProgramModel().findOne()) as ProgramDocument
+            expect(updated).toBeDefined()
+            expect(updated.levels.length).toEqual(1)
+        })
+
+        it('should fail if called by a student', async () => {
+            const student = await mongoTestHelper.createStudent()
+            const token = jwtService.sign({ id: student._id, role: student.role })
+
+            await request(app.getHttpServer())
+                .post(`/api/programs/anyId/levels`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({})
+                .expect(HttpStatus.FORBIDDEN)
+        })
+    })
+
+    describe('GET /api/programs/:id/levels', () => {
+        it('should succeed', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+            const lesson = await mongoTestHelper.createLesson()
+            const task = await mongoTestHelper.createTask([lesson._id])
+            const level = await mongoTestHelper.createLevel([task._id])
+            const program = await mongoTestHelper.createProgram([level._id], manager._id)
+
+            const response = await request(app.getHttpServer())
+                .get(`/api/programs/${program._id.toString()}/levels`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.OK)
+
+            const [receivedLevel] = response.body as LevelDto[]
+            expect(receivedLevel).toBeDefined()
+            expect(receivedLevel.id).toEqual(level._id.toString())
+            expect(receivedLevel.start).toEqual(level.start.toISOString())
+            expect(receivedLevel.tasks[0]).toBeDefined()
+            expect(receivedLevel.tasks[0].id).toEqual(task._id.toString())
+            expect(receivedLevel.tasks[0].date).toEqual(task.date.toISOString())
+            expect(receivedLevel.tasks[0].lessons[0]).toBeDefined()
+            expect(receivedLevel.tasks[0].lessons[0].id).toEqual(lesson._id.toString())
+            expect(receivedLevel.tasks[0].lessons[0].url).toEqual(lesson.url)
+        })
+
+        it('should fail if called by a student', async () => {
+            const student = await mongoTestHelper.createStudent()
+            const token = jwtService.sign({ id: student._id, role: student.role })
+
+            await request(app.getHttpServer())
+                .get(`/api/programs/anyId/levels`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.FORBIDDEN)
+        })
+    })
+
+    describe('DELETE /api/programs/:programId/levels/:levelId', () => {
+        it('should succeed', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+            const level = await mongoTestHelper.createLevel([])
+            const program = await mongoTestHelper.createProgram([level._id], manager._id)
+
+            await request(app.getHttpServer())
+                .delete(`/api/programs/${program._id.toString()}/levels/${level._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.NO_CONTENT)
+
+            const updated = (await mongoTestHelper.getProgramModel().findOne()) as ProgramDocument
+            expect(updated).toBeDefined()
+            expect(updated.levels.length).toEqual(0)
+        })
+
+        it('should fail if called by a student', async () => {
+            const student = await mongoTestHelper.createStudent()
+            const token = jwtService.sign({ id: student._id, role: student.role })
+
+            await request(app.getHttpServer())
+                .delete(`/api/programs/anyId/levels/anyId`)
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.FORBIDDEN)
         })

@@ -25,7 +25,7 @@ import { TasksService } from './tasks.service'
 export class TasksController {
     constructor(private service: TasksService) {}
 
-    @ApiOperation({ summary: 'Creates a task', description: 'Creates a task.' })
+    @ApiOperation({ summary: 'Creates a task', description: 'Creates a task.', deprecated: true })
     @ApiResponse({ status: HttpStatus.CREATED, type: CreatedDto, description: 'Task successfully created.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })

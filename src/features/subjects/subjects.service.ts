@@ -1,37 +1,27 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
-import { SharedDocumentsService } from '../../shared/documents-validator/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { HandleBsonErrors } from '../../shared/errors/error-handler'
 import { ObjectId } from '../../shared/repository/types'
 import { TokenUser } from '../authentication/types/token-user'
-import { ManagersService } from '../managers/managers.service'
+import { CreateLessonDto, LessonDto } from '../lessons/dto/lesson.dto'
+import { LessonsService } from '../lessons/lessons.service'
+import { LessonDocument } from '../lessons/schemas/lesson.schema'
 import { CreateSubjectDto, SubjectDto } from './dto/subject.dto'
+import { SubjectDocument } from './schemas/subject.schema'
 import { SubjectsRepository } from './subjects.repository'
 
 @Injectable()
 export class SubjectsService {
     constructor(
         private readonly subjectsRepository: SubjectsRepository,
-        private readonly managersService: ManagersService,
-        private readonly documentsService: SharedDocumentsService
+        private readonly lessonsService: LessonsService
     ) {}
 
     @HandleBsonErrors()
-    async create(subject: CreateSubjectDto, manager: TokenUser): Promise<CreatedDto> {
-        const document = CreateSubjectDto.toDocument(subject, manager.id)
-        const created = await this.subjectsRepository.create(document)
-        await this.managersService.addSubject(manager.id, created)
+    async create(subject: CreateSubjectDto, createdBy: ObjectId): Promise<CreatedDto> {
+        const createDocument = { ...subject, createdBy }
+        const created = await this.subjectsRepository.create(createDocument)
         return { id: created._id.toString() }
-    }
-
-    async addLessonToSubject(subjectId: string, lessonId: string): Promise<void> {
-        const lesson = await this.documentsService.getLesson(lessonId)
-        const subject = await this.documentsService.getSubject(subjectId)
-        if (!subject || !lesson) {
-            throw new NotFoundException('Subject or Lesson not found.')
-        }
-        ;(subject.lessons as ObjectId[]).push(lesson._id)
-        await subject.save()
     }
 
     @HandleBsonErrors()
@@ -47,10 +37,48 @@ export class SubjectsService {
 
     @HandleBsonErrors()
     async findOne(id: string): Promise<SubjectDto> {
-        const result = await this.subjectsRepository.findOne({ _id: new ObjectId(id) })
-        if (!result) {
-            throw new NotFoundException('Subject not found with the given Id')
+        const subject = await this.loadSubject(id)
+        await subject.populate(['lessons', { path: 'createdBy', select: 'name email' }])
+        return SubjectDto.fromDocument(subject)
+    }
+
+    @HandleBsonErrors()
+    async createLesson(subjectId: string, dto: CreateLessonDto): Promise<CreatedDto> {
+        const subject = await this.loadSubject(subjectId)
+        const created = await this.lessonsService.create(dto)
+        ;(subject.lessons as ObjectId[]).push(new ObjectId(created.id))
+        await subject.save()
+        return created
+    }
+
+    async getLessons(id: string): Promise<LessonDto[]> {
+        const subject = await this.loadSubject(id)
+        await subject.populate('lessons')
+        return LessonDto.fromDocuments(subject.lessons as LessonDocument[])
+    }
+
+    @HandleBsonErrors()
+    async removeLesson(subjectId: string, lessonId: string): Promise<void> {
+        const subject = await this.loadSubject(subjectId)
+        const lessonIndex = subject.lessons.findIndex(id => id._id.toString() === lessonId)
+        if (lessonIndex === -1) {
+            throw new NotFoundException('Lesson not found.')
         }
-        return SubjectDto.fromDocument(result)
+        ;(subject.lessons as ObjectId[]).splice(lessonIndex, 1)
+        await this.lessonsService.remove(lessonId)
+        await subject.save()
+    }
+
+    @HandleBsonErrors()
+    async loadSubject(id: string): Promise<SubjectDocument> {
+        const subject = await this.subjectsRepository.findById(new ObjectId(id))
+        if (!subject) {
+            throw new NotFoundException('Subject not found.')
+        }
+        return subject
+    }
+
+    async remove(subjectId: string): Promise<void> {
+        await this.subjectsRepository.remove({ _id: new ObjectId(subjectId) })
     }
 }

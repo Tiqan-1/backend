@@ -65,7 +65,7 @@ export class StudentsService {
     @HandleBsonErrors()
     async removeSubscription(subscriptionId: string, studentId: ObjectId): Promise<void> {
         const student = await this.loadStudent(studentId)
-        const indexOfSubscription = (student.subscriptions as ObjectId[]).findIndex(id => id.toString() === subscriptionId)
+        const indexOfSubscription = student.subscriptions.findIndex(id => id._id.toString() === subscriptionId)
         if (indexOfSubscription === -1) {
             throw new NotFoundException('Student does not have subscription with the given id.')
         }
