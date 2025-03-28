@@ -6,7 +6,7 @@ import { TokenUser } from '../authentication/types/token-user'
 import { CreateLessonDto, LessonDto } from '../lessons/dto/lesson.dto'
 import { LessonsService } from '../lessons/lessons.service'
 import { LessonDocument } from '../lessons/schemas/lesson.schema'
-import { CreateSubjectDto, SubjectDto } from './dto/subject.dto'
+import { CreateSubjectDto, SubjectDto, UpdateSubjectDto } from './dto/subject.dto'
 import { SubjectDocument } from './schemas/subject.schema'
 import { SubjectsRepository } from './subjects.repository'
 
@@ -78,7 +78,16 @@ export class SubjectsService {
         return subject
     }
 
+    @HandleBsonErrors()
     async remove(subjectId: string): Promise<void> {
         await this.subjectsRepository.remove({ _id: new ObjectId(subjectId) })
+    }
+
+    @HandleBsonErrors()
+    async update(id: string, dto: UpdateSubjectDto): Promise<void> {
+        const updated = await this.subjectsRepository.update({ _id: new ObjectId(id) }, dto)
+        if (!updated) {
+            throw new NotFoundException('Task not found.')
+        }
     }
 }

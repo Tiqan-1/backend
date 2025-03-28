@@ -1,4 +1,4 @@
-import { ApiProperty, OmitType } from '@nestjs/swagger'
+import { ApiProperty, OmitType, PartialType } from '@nestjs/swagger'
 import { IsOptional, IsString, ValidateNested } from 'class-validator'
 import { arePopulated } from '../../../shared/helper/populated-type.helper'
 import { WrapperType } from '../../../shared/types/shared-types'
@@ -47,3 +47,5 @@ export class SubjectDto {
 }
 
 export class CreateSubjectDto extends OmitType(SubjectDto, ['id', 'lessons', 'createdBy'] as const) {}
+
+export class UpdateSubjectDto extends PartialType(CreateSubjectDto) {}

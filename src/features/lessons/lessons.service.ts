@@ -30,7 +30,7 @@ export class LessonsService {
 
     @HandleBsonErrors()
     async update(id: string, lesson: UpdateLessonDto): Promise<void> {
-        const updated = await this.repository.update({ _id: new ObjectId(id) }, { lesson })
+        const updated = await this.repository.update({ _id: new ObjectId(id) }, lesson)
         if (!updated) {
             throw new NotFoundException('Task not found.')
         }

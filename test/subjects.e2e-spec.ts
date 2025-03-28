@@ -11,7 +11,7 @@ import { LessonType } from '../src/features/lessons/enums/lesson-type.enum'
 import { LessonsRepository } from '../src/features/lessons/lessons.repository'
 import { LessonsService } from '../src/features/lessons/lessons.service'
 import { LessonDocument } from '../src/features/lessons/schemas/lesson.schema'
-import { CreateSubjectDto, SubjectDto } from '../src/features/subjects/dto/subject.dto'
+import { CreateSubjectDto, SubjectDto, UpdateSubjectDto } from '../src/features/subjects/dto/subject.dto'
 import { SubjectDocument } from '../src/features/subjects/schemas/subject.schema'
 import { SubjectsController } from '../src/features/subjects/subjects.controller'
 import { SubjectsRepository } from '../src/features/subjects/subjects.repository'
@@ -210,6 +210,41 @@ describe('SubjectsController (e2e)', () => {
             await request(app.getHttpServer())
                 .get(`/api/subjects/${subject._id.toString()}`)
                 .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.FORBIDDEN)
+        })
+    })
+
+    describe('PUT /api/subjects/:id', () => {
+        it('should succeed', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+            const subject = await mongoTestHelper.createSubject([], manager._id)
+
+            const body: UpdateSubjectDto = {
+                name: 'new subject',
+                description: 'new description',
+            }
+
+            await request(app.getHttpServer())
+                .put(`/api/subjects/${subject.id}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send(body)
+                .expect(HttpStatus.NO_CONTENT)
+
+            const document = (await mongoTestHelper.getSubjectModel().findOne()) as SubjectDocument
+            expect(document._id.toString()).toEqual(subject._id.toString())
+            expect(document.name).toEqual(body.name)
+            expect(document.description).toEqual(body.description)
+        })
+
+        it('should fail with 403 if called by a student', async () => {
+            const student = await mongoTestHelper.createStudent()
+            const token = jwtService.sign({ id: student._id, role: Role.Student })
+
+            await request(app.getHttpServer())
+                .put('/api/subjects/anyId')
+                .set('Authorization', `Bearer ${token}`)
+                .send({})
                 .expect(HttpStatus.FORBIDDEN)
         })
     })

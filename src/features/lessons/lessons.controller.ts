@@ -1,4 +1,4 @@
-import { Body, Controller, HttpStatus, Param, Post, Put, UseGuards } from '@nestjs/common'
+import { Body, Controller, HttpCode, HttpStatus, Param, Post, Put, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger'
 import { Roles } from '../authentication/decorators/roles.decorator'
 import { Role } from '../authentication/enums/role.enum'
@@ -30,7 +30,7 @@ export class LessonsController {
     }
 
     @ApiOperation({ summary: 'Updates a lesson', description: 'Updates a lesson.' })
-    @ApiResponse({ status: HttpStatus.NO_CONTENT, type: LessonDto, description: 'Lesson successfully updated.' })
+    @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Lesson successfully updated.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
     @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
@@ -38,6 +38,7 @@ export class LessonsController {
     @Put(':id')
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
+    @HttpCode(HttpStatus.NO_CONTENT)
     update(@Param('id') id: string, @Body() lesson: UpdateLessonDto): Promise<void> {
         return this.service.update(id, lesson)
     }
