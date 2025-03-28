@@ -4,8 +4,9 @@ import { JwtModule, JwtService } from '@nestjs/jwt'
 import { getModelToken } from '@nestjs/mongoose'
 import { Test, TestingModule } from '@nestjs/testing'
 import { Model } from 'mongoose'
-import * as request from 'supertest'
+import request from 'supertest'
 import { App } from 'supertest/types'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { Role } from '../src/features/authentication/enums/role.enum'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
 import { CreateLessonDto, LessonDto } from '../src/features/lessons/dto/lesson.dto'
@@ -16,7 +17,7 @@ import { LessonsService } from '../src/features/lessons/lessons.service'
 import { Lesson } from '../src/features/lessons/schemas/lesson.schema'
 import { MongoTestHelper } from '../src/shared/test/helper/mongo-test.helper'
 
-const configService = { get: jest.fn().mockReturnValue('secret') }
+const configService = { get: vi.fn().mockReturnValue('secret') }
 
 describe('LessonsController (e2e)', () => {
     let app: INestApplication<App>

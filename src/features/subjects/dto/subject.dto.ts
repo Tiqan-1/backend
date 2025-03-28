@@ -1,6 +1,7 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { IsOptional, IsString, ValidateNested } from 'class-validator'
 import { arePopulated } from '../../../shared/helper/populated-type.helper'
+import { WrapperType } from '../../../shared/types/shared-types'
 import { LessonDto } from '../../lessons/dto/lesson.dto'
 import { SimpleManagerDto } from '../../managers/dto/manager.dto'
 import { ManagerDocument } from '../../managers/schemas/manager.schema'
@@ -17,7 +18,7 @@ export class SubjectDto {
 
     @ApiProperty({ type: () => SimpleManagerDto, required: true })
     @ValidateNested()
-    createdBy: SimpleManagerDto
+    createdBy: WrapperType<SimpleManagerDto>
 
     @ApiProperty({ type: String, required: false, example: 'الفقه على المذهب الشافعي' })
     @IsString()

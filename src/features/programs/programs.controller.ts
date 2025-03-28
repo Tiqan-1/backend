@@ -129,7 +129,7 @@ export class ProgramsController {
         return this.programsService.update(id, updateProgramDto)
     }
 
-    @ApiOperation({ summary: 'Deletes a program', description: 'Deletes a program.' })
+    @ApiOperation({ summary: 'Deletes a program', description: 'Deletes a program.', deprecated: true })
     @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Program successfully deleted.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Program not found.' })

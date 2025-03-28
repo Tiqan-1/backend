@@ -25,7 +25,7 @@ export class ManagerDto {
     @IsEmail()
     email: string
 
-    @ApiProperty({ type: ProgramDto, isArray: true, description: 'active programs created by manager' })
+    @ApiProperty({ type: () => ProgramDto, isArray: true, description: 'active programs created by manager' })
     @ValidateNested({ each: true })
     programs: ProgramDto[]
 

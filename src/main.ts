@@ -1,10 +1,11 @@
 import { ValidationPipe } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
+import { FastifyAdapter } from '@nestjs/platform-fastify'
+import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger'
 import { AppModule } from './app.module'
 
 async function bootstrap(): Promise<void> {
-    const app = await NestFactory.create(AppModule)
+    const app = await NestFactory.create(AppModule, new FastifyAdapter({ logger: true }))
 
     app.useGlobalPipes(new ValidationPipe())
 
@@ -15,7 +16,7 @@ async function bootstrap(): Promise<void> {
         .addBearerAuth()
         .build()
 
-    const documentFactory = () => SwaggerModule.createDocument(app, config)
+    const documentFactory = (): OpenAPIObject => SwaggerModule.createDocument(app, config)
     SwaggerModule.setup('api', app, documentFactory)
 
     await app.listen(process.env.PORT ?? 3000)

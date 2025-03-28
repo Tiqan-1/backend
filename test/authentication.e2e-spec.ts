@@ -3,8 +3,9 @@ import { JwtService } from '@nestjs/jwt'
 import { getModelToken } from '@nestjs/mongoose'
 import { Test, TestingModule } from '@nestjs/testing'
 import { Model } from 'mongoose'
-import * as request from 'supertest'
+import request from 'supertest'
 import { App } from 'supertest/types'
+import { afterAll, afterEach, beforeAll, describe, it, vi } from 'vitest'
 import { AuthenticationController } from '../src/features/authentication/authentication.controller'
 import { AuthenticationService } from '../src/features/authentication/authentication.service'
 import { RefreshTokenRequestDto } from '../src/features/authentication/dto/refresh-token-request.dto'
@@ -19,7 +20,7 @@ import { UsersService } from '../src/features/users/users.service'
 import { MongoTestHelper } from '../src/shared/test/helper/mongo-test.helper'
 
 const jwtService = {
-    sign: jest.fn(),
+    sign: vi.fn(),
 }
 
 describe('AuthenticationController (e2e)', () => {
