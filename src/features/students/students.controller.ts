@@ -4,6 +4,7 @@ import { CreatedDto } from '../../shared/dto/created.dto'
 import { AuthenticationResponseDto } from '../authentication/dto/authentication-response.dto'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { TokenUser } from '../authentication/types/token-user'
+import { StudentProgramDto } from '../programs/dto/program.dto'
 import { CreateSubscriptionDto, StudentSubscriptionDto } from '../subscriptions/dto/subscription.dto'
 import { SignUpStudentDto } from './dto/student.dto'
 import { StudentsService } from './students.service'
@@ -88,5 +89,22 @@ export class StudentsController {
     @ApiBearerAuth()
     removeSubscription(@Param('id') subscriptionId: string, @Request() request: { user: TokenUser }): Promise<void> {
         return this.service.removeSubscription(subscriptionId, request.user.id)
+    }
+
+    @ApiOperation({ summary: 'Gets open programs', description: 'Gets programs that are currently open for registration.' })
+    @ApiResponse({
+        status: HttpStatus.OK,
+        type: StudentProgramDto,
+        isArray: true,
+        description: 'Got programs successfully.',
+    })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
+    @Get('open-programs')
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    getOpenPrograms(): Promise<StudentProgramDto[]> {
+        return this.service.getOpenPrograms()
     }
 }

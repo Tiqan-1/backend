@@ -33,7 +33,11 @@ export class ProgramsController {
         return this.programsService.create(createProgramDto, request.user.id)
     }
 
-    @ApiOperation({ summary: 'Finds all programs.', description: 'Finds all programs.' })
+    @ApiOperation({
+        summary: 'Finds all programs.',
+        description: 'Deprecated: Use GET api/students/open-programs instead',
+        deprecated: true,
+    })
     @ApiQuery({
         name: 'limit',
         type: Number,
@@ -87,7 +91,7 @@ export class ProgramsController {
         return this.programsService.findAllForManagers(limit, skip)
     }
 
-    @ApiOperation({ summary: 'Finds program by id.', description: 'Finds program by id.' })
+    @ApiOperation({ summary: 'Finds program by id.', description: 'Finds program by id.', deprecated: true })
     @ApiResponse({ status: HttpStatus.OK, type: StudentProgramDto, description: 'Got program successfully.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Program not found.' })

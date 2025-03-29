@@ -29,7 +29,8 @@ export class ProgramsService {
 
     @HandleBsonErrors()
     async findAllForStudents(limit?: number, skip?: number): Promise<StudentProgramDto[]> {
-        const filter = { state: { $in: [ProgramState.published] } }
+        const now = new Date()
+        const filter = { state: 'published', registrationStart: { $lt: now }, registrationEnd: { $gt: now } }
         const foundPrograms = await this.programsRepository.find(filter, limit, skip)
         if (!foundPrograms) {
             return []

@@ -7,6 +7,12 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { AuthenticationService } from '../src/features/authentication/authentication.service'
 import { AuthenticationResponseDto } from '../src/features/authentication/dto/authentication-response.dto'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
+import { LevelsRepository } from '../src/features/levels/levels.repository'
+import { LevelsService } from '../src/features/levels/levels.service'
+import { StudentProgramDto } from '../src/features/programs/dto/program.dto'
+import { ProgramState } from '../src/features/programs/enums/program-state.enum'
+import { ProgramsRepository } from '../src/features/programs/programs.repository'
+import { ProgramsService } from '../src/features/programs/programs.service'
 import { SignUpStudentDto } from '../src/features/students/dto/student.dto'
 import { Gender } from '../src/features/students/enums/gender'
 import { StudentDocument } from '../src/features/students/schemas/student.schema'
@@ -18,6 +24,8 @@ import { State } from '../src/features/subscriptions/enums/state.enum'
 import { SubscriptionDocument } from '../src/features/subscriptions/schemas/subscription.schema'
 import { SubscriptionsRepository } from '../src/features/subscriptions/subscriptions.repository'
 import { SubscriptionsService } from '../src/features/subscriptions/subscriptions.service'
+import { TasksRepository } from '../src/features/tasks/tasks.repository'
+import { TasksService } from '../src/features/tasks/tasks.service'
 import { TokensRepository } from '../src/features/tokens/tokens.repository'
 import { TokensService } from '../src/features/tokens/tokens.service'
 import { UsersRepository } from '../src/features/users/users.repository'
@@ -47,6 +55,12 @@ describe('StudentsController (e2e)', () => {
                 StudentRepository,
                 SubscriptionsService,
                 SubscriptionsRepository,
+                ProgramsService,
+                ProgramsRepository,
+                LevelsService,
+                LevelsRepository,
+                TasksService,
+                TasksRepository,
                 ConfigServiceProvider,
                 AuthenticationService,
                 UsersService,
@@ -202,6 +216,44 @@ describe('StudentsController (e2e)', () => {
 
             const { subscriptions } = (await mongoTestHelper.getStudentModel().findOne()) as StudentDocument
             expect(subscriptions).toEqual([])
+        })
+    })
+
+    describe('GET /api/students/open-programs', () => {
+        it('should succeed', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const lesson = await mongoTestHelper.createLesson()
+            const task = await mongoTestHelper.createTask([lesson._id])
+            const level = await mongoTestHelper.createLevel([task._id])
+            const program = await mongoTestHelper.createProgram([level._id], manager._id)
+            const now = new Date()
+            const yesterday = new Date(now)
+            yesterday.setDate(now.getDate() - 1)
+            const tomorrow = new Date(now)
+            tomorrow.setDate(now.getDate() + 1)
+            program.registrationStart = yesterday
+            program.registrationEnd = tomorrow
+            program.state = ProgramState.published
+            await program.save()
+
+            const student = await mongoTestHelper.createStudent([])
+            const token = jwtService.sign({ id: student._id, role: student.role })
+
+            // unpublished program: should not be returned
+            await mongoTestHelper.createProgram([], manager._id)
+
+            const response = await request(app.getHttpServer())
+                .get('/api/students/open-programs')
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.OK)
+
+            expect(response.body).toBeDefined()
+            const programs = response.body as StudentProgramDto[]
+            expect(programs.length).toEqual(1)
+            expect(programs[0].id).toEqual(program._id.toString())
+            expect(programs[0].levels[0].name).toEqual(level.name)
+            expect(programs[0].levels[0].tasks[0].date).toEqual(task.date.toISOString())
+            expect(programs[0].levels[0].tasks[0].lessons[0].url).toEqual(lesson.url)
         })
     })
 })

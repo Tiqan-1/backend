@@ -6,6 +6,8 @@ import { ObjectId } from '../../shared/repository/types'
 import { AuthenticationService } from '../authentication/authentication.service'
 import { AuthenticationResponseDto } from '../authentication/dto/authentication-response.dto'
 import { Role } from '../authentication/enums/role.enum'
+import { StudentProgramDto } from '../programs/dto/program.dto'
+import { ProgramsService } from '../programs/programs.service'
 import { CreateSubscriptionDto, StudentSubscriptionDto } from '../subscriptions/dto/subscription.dto'
 import { State } from '../subscriptions/enums/state.enum'
 import { SubscriptionsService } from '../subscriptions/subscriptions.service'
@@ -18,7 +20,8 @@ export class StudentsService {
     constructor(
         private readonly studentRepository: StudentRepository,
         private readonly authenticationService: AuthenticationService,
-        private readonly subscriptionsService: SubscriptionsService
+        private readonly subscriptionsService: SubscriptionsService,
+        private readonly programsService: ProgramsService
     ) {}
 
     async create(student: SignUpStudentDto): Promise<AuthenticationResponseDto> {
@@ -80,5 +83,9 @@ export class StudentsService {
             throw new InternalServerErrorException('Student not found.')
         }
         return student
+    }
+
+    getOpenPrograms(): Promise<StudentProgramDto[]> {
+        return this.programsService.findAllForStudents()
     }
 }
