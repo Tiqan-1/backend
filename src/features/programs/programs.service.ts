@@ -7,7 +7,6 @@ import { CreateLevelDto, LevelDto } from '../levels/dto/level.dto'
 import { LevelsService } from '../levels/levels.service'
 import { LevelDocument } from '../levels/schemas/level.schema'
 import { CreateProgramDto, ProgramDto, StudentProgramDto, UpdateProgramDto } from './dto/program.dto'
-import { ProgramState } from './enums/program-state.enum'
 import { ProgramsRepository } from './programs.repository'
 import { ProgramDocument } from './schemas/program.schema'
 
