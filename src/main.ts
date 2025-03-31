@@ -7,6 +7,11 @@ import { AppModule } from './app.module'
 async function bootstrap(): Promise<void> {
     const app = await NestFactory.create(AppModule, new FastifyAdapter({ logger: true }))
 
+    app.enableCors({
+        origin: '*',
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+        credentials: true,
+    })
     app.useGlobalPipes(new ValidationPipe())
 
     const config = new DocumentBuilder()
