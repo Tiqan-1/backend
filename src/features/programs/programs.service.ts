@@ -18,7 +18,7 @@ export class ProgramsService {
         private readonly documentsService: SharedDocumentsService
     ) {}
 
-    async create(createProgramDto: CreateProgramDto, createdBy: ObjectId): Promise<CreatedDto> {
+    async create(createProgramDto: CreateProgramDto, createdBy: ObjectId, programPicture?: File): Promise<CreatedDto> {
         const levels = (await this.documentsService.getLevels(createProgramDto.levelIds))?.map(level => level._id)
         const document = CreateProgramDto.toDocument(createProgramDto, createdBy)
         const createObject = levels ? { ...document, levels } : { ...document }

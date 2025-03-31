@@ -1,6 +1,21 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Request, UseGuards } from '@nestjs/common'
-import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger'
+import { FileInterceptor } from '@nest-lab/fastify-multer'
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    HttpCode,
+    HttpStatus,
+    Param,
+    Post,
+    Request,
+    UploadedFile,
+    UseGuards,
+    UseInterceptors,
+} from '@nestjs/common'
+import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiResponse } from '@nestjs/swagger'
 import { CreatedDto } from '../../shared/dto/created.dto'
+import { PhotoFilePipe } from '../../shared/pipes/photo.file.pipe'
 import { Roles } from '../authentication/decorators/roles.decorator'
 import { AuthenticationResponseDto } from '../authentication/dto/authentication-response.dto'
 import { Role } from '../authentication/enums/role.enum'
@@ -74,12 +89,20 @@ export class ManagersController {
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
     @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
     @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.' })
+    @ApiResponse({ status: HttpStatus.UNPROCESSABLE_ENTITY, description: 'Program photo validation failed.' })
+    @ApiConsumes('multipart/form-data')
     @Post('programs')
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiBearerAuth()
-    createProgram(@Body() createProgramDto: CreateProgramDto, @Request() request: { user: TokenUser }): Promise<CreatedDto> {
-        return this.managersService.createProgram(request.user.id, createProgramDto)
+    @UseInterceptors(FileInterceptor('programPicture'))
+    createProgram(
+        @Body() createProgramDto: CreateProgramDto,
+        @Request() request: { user: TokenUser },
+        @UploadedFile(new PhotoFilePipe())
+        programPicture?: File
+    ): Promise<CreatedDto> {
+        return this.managersService.createProgram(request.user.id, createProgramDto, programPicture)
     }
 
     @ApiOperation({ summary: 'Gets programs of the manager', description: `Gets programs of the manager.` })

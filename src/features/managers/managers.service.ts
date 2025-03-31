@@ -65,9 +65,9 @@ export class ManagersService {
         await manager.save()
     }
 
-    async createProgram(id: ObjectId, createProgramDto: CreateProgramDto): Promise<CreatedDto> {
+    async createProgram(id: ObjectId, createProgramDto: CreateProgramDto, programPicture?: File): Promise<CreatedDto> {
         const manager = await this.loadManager(id)
-        const created = await this.programsService.create(createProgramDto, id)
+        const created = await this.programsService.create(createProgramDto, id, programPicture)
         ;(manager.programs as ObjectId[]).push(new ObjectId(created.id))
         await manager.save()
         return created
