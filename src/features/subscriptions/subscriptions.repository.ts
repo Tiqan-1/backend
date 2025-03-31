@@ -23,11 +23,13 @@ export class SubscriptionsRepository extends RepositoryMongoBase<SubscriptionDoc
         return found
     }
 
-    findManyByIdsPopulated(ids: ObjectId[]): Promise<SubscriptionDocument[]> {
+    findManyByIdsPopulated(ids: ObjectId[], limit = 20, skip = 0): Promise<SubscriptionDocument[]> {
         return this.model
             .find({ _id: { $in: ids } })
             .populate('program')
             .populate({ path: 'level', populate: { path: 'tasks', populate: { path: 'lessons' } } })
+            .limit(limit)
+            .skip(skip)
             .exec()
     }
 }

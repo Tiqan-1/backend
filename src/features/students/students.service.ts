@@ -60,9 +60,9 @@ export class StudentsService {
         await this.subscriptionsService.update(subscriptionId, { state: State.suspended })
     }
 
-    async getSubscriptions(studentId: ObjectId): Promise<StudentSubscriptionDto[]> {
+    async getSubscriptions(studentId: ObjectId, limit?: number, skip?: number): Promise<StudentSubscriptionDto[]> {
         const student = await this.loadStudent(studentId)
-        return this.subscriptionsService.getManyForStudent(student.subscriptions as ObjectId[])
+        return this.subscriptionsService.getManyForStudent(student.subscriptions as ObjectId[], limit, skip)
     }
 
     @HandleBsonErrors()
@@ -85,7 +85,7 @@ export class StudentsService {
         return student
     }
 
-    getOpenPrograms(): Promise<StudentProgramDto[]> {
-        return this.programsService.findAllForStudents()
+    getOpenPrograms(limit?: number, skip?: number): Promise<StudentProgramDto[]> {
+        return this.programsService.findAllForStudents(limit, skip)
     }
 }

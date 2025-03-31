@@ -46,8 +46,8 @@ export class SubscriptionsService {
         }
     }
 
-    async getManyForStudent(subscriptionIds: ObjectId[]): Promise<StudentSubscriptionDto[]> {
-        const subscriptions: SubscriptionDocument[] = await this.repository.findManyByIdsPopulated(subscriptionIds)
+    async getManyForStudent(subscriptionIds: ObjectId[], limit?: number, skip?: number): Promise<StudentSubscriptionDto[]> {
+        const subscriptions: SubscriptionDocument[] = await this.repository.findManyByIdsPopulated(subscriptionIds, limit, skip)
         return StudentSubscriptionDto.fromDocuments(subscriptions)
     }
 }
