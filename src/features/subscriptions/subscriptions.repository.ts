@@ -16,6 +16,7 @@ export class SubscriptionsRepository extends RepositoryMongoBase<SubscriptionDoc
             .findById(id)
             .populate('program')
             .populate({ path: 'level', populate: { path: 'tasks', populate: { path: 'lessons' } } })
+            .populate({ path: 'subscriber', select: 'name email' })
             .exec()
         if (!found) {
             return undefined
@@ -23,7 +24,7 @@ export class SubscriptionsRepository extends RepositoryMongoBase<SubscriptionDoc
         return found
     }
 
-    findManyByIdsPopulated(ids: ObjectId[], limit = 20, skip = 0): Promise<SubscriptionDocument[]> {
+    findManyByIdsPopulated(ids: ObjectId[], limit = 10, skip = 0): Promise<SubscriptionDocument[]> {
         return this.model
             .find({ _id: { $in: ids } })
             .populate('program')

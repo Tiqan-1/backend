@@ -27,7 +27,7 @@ export class LevelsService {
         if (!found) {
             throw new NotFoundException('Level Not Found')
         }
-        await found.populate({ path: 'tasks', perDocumentLimit: 20, populate: { path: 'lessons', perDocumentLimit: 20 } })
+        await found.populate({ path: 'tasks', perDocumentLimit: 10, populate: { path: 'lessons', perDocumentLimit: 20 } })
         return LevelDto.fromDocument(found)
     }
 
@@ -58,7 +58,7 @@ export class LevelsService {
 
     async getTasks(id: string): Promise<TaskDto[]> {
         const level = await this.loadLevel(id)
-        await level.populate({ path: 'tasks', populate: { path: 'lessons', perDocumentLimit: 20 } })
+        await level.populate({ path: 'tasks', populate: { path: 'lessons', perDocumentLimit: 10 } })
         return TaskDto.fromDocuments(level.tasks as TaskDocument[])
     }
 

@@ -42,7 +42,7 @@ export class StudentsService {
     @HandleBsonErrors()
     async createSubscription(createSubscriptionDto: CreateSubscriptionDto, studentId: ObjectId): Promise<CreatedDto> {
         const student = await this.loadStudent(studentId)
-        const created = await this.subscriptionsService.create(createSubscriptionDto)
+        const created = await this.subscriptionsService.create(createSubscriptionDto, student._id)
         ;(student.subscriptions as ObjectId[]).push(new ObjectId(created.id))
         await student.save()
 

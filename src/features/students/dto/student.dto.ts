@@ -3,7 +3,7 @@ import { IsEmail, IsEnum, IsString, IsStrongPassword, ValidateNested } from 'cla
 import { arePopulated } from '../../../shared/helper/populated-type.helper'
 import { SubscriptionDto } from '../../subscriptions/dto/subscription.dto'
 import { Gender } from '../enums/gender'
-import { Student } from '../schemas/student.schema'
+import { Student, StudentDocument } from '../schemas/student.schema'
 
 export class StudentDto {
     constructor(student: Student) {
@@ -25,9 +25,18 @@ export class StudentDto {
     @IsEnum(Gender)
     gender: Gender
 
-    @ApiProperty({ type: SubscriptionDto, isArray: true, description: 'subscriptions for student' })
+    @ApiProperty({ type: () => SubscriptionDto, isArray: true, description: 'subscriptions for student' })
     @ValidateNested({ each: true })
     subscriptions: SubscriptionDto[]
+}
+
+export class SimpleStudentDto extends OmitType(StudentDto, ['subscriptions', 'gender']) {
+    static fromDocument(subscriber: StudentDocument): SimpleStudentDto {
+        return {
+            name: subscriber.name,
+            email: subscriber.email,
+        }
+    }
 }
 
 export class SignUpStudentDto extends OmitType(StudentDto, ['subscriptions']) {

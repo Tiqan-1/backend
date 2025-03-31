@@ -15,10 +15,10 @@ export class SubscriptionsService {
         private readonly sharedDocumentsService: SharedDocumentsService
     ) {}
 
-    async create(createSubscriptionDto: CreateSubscriptionDto): Promise<CreatedDto> {
+    async create(createSubscriptionDto: CreateSubscriptionDto, subscriber: ObjectId): Promise<CreatedDto> {
         const program = (await this.sharedDocumentsService.getProgram(createSubscriptionDto.programId)) as ProgramDocument
         const level = (await this.sharedDocumentsService.getLevel(createSubscriptionDto.levelId)) as LevelDocument
-        const createdObject = await this.repository.create({ program: program._id, level: level._id })
+        const createdObject = await this.repository.create({ program: program._id, level: level._id, subscriber })
         return { id: createdObject._id.toString() }
     }
 

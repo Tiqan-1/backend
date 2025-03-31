@@ -150,8 +150,10 @@ describe('StudentsController (e2e)', () => {
             const task = await mongoTestHelper.createTask([lesson._id])
             const level = await mongoTestHelper.createLevel([task._id])
             const program = await mongoTestHelper.createProgram([level._id], manager._id)
-            const subscription = await mongoTestHelper.createSubscription(program._id, level._id)
-            const student = await mongoTestHelper.createStudent([subscription._id])
+            const student = await mongoTestHelper.createStudent([])
+            const subscription = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
+            student.subscriptions = [subscription._id]
+            await student.save()
             const token = jwtService.sign({ id: student._id, role: student.role })
 
             const response = await request(app.getHttpServer())
@@ -183,8 +185,10 @@ describe('StudentsController (e2e)', () => {
             const manager = await mongoTestHelper.createManager()
             const level = await mongoTestHelper.createLevel([])
             const program = await mongoTestHelper.createProgram([], manager._id)
-            const subscription = await mongoTestHelper.createSubscription(program._id, level._id)
-            const student = await mongoTestHelper.createStudent([subscription._id])
+            const student = await mongoTestHelper.createStudent([])
+            const subscription = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
+            student.subscriptions = [subscription._id]
+            await student.save()
             const token = jwtService.sign({ id: student._id, role: student.role })
 
             await request(app.getHttpServer())
@@ -202,8 +206,10 @@ describe('StudentsController (e2e)', () => {
             const manager = await mongoTestHelper.createManager()
             const level = await mongoTestHelper.createLevel([])
             const program = await mongoTestHelper.createProgram([], manager._id)
-            const subscription = await mongoTestHelper.createSubscription(program._id, level._id)
-            const student = await mongoTestHelper.createStudent([subscription._id])
+            const student = await mongoTestHelper.createStudent([])
+            const subscription = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
+            student.subscriptions = [subscription._id]
+            await student.save()
             const token = jwtService.sign({ id: student._id, role: student.role })
 
             await request(app.getHttpServer())

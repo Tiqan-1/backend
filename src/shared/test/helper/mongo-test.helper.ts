@@ -237,10 +237,11 @@ export class MongoTestHelper {
         return model.create(level)
     }
 
-    async createSubscription(programId: ObjectId, levelId: ObjectId): Promise<SubscriptionDocument> {
+    async createSubscription(programId: ObjectId, levelId: ObjectId, subscriber: ObjectId): Promise<SubscriptionDocument> {
         const subscription: Subscription = {
             program: programId,
             level: levelId,
+            subscriber,
             subscriptionDate: new Date(),
             state: State.active,
         }
