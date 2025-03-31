@@ -8,7 +8,7 @@ async function bootstrap(): Promise<void> {
     const app = await NestFactory.create(AppModule, new FastifyAdapter({ logger: true }))
 
     app.enableCors({
-        origin: '*',
+        origin: 'https://mubadarat.yaseen.dev',
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
         credentials: true,
     })
