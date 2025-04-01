@@ -3,11 +3,18 @@ import { NestFactory } from '@nestjs/core'
 import { FastifyAdapter } from '@nestjs/platform-fastify'
 import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger'
 import { AppModule } from './app.module'
+import { MongoDbExceptionFilter } from './shared/errors/mongo-db-exception.filter'
 
 async function bootstrap(): Promise<void> {
     const app = await NestFactory.create(AppModule, new FastifyAdapter({ logger: true }))
 
+    app.enableCors({
+        origin: 'https://mubadarat.yaseen.dev',
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+        credentials: true,
+    })
     app.useGlobalPipes(new ValidationPipe())
+    app.useGlobalFilters(new MongoDbExceptionFilter())
 
     const config = new DocumentBuilder()
         .setTitle('Mubadarat')

@@ -1,7 +1,6 @@
 import { ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
 import * as bcrypt from 'bcryptjs'
 import { CreatedDto } from '../../shared/dto/created.dto'
-import { HandleBsonErrors } from '../../shared/errors/error-handler'
 import { ObjectId } from '../../shared/repository/types'
 import { AuthenticationService } from '../authentication/authentication.service'
 import { AuthenticationResponseDto } from '../authentication/dto/authentication-response.dto'
@@ -39,17 +38,15 @@ export class StudentsService {
         }
     }
 
-    @HandleBsonErrors()
     async createSubscription(createSubscriptionDto: CreateSubscriptionDto, studentId: ObjectId): Promise<CreatedDto> {
         const student = await this.loadStudent(studentId)
-        const created = await this.subscriptionsService.create(createSubscriptionDto)
+        const created = await this.subscriptionsService.create(createSubscriptionDto, student._id)
         ;(student.subscriptions as ObjectId[]).push(new ObjectId(created.id))
         await student.save()
 
         return created
     }
 
-    @HandleBsonErrors()
     async suspendSubscription(subscriptionId: string, studentId: ObjectId): Promise<void> {
         const subscriptionObjectId = new ObjectId(subscriptionId)
         const student = await this.loadStudent(studentId)
@@ -60,12 +57,11 @@ export class StudentsService {
         await this.subscriptionsService.update(subscriptionId, { state: State.suspended })
     }
 
-    async getSubscriptions(studentId: ObjectId): Promise<StudentSubscriptionDto[]> {
+    async getSubscriptions(studentId: ObjectId, limit?: number, skip?: number): Promise<StudentSubscriptionDto[]> {
         const student = await this.loadStudent(studentId)
-        return this.subscriptionsService.getManyForStudent(student.subscriptions as ObjectId[])
+        return this.subscriptionsService.getManyForStudent(student.subscriptions as ObjectId[], limit, skip)
     }
 
-    @HandleBsonErrors()
     async removeSubscription(subscriptionId: string, studentId: ObjectId): Promise<void> {
         const student = await this.loadStudent(studentId)
         const indexOfSubscription = student.subscriptions.findIndex(id => id._id.toString() === subscriptionId)
@@ -85,7 +81,7 @@ export class StudentsService {
         return student
     }
 
-    getOpenPrograms(): Promise<StudentProgramDto[]> {
-        return this.programsService.findAllForStudents()
+    getOpenPrograms(limit?: number, skip?: number): Promise<StudentProgramDto[]> {
+        return this.programsService.findAllForStudents(limit, skip)
     }
 }

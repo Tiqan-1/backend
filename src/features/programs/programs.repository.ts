@@ -10,7 +10,7 @@ export class ProgramsRepository extends RepositoryMongoBase<ProgramDocument> {
         super(model)
     }
 
-    async find(filter: object, limit: number = 20, skip: number = 0): Promise<ProgramDocument[] | undefined> {
+    async find(filter: object, limit: number = 10, skip: number = 0): Promise<ProgramDocument[] | undefined> {
         const found = await this.model
             .find(filter)
             .limit(limit)

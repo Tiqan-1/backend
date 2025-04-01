@@ -7,12 +7,11 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
 import { LessonsRepository } from '../src/features/lessons/lessons.repository'
 import { LessonsService } from '../src/features/lessons/lessons.service'
-import { CreateTaskDto, UpdateTaskDto } from '../src/features/tasks/dto/task.dto'
+import { UpdateTaskDto } from '../src/features/tasks/dto/task.dto'
 import { TasksController } from '../src/features/tasks/tasks.controller'
 import { TasksRepository } from '../src/features/tasks/tasks.repository'
 import { TasksService } from '../src/features/tasks/tasks.service'
 import { SharedDocumentsService } from '../src/shared/documents-validator/shared-documents.service'
-import { CreatedDto } from '../src/shared/dto/created.dto'
 import { ObjectId } from '../src/shared/repository/types'
 import {
     ConfigServiceProvider,
@@ -59,44 +58,6 @@ describe('TasksController (e2e)', () => {
 
     afterEach(async () => {
         await mongoTestHelper.clearCollections()
-    })
-
-    /** @deprecated */
-    describe('POST /api/tasks/', () => {
-        it('should succeed', async () => {
-            const manager = await mongoTestHelper.createManager()
-            const lesson = await mongoTestHelper.createLesson()
-            const body: CreateTaskDto = {
-                date: new Date(),
-                lessonIds: [lesson._id.toString()],
-            }
-
-            const token = jwtService.sign({ id: manager._id, role: manager.role })
-            const response = await request(app.getHttpServer())
-                .post('/api/tasks/')
-                .set('Authorization', `Bearer ${token}`)
-                .send(body)
-                .expect(HttpStatus.CREATED)
-
-            const { id } = response.body as CreatedDto
-            expect(id).toBeDefined()
-        })
-
-        it('should fail if called by a student', async () => {
-            const student = await mongoTestHelper.createStudent()
-            const lesson = await mongoTestHelper.createLesson()
-            const body: CreateTaskDto = {
-                date: new Date(),
-                lessonIds: [lesson._id.toString()],
-            }
-
-            const token = jwtService.sign({ id: student._id, role: student.role })
-            await request(app.getHttpServer())
-                .post('/api/tasks/')
-                .set('Authorization', `Bearer ${token}`)
-                .send(body)
-                .expect(HttpStatus.FORBIDDEN)
-        })
     })
 
     describe('Get /api/tasks/:id', () => {

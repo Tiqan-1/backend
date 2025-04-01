@@ -11,7 +11,7 @@ import { LessonType } from '../src/features/lessons/enums/lesson-type.enum'
 import { LessonsRepository } from '../src/features/lessons/lessons.repository'
 import { LessonsService } from '../src/features/lessons/lessons.service'
 import { LessonDocument } from '../src/features/lessons/schemas/lesson.schema'
-import { CreateSubjectDto, SubjectDto, UpdateSubjectDto } from '../src/features/subjects/dto/subject.dto'
+import { SubjectDto, UpdateSubjectDto } from '../src/features/subjects/dto/subject.dto'
 import { SubjectDocument } from '../src/features/subjects/schemas/subject.schema'
 import { SubjectsController } from '../src/features/subjects/subjects.controller'
 import { SubjectsRepository } from '../src/features/subjects/subjects.repository'
@@ -64,40 +64,6 @@ describe('SubjectsController (e2e)', () => {
         await mongoTestHelper.clearCollections()
     })
 
-    describe('POST /api/subjects/', () => {
-        it('should succeed', async () => {
-            const manager = await mongoTestHelper.createManager()
-            const body: CreateSubjectDto = {
-                name: 'subject name',
-                description: 'description',
-            }
-
-            const token = jwtService.sign({ id: manager._id, role: manager.role })
-            const response = await request(app.getHttpServer())
-                .post('/api/subjects')
-                .set('Authorization', `Bearer ${token}`)
-                .send(body)
-                .expect(HttpStatus.CREATED)
-            expect(response.body).toBeDefined()
-            const { id } = response.body as CreatedDto
-            expect(id).toBeDefined()
-        })
-
-        it('called with a student, should throw 403', async () => {
-            const student = await mongoTestHelper.createStudent()
-            const token = jwtService.sign({ id: student._id, role: Role.Student })
-            const body: CreateSubjectDto = {
-                name: 'subject name',
-                description: 'description',
-            }
-            await request(app.getHttpServer())
-                .post('/api/subjects')
-                .set('Authorization', `Bearer ${token}`)
-                .send(body)
-                .expect(HttpStatus.FORBIDDEN)
-        })
-    })
-
     describe('GET /api/subjects/', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
@@ -123,56 +89,6 @@ describe('SubjectsController (e2e)', () => {
             const token = jwtService.sign({ id: student._id, role: Role.Student })
             await request(app.getHttpServer())
                 .get('/api/subjects')
-                .set('Authorization', `Bearer ${token}`)
-                .expect(HttpStatus.FORBIDDEN)
-        })
-    })
-
-    describe('GET /api/subjects/user/', () => {
-        it('should succeed', async () => {
-            const manager = await mongoTestHelper.createManager()
-            const token = jwtService.sign({ id: manager._id, role: manager.role })
-            const subject1 = await mongoTestHelper.createSubject([], manager._id)
-            const subject2 = await mongoTestHelper.createSubject([], manager._id)
-
-            const response = await request(app.getHttpServer())
-                .get('/api/subjects/user')
-                .set('Authorization', `Bearer ${token}`)
-                .expect(HttpStatus.OK)
-
-            expect(response.body).toBeDefined()
-            const responseBody = response.body as SubjectDto[]
-            expect(responseBody.length).toEqual(2)
-            const ids = responseBody.map(s => s.id)
-            expect(ids).toContain(subject1._id.toString())
-            expect(ids).toContain(subject2._id.toString())
-        })
-
-        it('should only return subjects of user', async () => {
-            const manager1 = await mongoTestHelper.createManager('1')
-            const token = jwtService.sign({ id: manager1._id, role: Role.Manager })
-            const subject1 = await mongoTestHelper.createSubject([], manager1._id)
-
-            const manager2 = await mongoTestHelper.createManager('2')
-            await mongoTestHelper.createSubject([], manager2._id)
-
-            const response = await request(app.getHttpServer())
-                .get('/api/subjects/user')
-                .set('Authorization', `Bearer ${token}`)
-                .expect(HttpStatus.OK)
-
-            expect(response.body).toBeDefined()
-            const responseBody = response.body as SubjectDto[]
-            expect(responseBody.length).toEqual(1)
-            const ids = responseBody.map(s => s.id)
-            expect(ids).toContain(subject1._id.toString())
-        })
-
-        it('called with a student, should throw 403', async () => {
-            const student = await mongoTestHelper.createStudent()
-            const token = jwtService.sign({ id: student._id, role: Role.Student })
-            await request(app.getHttpServer())
-                .get('/api/subjects/user')
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.FORBIDDEN)
         })

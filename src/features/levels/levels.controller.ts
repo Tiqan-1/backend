@@ -6,27 +6,13 @@ import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { RolesGuard } from '../authentication/guards/roles.guard'
 import { CreateTaskDto, TaskDto } from '../tasks/dto/task.dto'
-import { CreateLevelDto, LevelDto, UpdateLevelDto } from './dto/level.dto'
+import { LevelDto, UpdateLevelDto } from './dto/level.dto'
 import { LevelsService } from './levels.service'
 
 @ApiBearerAuth()
 @Controller('api/levels')
 export class LevelsController {
     constructor(private readonly levelsService: LevelsService) {}
-
-    @ApiOperation({ summary: 'Creates a level', description: 'Creates a level.', deprecated: true })
-    @ApiResponse({ status: HttpStatus.CREATED, type: CreatedDto, description: 'Level successfully created.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
-    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.' })
-    @Post()
-    @HttpCode(HttpStatus.CREATED)
-    @Roles(Role.Manager)
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    create(@Body() createLevelDto: CreateLevelDto): Promise<CreatedDto> {
-        return this.levelsService.create(createLevelDto)
-    }
 
     @ApiOperation({ summary: 'Gets a level', description: 'Gets a level.' })
     @ApiResponse({ status: HttpStatus.OK, type: LevelDto, description: 'Level successfully found.' })

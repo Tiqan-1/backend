@@ -62,8 +62,9 @@ describe('SubscriptionsController (e2e)', () => {
             const token = jwtService.sign({ id: manager._id, role: manager.role })
             const level = await mongoTestHelper.createLevel([])
             const program = await mongoTestHelper.createProgram([level._id], manager._id)
-            const subscription1 = await mongoTestHelper.createSubscription(program._id, level._id)
-            const subscription2 = await mongoTestHelper.createSubscription(program._id, level._id)
+            const student = await mongoTestHelper.createStudent([])
+            const subscription1 = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
+            const subscription2 = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
 
             const response = await request(app.getHttpServer())
                 .get('/api/subscriptions')
@@ -95,7 +96,8 @@ describe('SubscriptionsController (e2e)', () => {
             const token = jwtService.sign({ id: manager._id, role: manager.role })
             const level = await mongoTestHelper.createLevel([])
             const program = await mongoTestHelper.createProgram([level._id], manager._id)
-            const subscription = await mongoTestHelper.createSubscription(program._id, level._id)
+            const student = await mongoTestHelper.createStudent([])
+            const subscription = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
 
             const response = await request(app.getHttpServer())
                 .get(`/api/subscriptions/${subscription._id.toString()}`)
@@ -105,6 +107,8 @@ describe('SubscriptionsController (e2e)', () => {
             expect(response.body).toBeTruthy()
             const body = response.body as SubscriptionDto
             expect(body.id).toEqual(subscription._id.toString())
+            expect(body.subscriber?.name).toEqual(student.name)
+            expect(body.subscriber?.email).toEqual(student.email)
         })
 
         it('should fail with 403 if called by a student', async () => {
@@ -124,10 +128,12 @@ describe('SubscriptionsController (e2e)', () => {
             const token = jwtService.sign({ id: manager._id, role: manager.role })
             const level = await mongoTestHelper.createLevel([])
             const program = await mongoTestHelper.createProgram([level._id], manager._id)
-            const subscription = await mongoTestHelper.createSubscription(program._id, level._id)
+            const student = await mongoTestHelper.createStudent([])
+            const subscription = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
 
             const body: UpdateSubscriptionDto = {
                 state: State.failed,
+                notes: 'updated notes',
             }
 
             await request(app.getHttpServer())
@@ -138,6 +144,7 @@ describe('SubscriptionsController (e2e)', () => {
 
             const updated = (await mongoTestHelper.getSubscriptionModel().findOne()) as SubscriptionDocument
             expect(updated.state).toEqual(State.failed)
+            expect(updated.notes).toEqual('updated notes')
         })
 
         it('should fail with 403 if called by a student', async () => {
@@ -160,7 +167,8 @@ describe('SubscriptionsController (e2e)', () => {
             const token = jwtService.sign({ id: manager._id, role: manager.role })
             const level = await mongoTestHelper.createLevel([])
             const program = await mongoTestHelper.createProgram([level._id], manager._id)
-            const subscription = await mongoTestHelper.createSubscription(program._id, level._id)
+            const student = await mongoTestHelper.createStudent([])
+            const subscription = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
 
             await request(app.getHttpServer())
                 .delete(`/api/subscriptions/${subscription._id.toString()}`)

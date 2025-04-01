@@ -1,7 +1,6 @@
 import { ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
 import * as bcrypt from 'bcryptjs'
 import { CreatedDto } from '../../shared/dto/created.dto'
-import { HandleBsonErrors } from '../../shared/errors/error-handler'
 import { ObjectId } from '../../shared/repository/types'
 import { AuthenticationService } from '../authentication/authentication.service'
 import { AuthenticationResponseDto } from '../authentication/dto/authentication-response.dto'
@@ -53,7 +52,6 @@ export class ManagersService {
         return SubjectDto.fromDocuments(manager.subjects as SubjectDocument[])
     }
 
-    @HandleBsonErrors()
     async removeSubject(managerId: ObjectId, subjectId: string): Promise<void> {
         const manager = await this.loadManager(managerId)
         const subjectIndex = manager.subjects.findIndex(id => id._id.toString() === subjectId)
@@ -79,7 +77,6 @@ export class ManagersService {
         return ProgramDto.fromDocuments(manager.programs as ProgramDocument[])
     }
 
-    @HandleBsonErrors()
     async removeProgram(managerId: ObjectId, programId: string): Promise<void> {
         const manager = await this.loadManager(managerId)
         const programIndex = manager.programs.findIndex(id => id._id.toString() === programId)

@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { SharedDocumentsService } from '../../shared/documents-validator/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
-import { HandleBsonErrors } from '../../shared/errors/error-handler'
 import { ObjectId } from '../../shared/repository/types'
 import { CreateLevelDto, LevelDto } from '../levels/dto/level.dto'
 import { LevelsService } from '../levels/levels.service'
@@ -26,7 +25,6 @@ export class ProgramsService {
         return { id: created._id.toString() }
     }
 
-    @HandleBsonErrors()
     async findAllForStudents(limit?: number, skip?: number): Promise<StudentProgramDto[]> {
         const now = new Date()
         const filter = { state: 'published', registrationStart: { $lt: now }, registrationEnd: { $gt: now } }
@@ -37,15 +35,9 @@ export class ProgramsService {
         return StudentProgramDto.fromDocuments(foundPrograms)
     }
 
-    @HandleBsonErrors()
     async findAllForManagers(limit?: number, skip?: number): Promise<ProgramDto[]> {
         const foundPrograms = await this.programsRepository.findAll(limit, skip)
         return ProgramDto.fromDocuments(foundPrograms)
-    }
-
-    async findOneForStudents(id: string): Promise<StudentProgramDto> {
-        const found = await this.loadProgram(id)
-        return StudentProgramDto.fromDocument(found)
     }
 
     async findOneForManagers(id: string): Promise<ProgramDto> {
@@ -53,7 +45,6 @@ export class ProgramsService {
         return ProgramDto.fromDocument(found)
     }
 
-    @HandleBsonErrors()
     async update(id: string, updateProgramDto: UpdateProgramDto): Promise<void> {
         const programId = new ObjectId(id)
         const levels = await this.documentsService.getLevels(updateProgramDto.levelIds)
@@ -65,7 +56,6 @@ export class ProgramsService {
         }
     }
 
-    @HandleBsonErrors()
     async remove(id: string): Promise<void> {
         const programId = new ObjectId(id)
         const deleted = await this.programsRepository.remove({ _id: programId })
@@ -74,7 +64,6 @@ export class ProgramsService {
         }
     }
 
-    @HandleBsonErrors()
     async createLevel(programId: string, createLevelDto: CreateLevelDto): Promise<CreatedDto> {
         const program = await this.loadProgram(programId)
         const level = await this.levelsService.create(createLevelDto)
@@ -89,7 +78,6 @@ export class ProgramsService {
         return LevelDto.fromDocuments(program.levels as LevelDocument[])
     }
 
-    @HandleBsonErrors()
     async removeLevel(programId: string, levelId: string): Promise<void> {
         const program = await this.loadProgram(programId)
         const levelIndex = program.levels.findIndex(id => id._id.toString() === levelId)
@@ -101,7 +89,6 @@ export class ProgramsService {
         await program.save()
     }
 
-    @HandleBsonErrors()
     private async loadProgram(id: string): Promise<ProgramDocument> {
         const program = await this.programsRepository.findById(new ObjectId(id))
         if (!program) {

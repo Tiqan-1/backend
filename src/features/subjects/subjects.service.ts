@@ -1,8 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { CreatedDto } from '../../shared/dto/created.dto'
-import { HandleBsonErrors } from '../../shared/errors/error-handler'
 import { ObjectId } from '../../shared/repository/types'
-import { TokenUser } from '../authentication/types/token-user'
 import { CreateLessonDto, LessonDto } from '../lessons/dto/lesson.dto'
 import { LessonsService } from '../lessons/lessons.service'
 import { LessonDocument } from '../lessons/schemas/lesson.schema'
@@ -17,17 +15,10 @@ export class SubjectsService {
         private readonly lessonsService: LessonsService
     ) {}
 
-    @HandleBsonErrors()
     async create(subject: CreateSubjectDto, createdBy: ObjectId): Promise<CreatedDto> {
         const createDocument = { ...subject, createdBy }
         const created = await this.subjectsRepository.create(createDocument)
         return { id: created._id.toString() }
-    }
-
-    @HandleBsonErrors()
-    async findAllByManagerId(manager: TokenUser, limit?: number, skip?: number): Promise<SubjectDto[]> {
-        const result = await this.subjectsRepository.findAllByManagerId(manager.id, limit, skip)
-        return SubjectDto.fromDocuments(result)
     }
 
     async findAll(limit?: number, skip?: number): Promise<SubjectDto[]> {
@@ -35,14 +26,12 @@ export class SubjectsService {
         return SubjectDto.fromDocuments(result)
     }
 
-    @HandleBsonErrors()
     async findOne(id: string): Promise<SubjectDto> {
         const subject = await this.loadSubject(id)
         await subject.populate(['lessons', { path: 'createdBy', select: 'name email' }])
         return SubjectDto.fromDocument(subject)
     }
 
-    @HandleBsonErrors()
     async createLesson(subjectId: string, dto: CreateLessonDto): Promise<CreatedDto> {
         const subject = await this.loadSubject(subjectId)
         const created = await this.lessonsService.create(dto)
@@ -57,7 +46,6 @@ export class SubjectsService {
         return LessonDto.fromDocuments(subject.lessons as LessonDocument[])
     }
 
-    @HandleBsonErrors()
     async removeLesson(subjectId: string, lessonId: string): Promise<void> {
         const subject = await this.loadSubject(subjectId)
         const lessonIndex = subject.lessons.findIndex(id => id._id.toString() === lessonId)
@@ -69,7 +57,6 @@ export class SubjectsService {
         await subject.save()
     }
 
-    @HandleBsonErrors()
     async loadSubject(id: string): Promise<SubjectDocument> {
         const subject = await this.subjectsRepository.findById(new ObjectId(id))
         if (!subject) {
@@ -78,12 +65,10 @@ export class SubjectsService {
         return subject
     }
 
-    @HandleBsonErrors()
     async remove(subjectId: string): Promise<void> {
         await this.subjectsRepository.remove({ _id: new ObjectId(subjectId) })
     }
 
-    @HandleBsonErrors()
     async update(id: string, dto: UpdateSubjectDto): Promise<void> {
         const updated = await this.subjectsRepository.update({ _id: new ObjectId(id) }, dto)
         if (!updated) {

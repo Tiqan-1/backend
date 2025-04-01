@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { CreatedDto } from '../../shared/dto/created.dto'
-import { HandleBsonErrors } from '../../shared/errors/error-handler'
 import { ObjectId } from '../../shared/repository/types'
 import { CreateTaskDto, TaskDto } from '../tasks/dto/task.dto'
 import { TaskDocument } from '../tasks/schemas/task.schema'
@@ -21,17 +20,15 @@ export class LevelsService {
         return { id: created._id.toString() }
     }
 
-    @HandleBsonErrors()
     async findOne(id: string): Promise<LevelDto> {
         const found: LevelDocument | undefined = await this.levelsRepository.findById(new ObjectId(id))
         if (!found) {
             throw new NotFoundException('Level Not Found')
         }
-        await found.populate({ path: 'tasks', perDocumentLimit: 20, populate: { path: 'lessons', perDocumentLimit: 20 } })
+        await found.populate({ path: 'tasks', perDocumentLimit: 10, populate: { path: 'lessons', perDocumentLimit: 20 } })
         return LevelDto.fromDocument(found)
     }
 
-    @HandleBsonErrors()
     async update(id: string, dto: UpdateLevelDto): Promise<void> {
         const updated = await this.levelsRepository.update({ _id: new ObjectId(id) }, dto)
         if (!updated) {
@@ -39,7 +36,6 @@ export class LevelsService {
         }
     }
 
-    @HandleBsonErrors()
     async remove(id: string): Promise<void> {
         const removed = await this.levelsRepository.remove({ _id: new ObjectId(id) })
         if (!removed) {
@@ -47,7 +43,6 @@ export class LevelsService {
         }
     }
 
-    @HandleBsonErrors()
     async createTask(levelId: string, createTaskDto: CreateTaskDto): Promise<CreatedDto> {
         const level = await this.loadLevel(levelId)
         const task = await this.tasksService.create(createTaskDto)
@@ -58,11 +53,10 @@ export class LevelsService {
 
     async getTasks(id: string): Promise<TaskDto[]> {
         const level = await this.loadLevel(id)
-        await level.populate({ path: 'tasks', populate: { path: 'lessons', perDocumentLimit: 20 } })
+        await level.populate({ path: 'tasks', populate: { path: 'lessons', perDocumentLimit: 10 } })
         return TaskDto.fromDocuments(level.tasks as TaskDocument[])
     }
 
-    @HandleBsonErrors()
     async removeTask(levelId: string, taskId: string): Promise<void> {
         const level = await this.loadLevel(levelId)
         const taskIndex = level.tasks.findIndex(id => id._id.toString() === taskId)
@@ -74,7 +68,6 @@ export class LevelsService {
         await level.save()
     }
 
-    @HandleBsonErrors()
     private async loadLevel(id: string): Promise<LevelDocument> {
         const level = await this.levelsRepository.findById(new ObjectId(id))
         if (!level) {

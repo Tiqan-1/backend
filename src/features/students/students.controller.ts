@@ -1,5 +1,5 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, Request, UseGuards } from '@nestjs/common'
-import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger'
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, Query, Request, UseGuards } from '@nestjs/common'
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { AuthenticationResponseDto } from '../authentication/dto/authentication-response.dto'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
@@ -59,6 +59,8 @@ export class StudentsController {
     }
 
     @ApiOperation({ summary: 'Gets subscriptions', description: 'Gets subscriptions of the student.' })
+    @ApiQuery({ name: 'limit', type: String, required: false, description: 'Controls the number of returned elements' })
+    @ApiQuery({ name: 'skip', type: String, required: false, description: 'Controls the number of elements to be skipped' })
     @ApiResponse({
         status: HttpStatus.OK,
         type: StudentSubscriptionDto,
@@ -71,8 +73,12 @@ export class StudentsController {
     @HttpCode(HttpStatus.OK)
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
-    getSubscriptions(@Request() request: { user: TokenUser }): Promise<StudentSubscriptionDto[]> {
-        return this.service.getSubscriptions(request.user.id)
+    getSubscriptions(
+        @Request() request: { user: TokenUser },
+        @Query('limit') limit?: number,
+        @Query('skip') skip?: number
+    ): Promise<StudentSubscriptionDto[]> {
+        return this.service.getSubscriptions(request.user.id, limit, skip)
     }
 
     @ApiOperation({ summary: 'Removes a subscription', description: `Removes a subscription from the student's subscriptions.` })
@@ -92,6 +98,8 @@ export class StudentsController {
     }
 
     @ApiOperation({ summary: 'Gets open programs', description: 'Gets programs that are currently open for registration.' })
+    @ApiQuery({ name: 'limit', type: String, required: false, description: 'Controls the number of returned elements' })
+    @ApiQuery({ name: 'skip', type: String, required: false, description: 'Controls the number of elements to be skipped' })
     @ApiResponse({
         status: HttpStatus.OK,
         type: StudentProgramDto,
@@ -104,7 +112,7 @@ export class StudentsController {
     @HttpCode(HttpStatus.OK)
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
-    getOpenPrograms(): Promise<StudentProgramDto[]> {
-        return this.service.getOpenPrograms()
+    getOpenPrograms(@Query('limit') limit?: number, @Query('skip') skip?: number): Promise<StudentProgramDto[]> {
+        return this.service.getOpenPrograms(limit, skip)
     }
 }
