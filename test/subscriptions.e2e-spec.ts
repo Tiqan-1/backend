@@ -133,6 +133,7 @@ describe('SubscriptionsController (e2e)', () => {
 
             const body: UpdateSubscriptionDto = {
                 state: State.failed,
+                notes: 'updated notes',
             }
 
             await request(app.getHttpServer())
@@ -143,6 +144,7 @@ describe('SubscriptionsController (e2e)', () => {
 
             const updated = (await mongoTestHelper.getSubscriptionModel().findOne()) as SubscriptionDocument
             expect(updated.state).toEqual(State.failed)
+            expect(updated.notes).toEqual('updated notes')
         })
 
         it('should fail with 403 if called by a student', async () => {

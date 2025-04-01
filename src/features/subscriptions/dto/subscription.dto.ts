@@ -35,6 +35,11 @@ export class SubscriptionDto {
     @IsEnum(State)
     state: State
 
+    @ApiProperty({ type: String, required: false })
+    @IsString()
+    @IsOptional()
+    notes?: string
+
     static fromDocuments(subscriptions: SubscriptionDocument[] = []): SubscriptionDto[] {
         return subscriptions.map(subscription => this.fromDocument(subscription))
     }
@@ -47,6 +52,7 @@ export class SubscriptionDto {
             subscriptionDate: subscription.subscriptionDate,
             subscriber: isPopulated(subscription.subscriber) ? SimpleStudentDto.fromDocument(subscription.subscriber) : undefined,
             state: subscription.state,
+            notes: subscription.notes,
         }
     }
 }
@@ -70,6 +76,7 @@ export class StudentSubscriptionDto extends OmitType(SubscriptionDto, ['program'
             level: isPopulated(subscription.level) ? LevelDto.fromDocument(subscription.level) : undefined,
             subscriptionDate: subscription.subscriptionDate,
             state: subscription.state,
+            notes: subscription.notes,
         }
     }
 }
@@ -85,7 +92,13 @@ export class CreateSubscriptionDto {
 }
 
 export class UpdateSubscriptionDto {
-    @ApiProperty({ type: String, required: true, enum: State, example: 'subjectId' })
+    @ApiProperty({ type: String, required: false, enum: State, example: 'subjectId' })
+    @IsOptional()
     @IsEnum(State)
     state: State
+
+    @ApiProperty({ type: String, required: false })
+    @IsString()
+    @IsOptional()
+    notes?: string
 }

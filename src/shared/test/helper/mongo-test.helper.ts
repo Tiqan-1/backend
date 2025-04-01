@@ -244,6 +244,7 @@ export class MongoTestHelper {
             subscriber,
             subscriptionDate: new Date(),
             state: State.active,
+            notes: 'subscription notes',
         }
         const model = this.getSubscriptionModel()
         return model.create(subscription)

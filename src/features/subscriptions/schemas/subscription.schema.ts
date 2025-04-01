@@ -24,6 +24,9 @@ export class Subscription {
 
     @Prop({ required: true, type: String, enum: State, default: State.active })
     state: State
+
+    @Prop({ required: false, type: String })
+    notes?: string
 }
 
 export const SubscriptionSchema = SchemaFactory.createForClass(Subscription)
