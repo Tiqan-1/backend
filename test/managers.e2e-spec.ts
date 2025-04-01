@@ -16,6 +16,7 @@ import { ManagersRepository } from '../src/features/managers/managers.repository
 import { ManagersService } from '../src/features/managers/managers.service'
 import { ProgramsRepository } from '../src/features/programs/programs.repository'
 import { ProgramsService } from '../src/features/programs/programs.service'
+import { ProgramsThumbnailsRepository } from '../src/features/programs/programs.thumbnails.repository'
 import { SubjectsRepository } from '../src/features/subjects/subjects.repository'
 import { SubjectsService } from '../src/features/subjects/subjects.service'
 import { TasksRepository } from '../src/features/tasks/tasks.repository'
@@ -52,6 +53,7 @@ describe('ManagersController (e2e)', () => {
                 LessonsRepository,
                 ProgramsService,
                 ProgramsRepository,
+                ProgramsThumbnailsRepository,
                 LevelsService,
                 LevelsRepository,
                 TasksService,

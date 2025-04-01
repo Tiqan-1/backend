@@ -13,6 +13,7 @@ import { StudentProgramDto } from '../src/features/programs/dto/program.dto'
 import { ProgramState } from '../src/features/programs/enums/program-state.enum'
 import { ProgramsRepository } from '../src/features/programs/programs.repository'
 import { ProgramsService } from '../src/features/programs/programs.service'
+import { ProgramsThumbnailsRepository } from '../src/features/programs/programs.thumbnails.repository'
 import { SignUpStudentDto } from '../src/features/students/dto/student.dto'
 import { Gender } from '../src/features/students/enums/gender'
 import { StudentDocument } from '../src/features/students/schemas/student.schema'
@@ -57,6 +58,7 @@ describe('StudentsController (e2e)', () => {
                 SubscriptionsRepository,
                 ProgramsService,
                 ProgramsRepository,
+                ProgramsThumbnailsRepository,
                 LevelsService,
                 LevelsRepository,
                 TasksService,

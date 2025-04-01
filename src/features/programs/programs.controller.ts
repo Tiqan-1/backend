@@ -1,5 +1,6 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger'
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, Query, Req, UseGuards } from '@nestjs/common'
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger'
+import { FastifyRequest } from 'fastify'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { Roles } from '../authentication/decorators/roles.decorator'
 import { Role } from '../authentication/enums/role.enum'
@@ -8,6 +9,7 @@ import { RolesGuard } from '../authentication/guards/roles.guard'
 import { CreateLevelDto, LevelDto } from '../levels/dto/level.dto'
 import { ProgramDto, UpdateProgramDto } from './dto/program.dto'
 import { ProgramsService } from './programs.service'
+import { ThumbnailValidator } from './validators/thumbnail.validator'
 
 @ApiBearerAuth()
 @Controller('api/programs')
@@ -73,6 +75,38 @@ export class ProgramsController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     update(@Param('id') id: string, @Body() updateProgramDto: UpdateProgramDto): Promise<void> {
         return this.programsService.update(id, updateProgramDto)
+    }
+
+    @ApiOperation({ summary: 'Uploads a thumbnail', description: 'Uploads a thumbnail for the program.' })
+    @ApiBody({
+        required: true,
+        schema: {
+            type: 'object',
+            properties: {
+                thumbnail: {
+                    type: 'string',
+                    format: 'binary',
+                },
+            },
+            required: ['thumbnail'],
+        },
+    })
+    @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Thumbnail successfully uploaded.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Program not found.' })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
+    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Thumbnail validation failed.' })
+    @ApiConsumes('multipart/form-data')
+    @Post(':id/thumbnail')
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @Roles(Role.Manager)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    async addThumbnail(@Param('id') id: string, @Req() req: FastifyRequest): Promise<void> {
+        const thumbnail = await req.file()
+        if (ThumbnailValidator.validate(thumbnail)) {
+            return this.programsService.updateThumbnail(id, thumbnail)
+        }
     }
 
     @ApiOperation({ summary: 'Creates a level', description: 'Creates a level and adds it to the program.' })
