@@ -25,6 +25,11 @@ export class ProgramDto {
     @IsString()
     description: string
 
+    @ApiProperty({ type: String, required: false, description: 'صورة للبرنامج بصيغة base64' })
+    @IsOptional()
+    @IsString()
+    thumbnail?: string
+
     @ApiProperty({ type: () => SimpleManagerDto, required: true })
     @ValidateNested()
     createdBy: SimpleManagerDto
@@ -64,6 +69,7 @@ export class ProgramDto {
             id: document._id.toString(),
             name: document.name,
             state: document.state,
+            thumbnail: document.thumbnail,
             description: document.description,
             start: document.start,
             end: document.end,
@@ -84,6 +90,7 @@ export class StudentProgramDto extends OmitType(ProgramDto, ['state']) {
         return {
             id: document._id.toString(),
             name: document.name,
+            thumbnail: document.thumbnail,
             description: document.description,
             start: document.start,
             end: document.end,
@@ -105,6 +112,7 @@ export class StudentProgramUnpopulatedDto extends OmitType(StudentProgramDto, ['
         return {
             id: document._id.toString(),
             name: document.name,
+            thumbnail: document.thumbnail,
             description: document.description,
             start: document.start,
             end: document.end,
@@ -125,6 +133,7 @@ export class CreateProgramDto extends OmitType(ProgramDto, ['id', 'state', 'leve
     static toDocument(dto: CreateProgramDto, createdBy: ObjectId): object {
         return {
             name: dto.name,
+            thumbnail: dto.thumbnail,
             description: dto.description,
             start: dto.start,
             end: dto.end,
@@ -144,6 +153,7 @@ export class UpdateProgramDto extends PartialType(CreateProgramDto) {
     static toDocument(dto: UpdateProgramDto): object {
         return {
             name: dto.name,
+            thumbnail: dto.thumbnail,
             description: dto.description,
             state: dto.state,
             start: dto.start,

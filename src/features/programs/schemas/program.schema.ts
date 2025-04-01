@@ -15,6 +15,9 @@ export class Program {
     @Prop({ required: true, type: String })
     description: string
 
+    @Prop({ required: false, type: String })
+    thumbnail?: string
+
     @Prop({ required: true, type: ObjectId, ref: 'Manager' })
     createdBy: ObjectId | Populated<ManagerDocument>
 

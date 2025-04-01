@@ -1,3 +1,4 @@
+import { MultipartFile } from '@fastify/multipart'
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { SharedDocumentsService } from '../../shared/documents-validator/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
@@ -7,12 +8,14 @@ import { LevelsService } from '../levels/levels.service'
 import { LevelDocument } from '../levels/schemas/level.schema'
 import { CreateProgramDto, ProgramDto, StudentProgramDto, UpdateProgramDto } from './dto/program.dto'
 import { ProgramsRepository } from './programs.repository'
+import { ProgramsThumbnailsRepository } from './programs.thumbnails.repository'
 import { ProgramDocument } from './schemas/program.schema'
 
 @Injectable()
 export class ProgramsService {
     constructor(
         private readonly programsRepository: ProgramsRepository,
+        private readonly programsThumbnailsRepository: ProgramsThumbnailsRepository,
         private readonly levelsService: LevelsService,
         private readonly documentsService: SharedDocumentsService
     ) {}
@@ -25,23 +28,33 @@ export class ProgramsService {
         return { id: created._id.toString() }
     }
 
+    async updateThumbnail(id: string, uploaded: MultipartFile): Promise<void> {
+        const programId = new ObjectId(id)
+        const found = await this.programsRepository.findById(programId)
+        if (found?.thumbnail) {
+            await this.programsThumbnailsRepository.remove(found.thumbnail)
+        }
+        const thumbnail = await this.programsThumbnailsRepository.create(uploaded)
+        await this.programsRepository.update({ _id: id }, { thumbnail })
+    }
+
     async findAllForStudents(limit?: number, skip?: number): Promise<StudentProgramDto[]> {
         const now = new Date()
         const filter = { state: 'published', registrationStart: { $lt: now }, registrationEnd: { $gt: now } }
         const foundPrograms = await this.programsRepository.find(filter, limit, skip)
-        if (!foundPrograms) {
-            return []
-        }
+        await this.loadThumbnails(foundPrograms)
         return StudentProgramDto.fromDocuments(foundPrograms)
     }
 
     async findAllForManagers(limit?: number, skip?: number): Promise<ProgramDto[]> {
         const foundPrograms = await this.programsRepository.findAll(limit, skip)
+        await this.loadThumbnails(foundPrograms)
         return ProgramDto.fromDocuments(foundPrograms)
     }
 
     async findOneForManagers(id: string): Promise<ProgramDto> {
         const found = await this.loadProgram(id)
+        await this.loadThumbnail(found)
         return ProgramDto.fromDocument(found)
     }
 
@@ -58,10 +71,14 @@ export class ProgramsService {
 
     async remove(id: string): Promise<void> {
         const programId = new ObjectId(id)
-        const deleted = await this.programsRepository.remove({ _id: programId })
-        if (!deleted) {
-            throw new NotFoundException('Task not found.')
+        const found = await this.programsRepository.findById(programId)
+        if (!found) {
+            throw new NotFoundException('Program not found.')
         }
+        if (found.thumbnail) {
+            await this.programsThumbnailsRepository.remove(found.thumbnail)
+        }
+        await this.programsRepository.remove({ _id: programId })
     }
 
     async createLevel(programId: string, createLevelDto: CreateLevelDto): Promise<CreatedDto> {
@@ -87,6 +104,18 @@ export class ProgramsService {
         ;(program.levels as ObjectId[]).splice(levelIndex, 1)
         await this.levelsService.remove(levelId)
         await program.save()
+    }
+
+    private async loadThumbnails(foundPrograms: ProgramDocument[]): Promise<void> {
+        for (const program of foundPrograms) {
+            await this.loadThumbnail(program)
+        }
+    }
+
+    private async loadThumbnail(program: ProgramDocument): Promise<void> {
+        if (program.thumbnail) {
+            program.thumbnail = await this.programsThumbnailsRepository.findOne(program.thumbnail)
+        }
     }
 
     private async loadProgram(id: string): Promise<ProgramDocument> {

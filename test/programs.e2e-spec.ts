@@ -1,8 +1,12 @@
-import { HttpStatus, INestApplication } from '@nestjs/common'
+import multipart from '@fastify/multipart'
+import { HttpStatus } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
+import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify'
 import { Test, TestingModule } from '@nestjs/testing'
+import * as fs from 'node:fs'
+import path from 'path'
 import request from 'supertest'
-import { App } from 'supertest/types'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
 import { LessonsRepository } from '../src/features/lessons/lessons.repository'
@@ -16,6 +20,7 @@ import { ProgramState } from '../src/features/programs/enums/program-state.enum'
 import { ProgramsController } from '../src/features/programs/programs.controller'
 import { ProgramsRepository } from '../src/features/programs/programs.repository'
 import { ProgramsService } from '../src/features/programs/programs.service'
+import { ProgramsThumbnailsRepository } from '../src/features/programs/programs.thumbnails.repository'
 import { ProgramDocument } from '../src/features/programs/schemas/program.schema'
 import { TasksRepository } from '../src/features/tasks/tasks.repository'
 import { TasksService } from '../src/features/tasks/tasks.service'
@@ -29,8 +34,9 @@ import {
 import { MongoTestHelper } from '../src/shared/test/helper/mongo-test.helper'
 
 describe('ProgramsController (e2e)', () => {
-    let app: INestApplication<App>
+    let app: NestFastifyApplication
     let jwtService: JwtService
+    let configService: ConfigService
     let mongoTestHelper: MongoTestHelper
 
     beforeAll(async () => {
@@ -41,6 +47,7 @@ describe('ProgramsController (e2e)', () => {
             providers: [
                 ProgramsService,
                 ProgramsRepository,
+                ProgramsThumbnailsRepository,
                 LevelsService,
                 LevelsRepository,
                 TasksService,
@@ -55,14 +62,21 @@ describe('ProgramsController (e2e)', () => {
         }).compile()
 
         jwtService = module.get(JwtService)
+        configService = module.get(ConfigService)
         mockJwtStrategyValidation(module)
 
-        app = module.createNestApplication()
+        app = module.createNestApplication<NestFastifyApplication>(new FastifyAdapter({ logger: true }))
         await app.init()
+        await app.register(multipart)
+        await app.getHttpAdapter().getInstance().ready()
     })
+
     afterAll(async () => {
         await mongoTestHelper.tearDown()
         await app.close()
+        const folderPath = path.join(__dirname, '..', configService.get('UPLOAD_FOLDER') as string) // Replace with your folder path
+
+        fs.rmSync(folderPath, { recursive: true, force: true })
     })
 
     afterEach(async () => {
@@ -147,6 +161,37 @@ describe('ProgramsController (e2e)', () => {
 
             await request(app.getHttpServer())
                 .put(`/api/programs/${program._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.FORBIDDEN)
+        })
+    })
+
+    describe('POST /api/programs/:id/thumbnail', () => {
+        it('should succeed', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+            const program = await mongoTestHelper.createProgram([], manager._id)
+
+            await request(app.getHttpServer())
+                .post(`/api/programs/${program._id.toString()}/thumbnail`)
+                .set('Content-Type', 'multipart/form-data')
+                .set('Authorization', `Bearer ${token}`)
+                .attach('thumbnail', path.join(__dirname, 'test-image.jpg'))
+                .expect(HttpStatus.NO_CONTENT)
+
+            const found = (await mongoTestHelper.getProgramModel().findOne()) as ProgramDocument
+            expect(found.thumbnail).toBeDefined()
+            expect(found.thumbnail).toContain('test-image.jpg')
+        })
+
+        it('should fail with 403 if called by a student', async () => {
+            const student = await mongoTestHelper.createStudent()
+            const token = jwtService.sign({ id: student._id, role: student.role })
+            const manager = await mongoTestHelper.createManager()
+            const program = await mongoTestHelper.createProgram([], manager._id)
+
+            await request(app.getHttpServer())
+                .post(`/api/programs/${program._id.toString()}/thumbnail`)
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.FORBIDDEN)
         })
