@@ -1,60 +1,18 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, Query, Request, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { Roles } from '../authentication/decorators/roles.decorator'
 import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { RolesGuard } from '../authentication/guards/roles.guard'
-import { TokenUser } from '../authentication/types/token-user'
 import { CreateLessonDto, LessonDto } from '../lessons/dto/lesson.dto'
-import { CreateSubjectDto, SubjectDto, UpdateSubjectDto } from './dto/subject.dto'
+import { SubjectDto, UpdateSubjectDto } from './dto/subject.dto'
 import { SubjectsService } from './subjects.service'
 
 @ApiBearerAuth()
 @Controller('api/subjects')
 export class SubjectsController {
     constructor(private readonly service: SubjectsService) {}
-
-    @ApiOperation({
-        summary: 'Creates a subject',
-        description: 'Deprecated: use POST api/managers/subjects instead.',
-        deprecated: true,
-    })
-    @ApiResponse({ status: HttpStatus.CREATED, type: CreatedDto, description: 'Subject successfully created.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
-    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.' })
-    @Post()
-    @HttpCode(HttpStatus.CREATED)
-    @Roles(Role.Manager)
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    create(@Body() subject: CreateSubjectDto, @Request() request: { user: TokenUser }): Promise<CreatedDto> {
-        return this.service.create(subject, request.user.id)
-    }
-
-    @ApiOperation({
-        summary: 'Finds all subjects created by user',
-        description: 'Deprecated: use GET api/managers/subjects instead.',
-        deprecated: true,
-    })
-    @ApiQuery({ name: 'limit', type: String, required: false })
-    @ApiQuery({ name: 'skip', type: String, required: false })
-    @ApiResponse({ status: HttpStatus.OK, type: SubjectDto, isArray: true, description: 'Got subjects successfully.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
-    @Get('user')
-    @HttpCode(HttpStatus.OK)
-    @Roles(Role.Manager)
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    findAllByManagerId(
-        @Request() request: { user: TokenUser },
-        @Query('limit') limit?: number,
-        @Query('skip') skip?: number
-    ): Promise<SubjectDto[]> {
-        return this.service.findAllByManagerId(request.user, limit, skip)
-    }
 
     @ApiOperation({ summary: 'Finds all subjects', description: 'Finds all subjects.' })
     @ApiQuery({

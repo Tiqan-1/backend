@@ -43,11 +43,6 @@ export class ProgramsService {
         return ProgramDto.fromDocuments(foundPrograms)
     }
 
-    async findOneForStudents(id: string): Promise<StudentProgramDto> {
-        const found = await this.loadProgram(id)
-        return StudentProgramDto.fromDocument(found)
-    }
-
     async findOneForManagers(id: string): Promise<ProgramDto> {
         const found = await this.loadProgram(id)
         return ProgramDto.fromDocument(found)

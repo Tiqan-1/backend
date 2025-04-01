@@ -7,7 +7,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
 import { LessonsRepository } from '../src/features/lessons/lessons.repository'
 import { LessonsService } from '../src/features/lessons/lessons.service'
-import { CreateLevelDto, LevelDto, UpdateLevelDto } from '../src/features/levels/dto/level.dto'
+import { LevelDto, UpdateLevelDto } from '../src/features/levels/dto/level.dto'
 import { LevelsController } from '../src/features/levels/levels.controller'
 import { LevelsRepository } from '../src/features/levels/levels.repository'
 import { LevelsService } from '../src/features/levels/levels.service'
@@ -65,54 +65,6 @@ describe('LevelsController', () => {
 
     afterEach(async () => {
         await mongoTestHelper.clearCollections()
-    })
-
-    /** @deprecated */
-    describe('POST /api/levels/', () => {
-        it('should succeed', async () => {
-            const manager = await mongoTestHelper.createManager()
-            const token = jwtService.sign({ id: manager._id, role: manager.role })
-
-            const body: CreateLevelDto = {
-                name: 'level name',
-                start: new Date(),
-                end: new Date(),
-            }
-
-            const response = await request(app.getHttpServer())
-                .post('/api/levels/')
-                .set('Authorization', `Bearer ${token}`)
-                .send(body)
-                .expect(HttpStatus.CREATED)
-
-            const { id } = response.body as CreatedDto
-            expect(id).toBeDefined()
-
-            const created = (await mongoTestHelper.getLevelModel().findOne()) as LevelDocument
-            expect(created).toBeDefined()
-            expect(created.name).toEqual('level name')
-            expect(created.start).toBeDefined()
-            expect(created.end).toBeDefined()
-            expect(created.tasks).toBeDefined()
-            expect(created.tasks).toHaveLength(0)
-        })
-
-        it('should fail if called by a student', async () => {
-            const student = await mongoTestHelper.createStudent()
-            const token = jwtService.sign({ id: student._id, role: student.role })
-
-            const body: CreateLevelDto = {
-                name: 'level name',
-                start: new Date(),
-                end: new Date(),
-            }
-
-            await request(app.getHttpServer())
-                .post('/api/levels/')
-                .set('Authorization', `Bearer ${token}`)
-                .send(body)
-                .expect(HttpStatus.FORBIDDEN)
-        })
     })
 
     describe('GET /api/levels/', () => {
