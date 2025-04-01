@@ -1,7 +1,6 @@
 import { ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
 import * as bcrypt from 'bcryptjs'
 import { CreatedDto } from '../../shared/dto/created.dto'
-import { HandleBsonErrors } from '../../shared/errors/error-handler'
 import { ObjectId } from '../../shared/repository/types'
 import { AuthenticationService } from '../authentication/authentication.service'
 import { AuthenticationResponseDto } from '../authentication/dto/authentication-response.dto'
@@ -39,7 +38,6 @@ export class StudentsService {
         }
     }
 
-    @HandleBsonErrors()
     async createSubscription(createSubscriptionDto: CreateSubscriptionDto, studentId: ObjectId): Promise<CreatedDto> {
         const student = await this.loadStudent(studentId)
         const created = await this.subscriptionsService.create(createSubscriptionDto, student._id)
@@ -49,7 +47,6 @@ export class StudentsService {
         return created
     }
 
-    @HandleBsonErrors()
     async suspendSubscription(subscriptionId: string, studentId: ObjectId): Promise<void> {
         const subscriptionObjectId = new ObjectId(subscriptionId)
         const student = await this.loadStudent(studentId)
@@ -65,7 +62,6 @@ export class StudentsService {
         return this.subscriptionsService.getManyForStudent(student.subscriptions as ObjectId[], limit, skip)
     }
 
-    @HandleBsonErrors()
     async removeSubscription(subscriptionId: string, studentId: ObjectId): Promise<void> {
         const student = await this.loadStudent(studentId)
         const indexOfSubscription = student.subscriptions.findIndex(id => id._id.toString() === subscriptionId)

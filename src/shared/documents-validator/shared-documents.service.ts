@@ -9,7 +9,6 @@ import { Student, StudentDocument } from '../../features/students/schemas/studen
 import { Subject, SubjectDocument } from '../../features/subjects/schemas/subject.schema'
 import { Subscription, SubscriptionDocument } from '../../features/subscriptions/schemas/subscription.schema'
 import { Task, TaskDocument } from '../../features/tasks/schemas/task.schema'
-import { HandleBsonErrors } from '../errors/error-handler'
 import { ObjectId } from '../repository/types'
 
 @Injectable()
@@ -89,7 +88,6 @@ export class SharedDocumentsService {
         return this.getDocuments<SubscriptionDocument>(ids, this.subscriptionModel)
     }
 
-    @HandleBsonErrors()
     private async getDocument<T>(id: string | undefined, model: Model<T>): Promise<T | undefined> {
         if (!id) {
             return undefined
@@ -101,7 +99,6 @@ export class SharedDocumentsService {
         return found
     }
 
-    @HandleBsonErrors()
     private async getDocuments<T>(ids: string[] | undefined, model: Model<T>): Promise<T[] | undefined> {
         if (!ids) {
             return undefined
