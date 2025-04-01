@@ -25,7 +25,7 @@ export class MongoDbExceptionFilter implements ExceptionFilter {
         // Handle other Mongoose-specific errors
         if (exception.name === 'CastError') {
             console.error(`Mongoose CastError caught: ${exception.message}`)
-            response.status(400).send({ message: 'Invalid type or format for provided data.' })
+            response.status(500).send({ message: 'Invalid type or format for provided data.' })
             return
         }
 
