@@ -1,5 +1,6 @@
 import { ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
 import * as bcrypt from 'bcryptjs'
+import { oneMonth } from '../../shared/constants'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { ObjectId } from '../../shared/repository/types'
 import { AuthenticationService } from '../authentication/authentication.service'
@@ -72,9 +73,10 @@ export class StudentsService {
         if (!student) {
             throw new InternalServerErrorException('Student not found.')
         }
-        student.status = StudentStatus.deleted
+        await student.updateOne({ status: StudentStatus.deleted, expireAt: oneMonth })
+        console.debug(`student with id ${id.toString()} was marked as deleted and will be removed in 30 days.`)
         for (const subscription of student.subscriptions) {
-            await this.subscriptionsService.update(subscription._id.toString(), { state: SubscriptionState.deleted })
+            await this.subscriptionsService.remove(subscription._id.toString())
         }
         await student.save()
     }
@@ -87,7 +89,11 @@ export class StudentsService {
         }
         ;(student.subscriptions as ObjectId[]).splice(indexOfSubscription, 1)
         await student.save()
-        await this.subscriptionsService.update(subscriptionId, { state: SubscriptionState.deleted })
+        await this.subscriptionsService.remove(subscriptionId)
+    }
+
+    getOpenPrograms(limit?: number, skip?: number): Promise<StudentProgramDto[]> {
+        return this.programsService.findAllForStudents(limit, skip)
     }
 
     private async loadStudent(studentId: ObjectId): Promise<StudentDocument> {
@@ -96,9 +102,5 @@ export class StudentsService {
             throw new InternalServerErrorException('Student not found.')
         }
         return student
-    }
-
-    getOpenPrograms(limit?: number, skip?: number): Promise<StudentProgramDto[]> {
-        return this.programsService.findAllForStudents(limit, skip)
     }
 }

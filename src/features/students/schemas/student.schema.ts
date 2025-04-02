@@ -23,6 +23,9 @@ export class Student {
 
     @Prop({ required: true, type: [ObjectId], ref: Subscription.name, default: [] })
     subscriptions: ObjectId[] | Populated<SubscriptionDocument[]>
+
+    @Prop({ type: Date, index: { expireAfterSeconds: 0 } })
+    expireAt?: Date
 }
 
 export const StudentSchema = SchemaFactory.createForClass(Student)

@@ -27,6 +27,9 @@ export class Subscription {
 
     @Prop({ required: false, type: String })
     notes?: string
+
+    @Prop({ type: Date, index: { expireAfterSeconds: 0 } })
+    expireAt?: Date
 }
 
 export const SubscriptionSchema = SchemaFactory.createForClass(Subscription)

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Put, UseGuards } from '@nestjs/common'
+import { BadRequestException, Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Put, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger'
 import { Roles } from '../authentication/decorators/roles.decorator'
 import { Role } from '../authentication/enums/role.enum'
@@ -48,6 +48,9 @@ export class SubscriptionsController {
     @HttpCode(HttpStatus.NO_CONTENT)
     @Put(':id')
     update(@Param('id') id: string, @Body() updateSubscriptionDto: UpdateSubscriptionDto): Promise<void> {
+        if (updateSubscriptionDto.state && updateSubscriptionDto.state === SubscriptionState.deleted) {
+            throw new BadRequestException('Use the proper endpoint to delete subscription.')
+        }
         return this.subscriptionsService.update(id, updateSubscriptionDto)
     }
 
@@ -60,6 +63,6 @@ export class SubscriptionsController {
     @HttpCode(HttpStatus.NO_CONTENT)
     @Delete(':id')
     remove(@Param('id') id: string): Promise<void> {
-        return this.subscriptionsService.update(id, { state: SubscriptionState.deleted })
+        return this.subscriptionsService.remove(id)
     }
 }

@@ -1,10 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
+import { oneMonth } from '../../shared/constants'
 import { SharedDocumentsService } from '../../shared/documents-validator/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { ObjectId } from '../../shared/repository/types'
 import { LevelDocument } from '../levels/schemas/level.schema'
 import { ProgramDocument } from '../programs/schemas/program.schema'
 import { CreateSubscriptionDto, StudentSubscriptionDto, SubscriptionDto, UpdateSubscriptionDto } from './dto/subscription.dto'
+import { SubscriptionState } from './enums/subscription-state.enum'
 import { SubscriptionDocument } from './schemas/subscription.schema'
 import { SubscriptionsRepository } from './subscriptions.repository'
 
@@ -40,10 +42,14 @@ export class SubscriptionsService {
     }
 
     async remove(id: string): Promise<void> {
-        const isDeleted = await this.repository.remove({ _id: new ObjectId(id) })
-        if (!isDeleted) {
+        const found = await this.repository.update(
+            { _id: new ObjectId(id) },
+            { state: SubscriptionState.deleted, expireAt: oneMonth }
+        )
+        if (!found) {
             throw new NotFoundException(`Subscription with id ${id} not found.`)
         }
+        console.debug(`subscription with id ${id} was marked as deleted and will be removed in 30 days.`)
     }
 
     async getManyForStudent(subscriptionIds: ObjectId[], limit?: number, skip?: number): Promise<StudentSubscriptionDto[]> {
