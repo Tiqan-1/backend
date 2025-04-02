@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { MongooseModule } from '@nestjs/mongoose'
+import { ServeStaticModule } from '@nestjs/serve-static'
+import { join } from 'node:path'
 import { AuthenticationModule } from './features/authentication/authentication.module'
 import { LessonsModule } from './features/lessons/lessons.module'
 import { LevelsModule } from './features/levels/levels.module'
@@ -18,6 +20,9 @@ import { SharedDocumentsModule } from './shared/documents-validator/shared-docum
     imports: [
         ConfigModule.forRoot({
             isGlobal: true,
+        }),
+        ServeStaticModule.forRoot({
+            rootPath: join(__dirname, '..', 'static'), // Adjust path to the folder where your HTML files are stored
         }),
         MongooseModule.forRoot(process.env.MONGODB_URI as string),
         UsersModule,
