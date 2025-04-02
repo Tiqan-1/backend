@@ -1,7 +1,9 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, Query, Request, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger'
 import { CreatedDto } from '../../shared/dto/created.dto'
+import { Roles } from '../authentication/decorators/roles.decorator'
 import { AuthenticationResponseDto } from '../authentication/dto/authentication-response.dto'
+import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { TokenUser } from '../authentication/types/token-user'
 import { StudentProgramDto } from '../programs/dto/program.dto'
@@ -26,6 +28,18 @@ export class StudentsController {
     @Post('sign-up')
     signUp(@Body() signUpStudentDto: SignUpStudentDto): Promise<AuthenticationResponseDto> {
         return this.service.create(signUpStudentDto)
+    }
+
+    @ApiOperation({ summary: 'Removes the student.', description: 'Removes the student.' })
+    @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'The user got deleted successfully.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @Delete()
+    @UseGuards(JwtAuthGuard)
+    @Roles(Role.Student)
+    @ApiBearerAuth()
+    delete(@Request() request: { user: TokenUser }): Promise<void> {
+        return this.service.remove(request.user.id)
     }
 
     @ApiOperation({ summary: 'Creates a subscription.', description: 'Creates a subscription for the student.' })

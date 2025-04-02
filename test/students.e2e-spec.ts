@@ -16,12 +16,13 @@ import { ProgramsService } from '../src/features/programs/programs.service'
 import { ProgramsThumbnailsRepository } from '../src/features/programs/programs.thumbnails.repository'
 import { SignUpStudentDto } from '../src/features/students/dto/student.dto'
 import { Gender } from '../src/features/students/enums/gender'
+import { StudentStatus } from '../src/features/students/enums/student-status'
 import { StudentDocument } from '../src/features/students/schemas/student.schema'
 import { StudentsController } from '../src/features/students/students.controller'
 import { StudentRepository } from '../src/features/students/students.repository'
 import { StudentsService } from '../src/features/students/students.service'
 import { CreateSubscriptionDto, StudentSubscriptionDto } from '../src/features/subscriptions/dto/subscription.dto'
-import { State } from '../src/features/subscriptions/enums/state.enum'
+import { SubscriptionState } from '../src/features/subscriptions/enums/subscription-state.enum'
 import { SubscriptionDocument } from '../src/features/subscriptions/schemas/subscription.schema'
 import { SubscriptionsRepository } from '../src/features/subscriptions/subscriptions.repository'
 import { SubscriptionsService } from '../src/features/subscriptions/subscriptions.service'
@@ -117,6 +118,30 @@ describe('StudentsController (e2e)', () => {
         })
     })
 
+    describe('DELETE /api/students', () => {
+        it('should succeed', async () => {
+            const student = await mongoTestHelper.createStudent()
+            const token = jwtService.sign({ id: student._id, role: student.role })
+            const manager = await mongoTestHelper.createManager()
+            const level = await mongoTestHelper.createLevel([])
+            const program = await mongoTestHelper.createProgram([level._id], manager._id)
+            const subscription = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
+            student.subscriptions = [subscription._id]
+            await student.save()
+
+            await request(app.getHttpServer())
+                .delete('/api/students')
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.NO_CONTENT)
+
+            const deletedStudent = (await mongoTestHelper.getStudentModel().findOne()) as StudentDocument
+            expect(deletedStudent.status).toEqual(StudentStatus.deleted)
+
+            const deletedSubscription = (await mongoTestHelper.getSubscriptionModel().findOne()) as SubscriptionDocument
+            expect(deletedSubscription.state).toEqual(SubscriptionState.deleted)
+        })
+    })
+
     describe('POST /api/students/subscriptions/subscribe', () => {
         it('should succeed', async () => {
             const student = await mongoTestHelper.createStudent()
@@ -141,7 +166,7 @@ describe('StudentsController (e2e)', () => {
             const created = (await mongoTestHelper.getSubscriptionModel().findOne()) as SubscriptionDocument
             expect(created).toBeTruthy()
             expect(id).toEqual(created._id.toString())
-            expect(created.state).toEqual(State.active)
+            expect(created.state).toEqual(SubscriptionState.active)
         })
     })
 
@@ -199,7 +224,7 @@ describe('StudentsController (e2e)', () => {
                 .expect(HttpStatus.NO_CONTENT)
 
             const { state } = (await mongoTestHelper.getSubscriptionModel().findOne()) as SubscriptionDocument
-            expect(state).toEqual(State.suspended)
+            expect(state).toEqual(SubscriptionState.suspended)
         })
     })
 
@@ -220,7 +245,7 @@ describe('StudentsController (e2e)', () => {
                 .expect(HttpStatus.NO_CONTENT)
 
             const { state } = (await mongoTestHelper.getSubscriptionModel().findOne()) as SubscriptionDocument
-            expect(state).toEqual(State.deleted)
+            expect(state).toEqual(SubscriptionState.deleted)
 
             const { subscriptions } = (await mongoTestHelper.getStudentModel().findOne()) as StudentDocument
             expect(subscriptions).toEqual([])
