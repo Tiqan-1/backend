@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common'
+import { ConfigModule } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
+import { JwtModuleOptions } from '@nestjs/jwt/dist/interfaces/jwt-module-options.interface'
 import { MongooseModule } from '@nestjs/mongoose'
 import { PassportModule } from '@nestjs/passport'
-import * as dotenv from 'dotenv'
 import { RefreshToken, RefreshTokenSchema } from '../tokens/schemas/refresh-token.schema'
 import { TokensModule } from '../tokens/tokens.module'
 import { UsersModule } from '../users/users.module'
@@ -14,7 +15,13 @@ import { JwtStrategy } from './strategies/jwt.strategy'
 import { ManagersLocalStrategy } from './strategies/managers-local-strategy.service'
 import { StudentsLocalStrategy } from './strategies/students-local-strategy.service'
 
-dotenv.config()
+async function getJwtModuleOptions(): Promise<JwtModuleOptions> {
+    await ConfigModule.envVariablesLoaded
+    return {
+        secret: process.env.JWT_SECRET as string,
+        signOptions: { expiresIn: '1d' },
+    }
+}
 
 @Module({
     imports: [
@@ -22,10 +29,7 @@ dotenv.config()
         UsersModule,
         TokensModule,
         PassportModule,
-        JwtModule.register({
-            secret: process.env.JWT_SECRET as string,
-            signOptions: { expiresIn: '1d' },
-        }),
+        JwtModule.registerAsync({ useFactory: () => getJwtModuleOptions() }),
     ],
     controllers: [AuthenticationController],
     providers: [AuthenticationService, JwtStrategy, StudentsLocalStrategy, ManagersLocalStrategy, JwtAuthGuard, RolesGuard],
