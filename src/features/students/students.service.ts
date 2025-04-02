@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
+import { ConflictException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common'
 import * as bcrypt from 'bcryptjs'
 import { oneMonth } from '../../shared/constants'
 import { CreatedDto } from '../../shared/dto/created.dto'
@@ -18,6 +18,8 @@ import { StudentRepository } from './students.repository'
 
 @Injectable()
 export class StudentsService {
+    private readonly logger = new Logger(StudentsService.name)
+
     constructor(
         private readonly studentRepository: StudentRepository,
         private readonly authenticationService: AuthenticationService,
@@ -39,7 +41,7 @@ export class StudentsService {
             })
             return this.authenticationService.generateUserTokens(createdStudent)
         } catch (error) {
-            console.error('Error while creating user', error)
+            this.logger.error('Error while creating user', error)
             throw new InternalServerErrorException('General Error while creating student.')
         }
     }
@@ -74,7 +76,7 @@ export class StudentsService {
             throw new InternalServerErrorException('Student not found.')
         }
         await student.updateOne({ status: StudentStatus.deleted, expireAt: oneMonth })
-        console.debug(`student with id ${id.toString()} was marked as deleted and will be removed in 30 days.`)
+        this.logger.debug(`student with id ${id.toString()} was marked as deleted and will be removed in 30 days.`)
         for (const subscription of student.subscriptions) {
             await this.subscriptionsService.remove(subscription._id.toString())
         }

@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common'
+import { Injectable, InternalServerErrorException, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import * as bcrypt from 'bcryptjs'
 import { v4 as uuidv4 } from 'uuid'
@@ -10,6 +10,8 @@ import { Role } from './enums/role.enum'
 
 @Injectable()
 export class AuthenticationService {
+    private readonly logger = new Logger(AuthenticationService.name)
+
     constructor(
         private readonly usersService: UsersService,
         private readonly jwtService: JwtService,
@@ -67,7 +69,7 @@ export class AuthenticationService {
                 refreshToken: refreshToken,
             }
         } catch (error) {
-            console.error('General Error while generating user tokens.', error)
+            this.logger.error('General Error while generating user tokens.', error)
             throw new InternalServerErrorException('General Error while generating user tokens.')
         }
     }

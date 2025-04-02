@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { oneMonth } from '../../shared/constants'
 import { SharedDocumentsService } from '../../shared/documents-validator/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
@@ -12,6 +12,8 @@ import { SubscriptionsRepository } from './subscriptions.repository'
 
 @Injectable()
 export class SubscriptionsService {
+    private readonly logger = new Logger(SubscriptionsService.name)
+
     constructor(
         private readonly repository: SubscriptionsRepository,
         private readonly sharedDocumentsService: SharedDocumentsService
@@ -49,7 +51,7 @@ export class SubscriptionsService {
         if (!found) {
             throw new NotFoundException(`Subscription with id ${id} not found.`)
         }
-        console.debug(`subscription with id ${id} was marked as deleted and will be removed in 30 days.`)
+        this.logger.debug(`subscription with id ${id} was marked as deleted and will be removed in 30 days.`)
     }
 
     async getManyForStudent(subscriptionIds: ObjectId[], limit?: number, skip?: number): Promise<StudentSubscriptionDto[]> {

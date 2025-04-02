@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common'
+import { ConflictException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common'
 import * as bcrypt from 'bcryptjs'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { ObjectId } from '../../shared/repository/types'
@@ -16,6 +16,8 @@ import { ManagerDocument } from './schemas/manager.schema'
 
 @Injectable()
 export class ManagersService {
+    private readonly logger = new Logger(ManagersService.name)
+
     constructor(
         private managersRepository: ManagersRepository,
         private authenticationService: AuthenticationService,
@@ -33,7 +35,7 @@ export class ManagersService {
             const createdManager = await this.managersRepository.create(manager)
             return this.authenticationService.generateUserTokens(createdManager)
         } catch (error) {
-            console.error('General Error while creating manager.', error)
+            this.logger.error('General Error while creating manager.', error)
             throw new InternalServerErrorException('General Error while creating manager.')
         }
     }
