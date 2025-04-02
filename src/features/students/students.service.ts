@@ -8,9 +8,10 @@ import { Role } from '../authentication/enums/role.enum'
 import { StudentProgramDto } from '../programs/dto/program.dto'
 import { ProgramsService } from '../programs/programs.service'
 import { CreateSubscriptionDto, StudentSubscriptionDto } from '../subscriptions/dto/subscription.dto'
-import { State } from '../subscriptions/enums/state.enum'
+import { SubscriptionState } from '../subscriptions/enums/subscription-state.enum'
 import { SubscriptionsService } from '../subscriptions/subscriptions.service'
 import { SignUpStudentDto } from './dto/student.dto'
+import { StudentStatus } from './enums/student-status'
 import { StudentDocument } from './schemas/student.schema'
 import { StudentRepository } from './students.repository'
 
@@ -30,7 +31,11 @@ export class StudentsService {
         }
         try {
             student.password = bcrypt.hashSync(student.password, 10)
-            const createdStudent = await this.studentRepository.create({ ...student, role: Role.Student })
+            const createdStudent = await this.studentRepository.create({
+                ...student,
+                role: Role.Student,
+                status: StudentStatus.active,
+            })
             return this.authenticationService.generateUserTokens(createdStudent)
         } catch (error) {
             console.error('Error while creating user', error)
@@ -54,12 +59,24 @@ export class StudentsService {
         if (!hasSubscription) {
             throw new NotFoundException('Student does not have subscription with the given id.')
         }
-        await this.subscriptionsService.update(subscriptionId, { state: State.suspended })
+        await this.subscriptionsService.update(subscriptionId, { state: SubscriptionState.suspended })
     }
 
     async getSubscriptions(studentId: ObjectId, limit?: number, skip?: number): Promise<StudentSubscriptionDto[]> {
         const student = await this.loadStudent(studentId)
         return this.subscriptionsService.getManyForStudent(student.subscriptions as ObjectId[], limit, skip)
+    }
+
+    async remove(id: ObjectId): Promise<void> {
+        const student = await this.studentRepository.findById(id)
+        if (!student) {
+            throw new InternalServerErrorException('Student not found.')
+        }
+        student.status = StudentStatus.deleted
+        for (const subscription of student.subscriptions) {
+            await this.subscriptionsService.update(subscription._id.toString(), { state: SubscriptionState.deleted })
+        }
+        await student.save()
     }
 
     async removeSubscription(subscriptionId: string, studentId: ObjectId): Promise<void> {
@@ -70,12 +87,12 @@ export class StudentsService {
         }
         ;(student.subscriptions as ObjectId[]).splice(indexOfSubscription, 1)
         await student.save()
-        await this.subscriptionsService.update(subscriptionId, { state: State.deleted })
+        await this.subscriptionsService.update(subscriptionId, { state: SubscriptionState.deleted })
     }
 
     private async loadStudent(studentId: ObjectId): Promise<StudentDocument> {
         const student = await this.studentRepository.findById(studentId)
-        if (!student) {
+        if (!student || student.status === StudentStatus.deleted) {
             throw new InternalServerErrorException('Student not found.')
         }
         return student

@@ -4,7 +4,7 @@ import { ObjectId, Populated } from '../../../shared/repository/types'
 import { Level, LevelDocument } from '../../levels/schemas/level.schema'
 import { Program, ProgramDocument } from '../../programs/schemas/program.schema'
 import { StudentDocument } from '../../students/schemas/student.schema'
-import { State } from '../enums/state.enum'
+import { SubscriptionState } from '../enums/subscription-state.enum'
 
 export type SubscriptionDocument = HydratedDocument<Subscription>
 
@@ -22,8 +22,8 @@ export class Subscription {
     @Prop({ required: true, type: Date, default: new Date() })
     subscriptionDate: Date
 
-    @Prop({ required: true, type: String, enum: State, default: State.active })
-    state: State
+    @Prop({ required: true, type: String, enum: SubscriptionState, default: SubscriptionState.active })
+    state: SubscriptionState
 
     @Prop({ required: false, type: String })
     notes?: string

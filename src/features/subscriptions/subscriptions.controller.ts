@@ -5,6 +5,7 @@ import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { RolesGuard } from '../authentication/guards/roles.guard'
 import { SubscriptionDto, UpdateSubscriptionDto } from './dto/subscription.dto'
+import { SubscriptionState } from './enums/subscription-state.enum'
 import { SubscriptionsService } from './subscriptions.service'
 
 @Roles(Role.Manager)
@@ -59,6 +60,6 @@ export class SubscriptionsController {
     @HttpCode(HttpStatus.NO_CONTENT)
     @Delete(':id')
     remove(@Param('id') id: string): Promise<void> {
-        return this.subscriptionsService.remove(id)
+        return this.subscriptionsService.update(id, { state: SubscriptionState.deleted })
     }
 }

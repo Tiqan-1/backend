@@ -1,4 +1,4 @@
-export enum State {
+export enum SubscriptionState {
     active = 'active',
     suspended = 'suspended',
     deleted = 'deleted',

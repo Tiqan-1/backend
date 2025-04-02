@@ -6,7 +6,7 @@ import { App } from 'supertest/types'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
 import { SubscriptionDto, UpdateSubscriptionDto } from '../src/features/subscriptions/dto/subscription.dto'
-import { State } from '../src/features/subscriptions/enums/state.enum'
+import { SubscriptionState } from '../src/features/subscriptions/enums/subscription-state.enum'
 import { SubscriptionDocument } from '../src/features/subscriptions/schemas/subscription.schema'
 import { SubscriptionsController } from '../src/features/subscriptions/subscriptions.controller'
 import { SubscriptionsRepository } from '../src/features/subscriptions/subscriptions.repository'
@@ -132,7 +132,7 @@ describe('SubscriptionsController (e2e)', () => {
             const subscription = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
 
             const body: UpdateSubscriptionDto = {
-                state: State.failed,
+                state: SubscriptionState.failed,
                 notes: 'updated notes',
             }
 
@@ -143,7 +143,7 @@ describe('SubscriptionsController (e2e)', () => {
                 .expect(HttpStatus.NO_CONTENT)
 
             const updated = (await mongoTestHelper.getSubscriptionModel().findOne()) as SubscriptionDocument
-            expect(updated.state).toEqual(State.failed)
+            expect(updated.state).toEqual(SubscriptionState.failed)
             expect(updated.notes).toEqual('updated notes')
         })
 
@@ -151,7 +151,7 @@ describe('SubscriptionsController (e2e)', () => {
             const student = await mongoTestHelper.createStudent()
             const token = jwtService.sign({ id: student._id, role: student.role })
             const body: UpdateSubscriptionDto = {
-                state: State.failed,
+                state: SubscriptionState.failed,
             }
             await request(app.getHttpServer())
                 .put(`/api/subscriptions/anyId`)
@@ -175,8 +175,8 @@ describe('SubscriptionsController (e2e)', () => {
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.NO_CONTENT)
 
-            const deleted = await mongoTestHelper.getSubscriptionModel().findOne()
-            expect(deleted).toBeFalsy()
+            const deleted = (await mongoTestHelper.getSubscriptionModel().findOne()) as SubscriptionDocument
+            expect(deleted.state).toEqual(SubscriptionState.deleted)
         })
 
         it('should fail with 403 if called by a student', async () => {

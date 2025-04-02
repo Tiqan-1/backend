@@ -4,7 +4,7 @@ import { isPopulated } from '../../../shared/helper/populated-type.helper'
 import { LevelDto } from '../../levels/dto/level.dto'
 import { ProgramDto, StudentProgramUnpopulatedDto } from '../../programs/dto/program.dto'
 import { SimpleStudentDto } from '../../students/dto/student.dto'
-import { State } from '../enums/state.enum'
+import { SubscriptionState } from '../enums/subscription-state.enum'
 import { SubscriptionDocument } from '../schemas/subscription.schema'
 
 export class SubscriptionDto {
@@ -31,9 +31,9 @@ export class SubscriptionDto {
     @IsDateString()
     subscriptionDate: Date
 
-    @ApiProperty({ type: String, required: true, enum: State })
-    @IsEnum(State)
-    state: State
+    @ApiProperty({ type: String, required: true, enum: SubscriptionState })
+    @IsEnum(SubscriptionState)
+    state: SubscriptionState
 
     @ApiProperty({ type: String, required: false })
     @IsString()
@@ -92,10 +92,10 @@ export class CreateSubscriptionDto {
 }
 
 export class UpdateSubscriptionDto {
-    @ApiProperty({ type: String, required: false, enum: State, example: 'subjectId' })
+    @ApiProperty({ type: String, required: false, enum: SubscriptionState, example: 'subjectId' })
     @IsOptional()
-    @IsEnum(State)
-    state: State
+    @IsEnum(SubscriptionState)
+    state: SubscriptionState
 
     @ApiProperty({ type: String, required: false })
     @IsString()

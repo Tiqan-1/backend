@@ -12,9 +12,10 @@ import { Manager, ManagerDocument, ManagerSchema } from '../../../features/manag
 import { ProgramState } from '../../../features/programs/enums/program-state.enum'
 import { Program, ProgramDocument, ProgramSchema } from '../../../features/programs/schemas/program.schema'
 import { Gender } from '../../../features/students/enums/gender'
+import { StudentStatus } from '../../../features/students/enums/student-status'
 import { Student, StudentDocument, StudentSchema } from '../../../features/students/schemas/student.schema'
 import { Subject, SubjectDocument, SubjectSchema } from '../../../features/subjects/schemas/subject.schema'
-import { State } from '../../../features/subscriptions/enums/state.enum'
+import { SubscriptionState } from '../../../features/subscriptions/enums/subscription-state.enum'
 import {
     Subscription,
     SubscriptionDocument,
@@ -151,6 +152,7 @@ export class MongoTestHelper {
             gender: Gender.male,
             role: Role.Student,
             subscriptions: subscriptionIds,
+            status: StudentStatus.active,
         }
         const model = this.getStudentModel()
         return model.create(student)
@@ -243,7 +245,7 @@ export class MongoTestHelper {
             level: levelId,
             subscriber,
             subscriptionDate: new Date(),
-            state: State.active,
+            state: SubscriptionState.active,
             notes: 'subscription notes',
         }
         const model = this.getSubscriptionModel()
