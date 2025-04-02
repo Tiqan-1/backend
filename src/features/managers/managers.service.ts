@@ -28,6 +28,7 @@ export class ManagersService {
     async create(manager: SignUpManagerDto): Promise<AuthenticationResponseDto> {
         const duplicate = await this.managersRepository.findOne({ email: manager.email })
         if (duplicate) {
+            this.logger.error(`Manager signup attempt with duplicate email detected: ${duplicate.email}`)
             throw new ConflictException('A user with the same email already exists.')
         }
         try {
@@ -45,6 +46,7 @@ export class ManagersService {
         const created = await this.subjectsService.create(subject, id)
         ;(manager.subjects as ObjectId[]).push(new ObjectId(created.id))
         await manager.save()
+        this.logger.log(`Manager ${manager.email} created subject ${created.id}.`)
         return created
     }
 
@@ -63,6 +65,7 @@ export class ManagersService {
         ;(manager.subjects as ObjectId[]).splice(subjectIndex, 1)
         await this.subjectsService.remove(subjectId)
         await manager.save()
+        this.logger.log(`Manager ${manager.email} removed subject ${subjectId}.`)
     }
 
     async createProgram(id: ObjectId, createProgramDto: CreateProgramDto): Promise<CreatedDto> {
@@ -70,6 +73,7 @@ export class ManagersService {
         const created = await this.programsService.create(createProgramDto, id)
         ;(manager.programs as ObjectId[]).push(new ObjectId(created.id))
         await manager.save()
+        this.logger.log(`Manager ${manager.email} created program ${created.id}.`)
         return created
     }
 
@@ -88,11 +92,13 @@ export class ManagersService {
         ;(manager.programs as ObjectId[]).splice(programIndex, 1)
         await this.programsService.remove(programId)
         await manager.save()
+        this.logger.log(`Manager ${manager.email} removed program ${programId}.`)
     }
 
     private async loadManager(id: ObjectId): Promise<ManagerDocument> {
         const manager = await this.managersRepository.findById(id)
         if (!manager) {
+            this.logger.error(`Trying to load manager ${id.toString()} from session but not found in the database.`)
             throw new InternalServerErrorException(`Manager document not found.`)
         }
         return manager

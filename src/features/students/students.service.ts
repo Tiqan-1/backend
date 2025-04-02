@@ -30,6 +30,7 @@ export class StudentsService {
     async create(student: SignUpStudentDto): Promise<AuthenticationResponseDto> {
         const duplicate = await this.studentRepository.findOne({ email: student.email })
         if (duplicate) {
+            this.logger.error(`Manager signup attempt with duplicate email detected: ${duplicate.email}`)
             throw new ConflictException('A user with the same email already exists.')
         }
         try {
@@ -51,7 +52,8 @@ export class StudentsService {
         const created = await this.subscriptionsService.create(createSubscriptionDto, student._id)
         ;(student.subscriptions as ObjectId[]).push(new ObjectId(created.id))
         await student.save()
-
+        this.logger.log(`Student ${student.email} subscribed to program ${createSubscriptionDto.programId}
+         in level ${createSubscriptionDto.levelId}. Subscription: ${created.id}.`)
         return created
     }
 
@@ -63,6 +65,7 @@ export class StudentsService {
             throw new NotFoundException('Student does not have subscription with the given id.')
         }
         await this.subscriptionsService.update(subscriptionId, { state: SubscriptionState.suspended })
+        this.logger.log(`Student ${student.email} suspended subscription ${subscriptionId}.`)
     }
 
     async getSubscriptions(studentId: ObjectId, limit?: number, skip?: number): Promise<StudentSubscriptionDto[]> {
@@ -76,11 +79,12 @@ export class StudentsService {
             throw new InternalServerErrorException('Student not found.')
         }
         await student.updateOne({ status: StudentStatus.deleted, expireAt: oneMonth })
-        this.logger.debug(`student with id ${id.toString()} was marked as deleted and will be removed in 30 days.`)
+        this.logger.log(`student with id ${id.toString()} was marked as deleted and will be removed in 30 days.`)
         for (const subscription of student.subscriptions) {
             await this.subscriptionsService.remove(subscription._id.toString())
         }
         await student.save()
+        this.logger.log(`Student ${student.email} closed his account.`)
     }
 
     async removeSubscription(subscriptionId: string, studentId: ObjectId): Promise<void> {
@@ -92,6 +96,7 @@ export class StudentsService {
         ;(student.subscriptions as ObjectId[]).splice(indexOfSubscription, 1)
         await student.save()
         await this.subscriptionsService.remove(subscriptionId)
+        this.logger.log(`Student ${student.email} removed subscription ${subscriptionId}.`)
     }
 
     getOpenPrograms(limit?: number, skip?: number): Promise<StudentProgramDto[]> {
@@ -101,6 +106,7 @@ export class StudentsService {
     private async loadStudent(studentId: ObjectId): Promise<StudentDocument> {
         const student = await this.studentRepository.findById(studentId)
         if (!student || student.status === StudentStatus.deleted) {
+            this.logger.error(`Trying to load student ${studentId.toString()} from session but not found in the database.`)
             throw new InternalServerErrorException('Student not found.')
         }
         return student

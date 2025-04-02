@@ -4,10 +4,11 @@ import { NestFactory } from '@nestjs/core'
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify'
 import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger'
 import { AppModule } from './app.module'
-import { MongoDbExceptionFilter } from './shared/errors/mongo-db-exception.filter'
+import { MongoDbExceptionFilter } from './shared/exceptions/mongo-db-exception.filter'
+import { SecurityExceptionFilter } from './shared/exceptions/security-exception.filter'
 
 async function bootstrap(): Promise<void> {
-    const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter({ logger: true }))
+    const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter())
 
     await app.register(multipart)
     app.enableCors({
@@ -16,7 +17,7 @@ async function bootstrap(): Promise<void> {
         credentials: true,
     })
     app.useGlobalPipes(new ValidationPipe())
-    app.useGlobalFilters(new MongoDbExceptionFilter())
+    app.useGlobalFilters(new MongoDbExceptionFilter(), new SecurityExceptionFilter())
 
     const config = new DocumentBuilder()
         .setTitle('Mubadarat')

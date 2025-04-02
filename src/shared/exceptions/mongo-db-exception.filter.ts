@@ -1,8 +1,8 @@
-import { ArgumentsHost, Catch, ExceptionFilter, Logger } from '@nestjs/common'
+import { ArgumentsHost, Catch, ExceptionFilter, HttpStatus, Logger } from '@nestjs/common'
 import { FastifyReply } from 'fastify'
 import { Error } from 'mongoose'
 
-@Catch(Error)
+@Catch()
 export class MongoDbExceptionFilter implements ExceptionFilter {
     private readonly logger = new Logger(MongoDbExceptionFilter.name)
 
@@ -12,22 +12,26 @@ export class MongoDbExceptionFilter implements ExceptionFilter {
 
         // Handle BSON errors
         if (exception.name === 'BSONError') {
-            this.logger.error(`BSONError caught in global filter: ${exception.message}`)
-            response.status(400).send({ message: 'Id validation error.' })
+            this.logger.error(`BSONError caught: ${exception.message}`, exception.stack)
+            response.status(HttpStatus.BAD_REQUEST).send({ message: 'Id validation error.', statusCode: HttpStatus.BAD_REQUEST })
             return
         }
 
         // Handle Mongoose validation errors
         if (exception.name === 'ValidationError') {
             this.logger.error(`Mongoose ValidationError caught: ${exception.message}`)
-            response.status(500).send({ message: 'Database validation error.' })
+            response
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .send({ message: 'Database validation error.', statusCode: HttpStatus.INTERNAL_SERVER_ERROR })
             return
         }
 
         // Handle other Mongoose-specific errors
         if (exception.name === 'CastError') {
             this.logger.error(`Mongoose CastError caught: ${exception.message}`)
-            response.status(500).send({ message: 'Invalid type or format for provided data.' })
+            response
+                .status(HttpStatus.BAD_REQUEST)
+                .send({ message: 'Invalid type or format for provided data.', statusCode: HttpStatus.INTERNAL_SERVER_ERROR })
             return
         }
 

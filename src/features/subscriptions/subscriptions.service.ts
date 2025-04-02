@@ -51,7 +51,7 @@ export class SubscriptionsService {
         if (!found) {
             throw new NotFoundException(`Subscription with id ${id} not found.`)
         }
-        this.logger.debug(`subscription with id ${id} was marked as deleted and will be removed in 30 days.`)
+        this.logger.log(`subscription with id ${id} was marked as deleted and will be removed in 30 days.`)
     }
 
     async getManyForStudent(subscriptionIds: ObjectId[], limit?: number, skip?: number): Promise<StudentSubscriptionDto[]> {

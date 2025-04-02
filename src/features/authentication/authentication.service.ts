@@ -25,6 +25,7 @@ export class AuthenticationService {
     async logout(refreshToken: string): Promise<void> {
         const success = await this.tokensService.remove(refreshToken)
         if (!success) {
+            this.logger.error(`Failed to logout user. Token not found.`)
             throw new NotFoundException('invalid refresh token')
         }
     }
@@ -32,7 +33,8 @@ export class AuthenticationService {
     async refreshTokens(refreshToken: string): Promise<AuthenticationResponseDto> {
         const foundToken = await this.tokensService.findOne(refreshToken)
         if (!foundToken) {
-            throw new UnauthorizedException('Invalid refresh token')
+            this.logger.error(`Failed to refresh token. Token not found.`)
+            throw new UnauthorizedException('Invalid refresh token.')
         }
         const newTokens = await this.generateUserTokens(foundToken.user)
         await this.tokensService.remove(refreshToken)
@@ -41,18 +43,36 @@ export class AuthenticationService {
 
     async validateStudent(email: string, password: string): Promise<UserDocument | undefined> {
         const user = await this.usersService.findByEmail(email)
-        if (user && bcrypt.compareSync(password, user.password) && user.role === Role.Student) {
-            return user
+        if (!user) {
+            this.logger.error(`Invalid attempt to login a student user with email: ${email}. User Not Found.`)
+            return undefined
         }
-        return undefined
+        if (!bcrypt.compareSync(password, user.password)) {
+            this.logger.error(`Invalid attempt to login a student user with email: ${email}. Password mismatch.`)
+            return undefined
+        }
+        if (user.role !== Role.Student) {
+            this.logger.error(`Invalid attempt to login a student user with email: ${email}. Invalid role.`)
+            return undefined
+        }
+        return user
     }
 
     async validateManager(email: string, password: string): Promise<UserDocument | undefined> {
         const user = await this.usersService.findByEmail(email)
-        if (user && bcrypt.compareSync(password, user.password) && user.role === Role.Manager) {
-            return user
+        if (!user) {
+            this.logger.error(`Invalid attempt to login a manager user with email: ${email}. User Not Found.`)
+            return undefined
         }
-        return undefined
+        if (!bcrypt.compareSync(password, user.password)) {
+            this.logger.error(`Invalid attempt to login a manager user with email: ${email}. Password mismatch.`)
+            return undefined
+        }
+        if (user.role !== Role.Manager) {
+            this.logger.error(`Invalid attempt to login a manager user with email: ${email}. Invalid role.`)
+            return undefined
+        }
+        return user
     }
 
     async generateUserTokens(user: UserDocument): Promise<AuthenticationResponseDto> {
