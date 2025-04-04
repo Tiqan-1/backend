@@ -64,6 +64,7 @@ export class ManagersController {
     @HttpCode(HttpStatus.NO_CONTENT)
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
+    @ApiBearerAuth()
     removeSubject(@Request() request: { user: TokenUser }, @Param('subjectId') subjectId: string): Promise<void> {
         return this.managersService.removeSubject(request.user.id, subjectId)
     }
@@ -105,6 +106,7 @@ export class ManagersController {
     @HttpCode(HttpStatus.NO_CONTENT)
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
+    @ApiBearerAuth()
     removeProgram(@Request() request: { user: TokenUser }, @Param('programId') programId: string): Promise<void> {
         return this.managersService.removeProgram(request.user.id, programId)
     }
