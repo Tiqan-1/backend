@@ -4,8 +4,10 @@ import * as bcrypt from 'bcryptjs'
 import { MongoMemoryServer } from 'mongodb-memory-server'
 import { connect, Connection, Model } from 'mongoose'
 import { Role } from '../../../features/authentication/enums/role.enum'
+import { LessonState } from '../../../features/lessons/enums/lesson-state.enum'
 import { LessonType } from '../../../features/lessons/enums/lesson-type.enum'
 import { Lesson, LessonDocument, LessonSchema } from '../../../features/lessons/schemas/lesson.schema'
+import { LevelState } from '../../../features/levels/enums/level-stats.enum'
 import { Level, LevelDocument, LevelSchema } from '../../../features/levels/schemas/level.schema'
 import { SignUpManagerDto } from '../../../features/managers/dto/manager.dto'
 import { Manager, ManagerDocument, ManagerSchema } from '../../../features/managers/schemas/manager.schema'
@@ -21,6 +23,7 @@ import {
     SubscriptionDocument,
     SubscriptionSchema,
 } from '../../../features/subscriptions/schemas/subscription.schema'
+import { TaskState } from '../../../features/tasks/enums'
 import { Task, TaskDocument, TaskSchema } from '../../../features/tasks/schemas/task.schema'
 import { RefreshToken, RefreshTokenSchema } from '../../../features/tokens/schemas/refresh-token.schema'
 import { User, UserDocument, UserSchema } from '../../../features/users/schemas/user.schema'
@@ -183,6 +186,7 @@ export class MongoTestHelper {
     async createLesson(): Promise<LessonDocument> {
         const lesson: Lesson = {
             url: 'test url',
+            state: LessonState.active,
             type: LessonType.Video,
             title: 'lesson title',
         }
@@ -204,6 +208,7 @@ export class MongoTestHelper {
     async createTask(lessons: ObjectId[]): Promise<TaskDocument> {
         const task: Task = {
             date: new Date(),
+            state: TaskState.active,
             lessons: lessons.map(({ _id }) => _id),
         }
         const model = this.getTaskModel()
@@ -231,6 +236,7 @@ export class MongoTestHelper {
         const date = new Date()
         const level: Level = {
             name: 'level name',
+            state: LevelState.active,
             start: new Date(date.valueOf()),
             end: new Date(date.setFullYear(date.getFullYear() + 1)),
             tasks: tasks,
