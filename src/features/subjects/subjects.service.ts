@@ -1,10 +1,11 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { CreatedDto } from '../../shared/dto/created.dto'
+import { SearchFilterBuilder } from '../../shared/helper/search-filter.builder'
 import { ObjectId } from '../../shared/repository/types'
 import { CreateLessonDto, LessonDto } from '../lessons/dto/lesson.dto'
 import { LessonsService } from '../lessons/lessons.service'
 import { LessonDocument } from '../lessons/schemas/lesson.schema'
-import { CreateSubjectDto, SubjectDto, UpdateSubjectDto } from './dto/subject.dto'
+import { CreateSubjectDto, SearchSubjectQueryDto, SubjectDto, UpdateSubjectDto } from './dto/subject.dto'
 import { SubjectState } from './enums/subject-state'
 import { SubjectDocument } from './schemas/subject.schema'
 import { SubjectsRepository } from './subjects.repository'
@@ -86,5 +87,16 @@ export class SubjectsService {
             this.logger.error(`Attempt to update subject ${id} failed.`)
             throw new NotFoundException(`Subject not found.`)
         }
+    }
+
+    async search(searchSubjectQueryDto: SearchSubjectQueryDto): Promise<SubjectDto[]> {
+        const filter = SearchFilterBuilder.init()
+            .withId(searchSubjectQueryDto.id)
+            .withStringLike('name', searchSubjectQueryDto.name)
+            .withStringLike('description', searchSubjectQueryDto.description)
+            .build()
+
+        const found = await this.subjectsRepository.find(filter)
+        return SubjectDto.fromDocuments(found)
     }
 }

@@ -6,7 +6,7 @@ import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { RolesGuard } from '../authentication/guards/roles.guard'
 import { CreateLessonDto, LessonDto } from '../lessons/dto/lesson.dto'
-import { SubjectDto, UpdateSubjectDto } from './dto/subject.dto'
+import { SearchSubjectQueryDto, SubjectDto, UpdateSubjectDto } from './dto/subject.dto'
 import { SubjectsService } from './subjects.service'
 
 @ApiBearerAuth()
@@ -39,6 +39,17 @@ export class SubjectsController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     findAll(@Query('limit') limit?: number, @Query('skip') skip?: number): Promise<SubjectDto[]> {
         return this.service.findAll(limit, skip)
+    }
+
+    @ApiOperation({ summary: 'Searches for subjects', description: 'Searches for subjects.' })
+    @ApiResponse({ status: HttpStatus.OK, type: SubjectDto, isArray: true, description: 'Got subjects successfully.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user.' })
+    @Get('search')
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(JwtAuthGuard)
+    search(@Query() searchSubjectQueryDto: SearchSubjectQueryDto): Promise<SubjectDto[]> {
+        return this.service.search(searchSubjectQueryDto)
     }
 
     @ApiOperation({ summary: 'Finds subject by id', description: 'Finds subject by id.' })

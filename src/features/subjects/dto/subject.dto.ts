@@ -49,3 +49,5 @@ export class SubjectDto {
 export class CreateSubjectDto extends OmitType(SubjectDto, ['id', 'lessons', 'createdBy'] as const) {}
 
 export class UpdateSubjectDto extends PartialType(CreateSubjectDto) {}
+
+export class SearchSubjectQueryDto extends PartialType(OmitType(SubjectDto, ['createdBy', 'lessons'])) {}

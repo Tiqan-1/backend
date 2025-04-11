@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
-import { ObjectId } from 'src/shared/repository/types'
 import { RepositoryMongoBase } from '../../shared/repository/repository-mongo-base'
 import { Subject, SubjectDocument } from './schemas/subject.schema'
 
@@ -35,13 +34,7 @@ export class SubjectsRepository extends RepositoryMongoBase<SubjectDocument> {
         return this.model.find().populate('createdBy', 'name email').populate('lessons').limit(limit).skip(skip).exec()
     }
 
-    async findAllByManagerId(managerId: ObjectId, limit = 10, skip = 0): Promise<SubjectDocument[]> {
-        return this.model
-            .find({ createdBy: managerId })
-            .populate('createdBy', 'name email')
-            .populate('lessons')
-            .limit(limit)
-            .skip(skip)
-            .exec()
+    async find(filter: object, limit = 10, skip = 0): Promise<SubjectDocument[]> {
+        return this.model.find(filter).populate('createdBy', 'name email').populate('lessons').limit(limit).skip(skip).exec()
     }
 }

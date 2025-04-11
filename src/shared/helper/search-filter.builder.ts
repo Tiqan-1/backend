@@ -1,3 +1,5 @@
+import { ObjectId } from '../repository/types'
+
 export class SearchFilterBuilder {
     private filter: Record<string, unknown> = {}
     constructor() {}
@@ -6,8 +8,15 @@ export class SearchFilterBuilder {
         return new SearchFilterBuilder()
     }
 
+    withId(id?: string): SearchFilterBuilder {
+        if (id) {
+            this.filter._id = new ObjectId(id)
+        }
+        return this
+    }
+
     withParam(key: string, value?: unknown): SearchFilterBuilder {
-        if (value) {
+        if (value !== undefined && value !== null) {
             this.filter[key] = value
         }
         return this

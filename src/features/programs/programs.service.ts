@@ -3,6 +3,7 @@ import { BadRequestException, Injectable, Logger, NotFoundException } from '@nes
 import { oneMonth } from '../../shared/constants'
 import { SharedDocumentsService } from '../../shared/documents-validator/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
+import { SearchFilterBuilder } from '../../shared/helper/search-filter.builder'
 import { ObjectId } from '../../shared/repository/types'
 import { CreateLevelDto, LevelDto } from '../levels/dto/level.dto'
 import { LevelsService } from '../levels/levels.service'
@@ -12,7 +13,6 @@ import { ProgramState } from './enums/program-state.enum'
 import { ProgramsRepository } from './programs.repository'
 import { ProgramsThumbnailsRepository } from './programs.thumbnails.repository'
 import { ProgramDocument } from './schemas/program.schema'
-import { SearchFilterBuilder } from './search-filter.builder'
 
 @Injectable()
 export class ProgramsService {
@@ -152,7 +152,7 @@ export class ProgramsService {
 
     async findForManagers(searchProgramQueryDto: SearchProgramQueryDto): Promise<ProgramDto[]> {
         const filter = SearchFilterBuilder.init()
-            .withParam('id', searchProgramQueryDto.id)
+            .withId(searchProgramQueryDto.id)
             .withParam('state', searchProgramQueryDto.state)
             .withStringLike('name', searchProgramQueryDto.name)
             .withStringLike('description', searchProgramQueryDto.description)
