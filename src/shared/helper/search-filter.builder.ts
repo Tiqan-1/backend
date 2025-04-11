@@ -8,9 +8,9 @@ export class SearchFilterBuilder {
         return new SearchFilterBuilder()
     }
 
-    withId(id?: string): SearchFilterBuilder {
+    withObjectId(key: string, id?: string): SearchFilterBuilder {
         if (id) {
-            this.filter._id = new ObjectId(id)
+            this.filter[key] = new ObjectId(id)
         }
         return this
     }

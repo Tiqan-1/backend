@@ -152,7 +152,7 @@ export class ProgramsService {
 
     async findForManagers(searchProgramQueryDto: SearchProgramQueryDto): Promise<ProgramDto[]> {
         const filter = SearchFilterBuilder.init()
-            .withId(searchProgramQueryDto.id)
+            .withObjectId('_id', searchProgramQueryDto.id)
             .withParam('state', searchProgramQueryDto.state)
             .withStringLike('name', searchProgramQueryDto.name)
             .withStringLike('description', searchProgramQueryDto.description)

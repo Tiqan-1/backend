@@ -91,7 +91,7 @@ export class SubjectsService {
 
     async search(searchSubjectQueryDto: SearchSubjectQueryDto): Promise<SubjectDto[]> {
         const filter = SearchFilterBuilder.init()
-            .withId(searchSubjectQueryDto.id)
+            .withObjectId('_id', searchSubjectQueryDto.id)
             .withStringLike('name', searchSubjectQueryDto.name)
             .withStringLike('description', searchSubjectQueryDto.description)
             .build()

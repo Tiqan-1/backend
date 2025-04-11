@@ -13,25 +13,25 @@ describe('SearchFilterBuilder', () => {
         expect(builder.build()).toEqual({})
     })
 
-    describe('withId', () => {
-        it('should add _id filter with ObjectId when id is provided', () => {
+    describe('withObjectId', () => {
+        it('should add filter with ObjectId when id is provided', () => {
             const testId = '60f1b9b3b3b3b3b3b3b3b3b3'
             const expectedObjectId = new ObjectId(testId)
-            const filter = builder.withId(testId).build()
+            const filter = builder.withObjectId('_id', testId).build()
 
             expect(filter).toHaveProperty('_id')
             expect(filter._id).toEqual(expectedObjectId)
         })
 
-        it('should not add _id filter when id is undefined', () => {
-            const filter = builder.withId(undefined).build()
+        it('should not add filter when id is undefined', () => {
+            const filter = builder.withObjectId('_id', undefined).build()
             expect(filter).not.toHaveProperty('_id')
             expect(filter).toEqual({})
         })
 
         it('should return the builder instance for chaining', () => {
             const testId = '60f1b9b3b3b3b3b3b3b3b3b3'
-            expect(builder.withId(testId)).toBeInstanceOf(SearchFilterBuilder)
+            expect(builder.withObjectId('_id', testId)).toBeInstanceOf(SearchFilterBuilder)
         })
     })
 
@@ -147,7 +147,7 @@ describe('SearchFilterBuilder', () => {
             const endDate = new Date('2023-05-31')
 
             const filter = builder
-                .withId(testId)
+                .withObjectId('_id', testId)
                 .withParam('status', statusValue)
                 .withStringLike('name', nameValue)
                 .withDateAfter('startDate', startDate)
