@@ -7,7 +7,7 @@ import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { RolesGuard } from '../authentication/guards/roles.guard'
 import { CreateLevelDto, LevelDto } from '../levels/dto/level.dto'
-import { ProgramDto, UpdateProgramDto } from './dto/program.dto'
+import { ProgramDto, SearchProgramQueryDto, UpdateProgramDto } from './dto/program.dto'
 import { ProgramsService } from './programs.service'
 import { ThumbnailValidator } from './validators/thumbnail.validator'
 
@@ -47,22 +47,8 @@ export class ProgramsController {
     }
 
     @ApiOperation({
-        summary: 'Finds all programs (enriched for managers)',
-        description: 'Finds all programs (enriched for managers)',
-    })
-    @ApiQuery({
-        name: 'limit',
-        type: Number,
-        required: false,
-        description: 'Controls the number of returned elements',
-        default: 20,
-    })
-    @ApiQuery({
-        name: 'skip',
-        type: Number,
-        required: false,
-        description: 'Controls the number of elements to be skipped (for paging)',
-        default: 0,
+        summary: 'Searches for programs',
+        description: 'Searches for programs (enriched for managers)',
     })
     @ApiResponse({ status: HttpStatus.OK, type: ProgramDto, isArray: true, description: 'Got programs successfully.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
@@ -72,8 +58,8 @@ export class ProgramsController {
     @UseGuards(JwtAuthGuard)
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
-    search(@Query('limit') limit?: number, @Query('skip') skip?: number): Promise<ProgramDto[]> {
-        return this.programsService.findAllForManagers(limit, skip)
+    search(@Query() searchProgramQueryDto: SearchProgramQueryDto): Promise<ProgramDto[]> {
+        return this.programsService.findForManagers(searchProgramQueryDto)
     }
 
     @ApiOperation({

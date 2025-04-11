@@ -7,11 +7,12 @@ import { ObjectId } from '../../shared/repository/types'
 import { CreateLevelDto, LevelDto } from '../levels/dto/level.dto'
 import { LevelsService } from '../levels/levels.service'
 import { LevelDocument } from '../levels/schemas/level.schema'
-import { CreateProgramDto, ProgramDto, StudentProgramDto, UpdateProgramDto } from './dto/program.dto'
+import { CreateProgramDto, ProgramDto, SearchProgramQueryDto, StudentProgramDto, UpdateProgramDto } from './dto/program.dto'
 import { ProgramState } from './enums/program-state.enum'
 import { ProgramsRepository } from './programs.repository'
 import { ProgramsThumbnailsRepository } from './programs.thumbnails.repository'
 import { ProgramDocument } from './schemas/program.schema'
+import { SearchFilterBuilder } from './search-filter.builder'
 
 @Injectable()
 export class ProgramsService {
@@ -147,5 +148,21 @@ export class ProgramsService {
             throw new NotFoundException('Program not found')
         }
         return program
+    }
+
+    async findForManagers(searchProgramQueryDto: SearchProgramQueryDto): Promise<ProgramDto[]> {
+        const filter = SearchFilterBuilder.init()
+            .withParam('id', searchProgramQueryDto.id)
+            .withParam('state', searchProgramQueryDto.state)
+            .withStringLike('name', searchProgramQueryDto.name)
+            .withStringLike('description', searchProgramQueryDto.description)
+            .withDateAfter('start', searchProgramQueryDto.start)
+            .withDateBefore('end', searchProgramQueryDto.end)
+            .withDateAfter('registrationStart', searchProgramQueryDto.registrationStart)
+            .withDateBefore('registrationEnd', searchProgramQueryDto.registrationEnd)
+            .build()
+
+        const result = await this.programsRepository.find(filter, 10)
+        return ProgramDto.fromDocuments(result)
     }
 }

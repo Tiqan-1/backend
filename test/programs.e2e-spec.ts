@@ -24,6 +24,7 @@ import { ProgramsThumbnailsRepository } from '../src/features/programs/programs.
 import { ProgramDocument } from '../src/features/programs/schemas/program.schema'
 import { TasksRepository } from '../src/features/tasks/tasks.repository'
 import { TasksService } from '../src/features/tasks/tasks.service'
+import { oneMonth } from '../src/shared/constants'
 import { SharedDocumentsService } from '../src/shared/documents-validator/shared-documents.service'
 import { CreatedDto } from '../src/shared/dto/created.dto'
 import {
@@ -128,6 +129,47 @@ describe('ProgramsController (e2e)', () => {
 
             await request(app.getHttpServer())
                 .get(`/api/programs/enriched/${program._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.FORBIDDEN)
+        })
+    })
+
+    describe('GET /api/programs/search', () => {
+        it('should succeed', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+            const program = await mongoTestHelper.createProgram([], manager._id)
+            const otherProgram = await mongoTestHelper.createProgram([], manager._id)
+
+            // change other program so is won't be found
+            otherProgram.name = 'other'
+            otherProgram.description = 'other'
+            otherProgram.state = ProgramState.published
+            otherProgram.start = new Date(oneMonth.valueOf())
+            await otherProgram.save()
+
+            const name = program.name
+            const description = program.description
+            const state = program.state
+            const start = new Date(program.start.valueOf() - oneMonth.valueOf())
+
+            const response = await request(app.getHttpServer())
+                .get(`/api/programs/search?name=${name}&description=${description}&state=${state}&start=${start.toISOString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.OK)
+
+            expect(response.body).toBeDefined()
+            const found = response.body as ProgramDto[]
+            expect(found.length).toEqual(1)
+            expect(found[0].id).toEqual(program._id.toString())
+        })
+
+        it('should fail with 403 if called by a student', async () => {
+            const student = await mongoTestHelper.createStudent()
+            const token = jwtService.sign({ id: student._id, role: student.role })
+
+            await request(app.getHttpServer())
+                .get(`/api/programs/search`)
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.FORBIDDEN)
         })

@@ -164,3 +164,29 @@ export class UpdateProgramDto extends PartialType(CreateProgramDto) {
         }
     }
 }
+
+export class SearchProgramQueryDto extends PartialType(OmitType(ProgramDto, ['thumbnail', 'levels', 'createdBy'])) {
+    @ApiProperty({ example: '' })
+    id: string
+
+    @ApiProperty({ example: '' })
+    name: string
+
+    @ApiProperty({ example: '' })
+    description: string
+
+    @ApiProperty({ example: '' })
+    state: ProgramState
+
+    @ApiProperty({ example: '' })
+    start: Date
+
+    @ApiProperty({ example: '' })
+    end: Date
+
+    @ApiProperty({ example: '' })
+    registrationStart?: Date
+
+    @ApiProperty({ example: '' })
+    registrationEnd?: Date
+}

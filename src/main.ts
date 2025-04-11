@@ -22,7 +22,12 @@ async function bootstrap(): Promise<void> {
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
         credentials: true,
     })
-    app.useGlobalPipes(new ValidationPipe())
+    app.useGlobalPipes(
+        new ValidationPipe({
+            transform: true,
+            whitelist: true,
+        })
+    )
     app.useGlobalFilters(new MongoDbExceptionFilter(), new SecurityExceptionFilter())
 
     const config = new DocumentBuilder()
