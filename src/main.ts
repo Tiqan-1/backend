@@ -1,5 +1,5 @@
 import multipart from '@fastify/multipart'
-import { ValidationPipe } from '@nestjs/common'
+import { ConsoleLogger, ValidationPipe } from '@nestjs/common'
 import { LogLevel } from '@nestjs/common/services/logger.service'
 import { NestFactory } from '@nestjs/core'
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify'
@@ -12,7 +12,9 @@ import { SecurityExceptionFilter } from './shared/exceptions/security-exception.
 async function bootstrap(): Promise<void> {
     const logLevels: LogLevel[] =
         process.env.NODE_ENV === 'production' ? ['log', 'error', 'warn'] : ['log', 'error', 'warn', 'debug', 'verbose']
-    const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter(), { logger: logLevels })
+    const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter(), {
+        logger: new ConsoleLogger({ logLevels, json: true, colors: process.env.NODE_ENV === 'development' }),
+    })
 
     await app.register(multipart)
     app.enableCors({
@@ -32,6 +34,8 @@ async function bootstrap(): Promise<void> {
 
     const documentFactory = (): OpenAPIObject => SwaggerModule.createDocument(app, config)
     SwaggerModule.setup('api', app, documentFactory)
+
+    app.enableShutdownHooks()
 
     await app.listen(process.env.PORT ?? 3000)
 }
