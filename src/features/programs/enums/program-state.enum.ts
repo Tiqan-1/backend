@@ -3,4 +3,5 @@ export enum ProgramState {
     published = 'published',
     suspended = 'suspended',
     cancelled = 'cancelled',
+    deleted = 'deleted',
 }

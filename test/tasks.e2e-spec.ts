@@ -8,6 +8,8 @@ import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strat
 import { LessonsRepository } from '../src/features/lessons/lessons.repository'
 import { LessonsService } from '../src/features/lessons/lessons.service'
 import { UpdateTaskDto } from '../src/features/tasks/dto/task.dto'
+import { TaskState } from '../src/features/tasks/enums'
+import { TaskDocument } from '../src/features/tasks/schemas/task.schema'
 import { TasksController } from '../src/features/tasks/tasks.controller'
 import { TasksRepository } from '../src/features/tasks/tasks.repository'
 import { TasksService } from '../src/features/tasks/tasks.service'
@@ -231,8 +233,8 @@ describe('TasksController (e2e)', () => {
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.NO_CONTENT)
 
-            const deleted = await mongoTestHelper.getTaskModel().findById(task._id)
-            expect(deleted).toBeNull()
+            const deleted = (await mongoTestHelper.getTaskModel().findById(task._id)) as TaskDocument
+            expect(deleted.state).toEqual(TaskState.deleted)
         })
 
         it('should fail with 403 when called by a student', async () => {

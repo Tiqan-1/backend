@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { HydratedDocument } from 'mongoose'
+import { LessonState } from '../enums/lesson-state.enum'
 import { LessonType } from '../enums/lesson-type.enum'
 
 export type LessonDocument = HydratedDocument<Lesson>
@@ -14,5 +15,8 @@ export class Lesson {
 
     @Prop({ required: true, type: String })
     url: string
+
+    @Prop({ required: true, type: String, enum: LessonState, default: LessonState.active })
+    state: LessonState
 }
 export const LessonSchema = SchemaFactory.createForClass(Lesson)

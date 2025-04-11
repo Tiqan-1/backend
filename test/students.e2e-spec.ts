@@ -7,6 +7,8 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { AuthenticationService } from '../src/features/authentication/authentication.service'
 import { AuthenticationResponseDto } from '../src/features/authentication/dto/authentication-response.dto'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
+import { LessonsRepository } from '../src/features/lessons/lessons.repository'
+import { LessonsService } from '../src/features/lessons/lessons.service'
 import { LevelsRepository } from '../src/features/levels/levels.repository'
 import { LevelsService } from '../src/features/levels/levels.service'
 import { StudentProgramDto } from '../src/features/programs/dto/program.dto'
@@ -64,6 +66,8 @@ describe('StudentsController (e2e)', () => {
                 LevelsRepository,
                 TasksService,
                 TasksRepository,
+                LessonsService,
+                LessonsRepository,
                 ConfigServiceProvider,
                 AuthenticationService,
                 UsersService,

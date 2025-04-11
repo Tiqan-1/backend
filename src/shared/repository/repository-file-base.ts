@@ -1,4 +1,5 @@
 import { MultipartFile } from '@fastify/multipart'
+import { Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import * as fs from 'node:fs'
 import { pipeline } from 'node:stream'
@@ -9,7 +10,9 @@ import { v4 as uuidv4 } from 'uuid'
 const pump = promisify(pipeline)
 
 export abstract class RepositoryFileBase {
+    private readonly logger: Logger = new Logger(RepositoryFileBase.name)
     private readonly uploadDir: string
+
     protected constructor(
         private readonly folderName: string,
         private readonly configService: ConfigService
@@ -27,6 +30,7 @@ export abstract class RepositoryFileBase {
         const filePath = path.join(this.uploadDir, uniqueFilename)
         try {
             await pump(multipartFile.file, fs.createWriteStream(filePath))
+            this.logger.log(`File ${filePath} created.`)
         } catch (error) {
             throw new Error(`Failed to save file`, error as Error)
         }
@@ -48,5 +52,6 @@ export abstract class RepositoryFileBase {
         }
         const filePath = path.join(this.uploadDir, fileName)
         await fs.promises.rm(filePath)
+        this.logger.log(`File ${filePath} removed.`)
     }
 }

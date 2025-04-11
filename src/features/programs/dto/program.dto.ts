@@ -160,6 +160,7 @@ export class UpdateProgramDto extends PartialType(CreateProgramDto) {
             end: dto.end,
             registrationStart: dto.registrationStart,
             registrationEnd: dto.registrationEnd,
+            levelIds: dto.levelIds,
         }
     }
 }

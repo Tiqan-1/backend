@@ -47,6 +47,36 @@ export class ProgramsController {
     }
 
     @ApiOperation({
+        summary: 'Finds all programs (enriched for managers)',
+        description: 'Finds all programs (enriched for managers)',
+    })
+    @ApiQuery({
+        name: 'limit',
+        type: Number,
+        required: false,
+        description: 'Controls the number of returned elements',
+        default: 20,
+    })
+    @ApiQuery({
+        name: 'skip',
+        type: Number,
+        required: false,
+        description: 'Controls the number of elements to be skipped (for paging)',
+        default: 0,
+    })
+    @ApiResponse({ status: HttpStatus.OK, type: ProgramDto, isArray: true, description: 'Got programs successfully.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user,' })
+    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
+    @Get('search')
+    @UseGuards(JwtAuthGuard)
+    @Roles(Role.Manager)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    search(@Query('limit') limit?: number, @Query('skip') skip?: number): Promise<ProgramDto[]> {
+        return this.programsService.findAllForManagers(limit, skip)
+    }
+
+    @ApiOperation({
         summary: 'Finds program by id (enriched for managers)',
         description: 'Finds program by id. (enriched for managers)',
     })

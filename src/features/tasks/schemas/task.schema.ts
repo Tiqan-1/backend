@@ -3,6 +3,7 @@ import { HydratedDocument } from 'mongoose'
 import { normalizeDate } from '../../../shared/helper/date.helper'
 import { ObjectId, Populated } from '../../../shared/repository/types'
 import { Lesson, LessonDocument } from '../../lessons/schemas/lesson.schema'
+import { TaskState } from '../enums'
 
 export type TaskDocument = HydratedDocument<Task>
 
@@ -13,6 +14,12 @@ export class Task {
 
     @Prop({ required: true, type: [ObjectId], ref: Lesson.name, default: [] })
     lessons: ObjectId[] | Populated<LessonDocument[]>
+
+    @Prop({ type: Date, index: { expireAfterSeconds: 0 } })
+    expireAt?: Date
+
+    @Prop({ required: true, type: String, enum: TaskState, default: TaskState.active })
+    state: TaskState
 }
 
 export const TaskSchema = SchemaFactory.createForClass(Task)

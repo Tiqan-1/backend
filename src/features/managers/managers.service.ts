@@ -60,6 +60,7 @@ export class ManagersService {
         const manager = await this.loadManager(managerId)
         const subjectIndex = manager.subjects.findIndex(id => id._id.toString() === subjectId)
         if (subjectIndex === -1) {
+            this.logger.error(`Attempt to remove subject ${subjectId} from manager ${managerId.toString()} failed.`)
             throw new NotFoundException('Subject not found.')
         }
         ;(manager.subjects as ObjectId[]).splice(subjectIndex, 1)

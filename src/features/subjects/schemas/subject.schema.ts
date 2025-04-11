@@ -3,6 +3,7 @@ import { HydratedDocument } from 'mongoose'
 import { ObjectId, Populated } from '../../../shared/repository/types'
 import { Lesson, LessonDocument } from '../../lessons/schemas/lesson.schema'
 import { ManagerDocument } from '../../managers/schemas/manager.schema'
+import { SubjectState } from '../enums/subject-state'
 
 export type SubjectDocument = HydratedDocument<Subject>
 
@@ -13,6 +14,9 @@ export class Subject {
 
     @Prop({ required: false, type: String })
     description?: string
+
+    @Prop({ required: true, type: String, enum: SubjectState, default: SubjectState.active })
+    state?: SubjectState
 
     @Prop({ required: true, type: ObjectId, ref: 'Manager' })
     createdBy: ObjectId | Populated<ManagerDocument>
