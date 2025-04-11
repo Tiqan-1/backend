@@ -49,6 +49,8 @@ export class StudentsService {
 
     async createSubscription(createSubscriptionDto: CreateSubscriptionDto, studentId: ObjectId): Promise<CreatedDto> {
         const student = await this.loadStudent(studentId)
+        const currentSubscriptions = await this.subscriptionsService.getManyForStudent(student.subscriptions as ObjectId[])
+        this.assureUniqueSubscription(createSubscriptionDto, currentSubscriptions)
         const created = await this.subscriptionsService.create(createSubscriptionDto, student._id)
         ;(student.subscriptions as ObjectId[]).push(new ObjectId(created.id))
         await student.save()
@@ -110,5 +112,16 @@ export class StudentsService {
             throw new InternalServerErrorException('Student not found.')
         }
         return student
+    }
+
+    private assureUniqueSubscription(
+        { programId, levelId }: CreateSubscriptionDto,
+        subscriptions: StudentSubscriptionDto[]
+    ): void {
+        const hasSameSubscription = subscriptions?.some(sub => sub.program?.id === programId && sub.level?.id === levelId)
+        if (hasSameSubscription) {
+            this.logger.error(`Student already subscribed to level ${levelId} in program ${programId}.`)
+            throw new ConflictException('Student already have the same subscription.')
+        }
     }
 }

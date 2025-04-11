@@ -47,6 +47,7 @@ export class StudentsController {
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
     @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.' })
+    @ApiResponse({ status: HttpStatus.CONFLICT, description: 'Student already have the same subscription.' })
     @Post('subscriptions/subscribe')
     @HttpCode(HttpStatus.CREATED)
     @UseGuards(JwtAuthGuard)

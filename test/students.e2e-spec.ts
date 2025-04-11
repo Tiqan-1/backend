@@ -172,6 +172,27 @@ describe('StudentsController (e2e)', () => {
             expect(id).toEqual(created._id.toString())
             expect(created.state).toEqual(SubscriptionState.active)
         })
+
+        it('should fail with 409 if student already subscribed to same level in the same program', async () => {
+            const student = await mongoTestHelper.createStudent()
+            const token = jwtService.sign({ id: student._id, role: student.role })
+            const level = await mongoTestHelper.createLevel([])
+            const program = await mongoTestHelper.createProgram([], student._id)
+            const subscription = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
+            student.subscriptions = [subscription]
+            await student.save()
+
+            const body: CreateSubscriptionDto = {
+                programId: program._id.toString(),
+                levelId: level._id.toString(),
+            }
+
+            await request(app.getHttpServer())
+                .post('/api/students/subscriptions/subscribe')
+                .set('Authorization', `Bearer ${token}`)
+                .send(body)
+                .expect(HttpStatus.CONFLICT)
+        })
     })
 
     describe('GET /api/students/subscriptions', () => {
