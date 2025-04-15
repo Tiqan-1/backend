@@ -27,12 +27,12 @@ export class SubscriptionsService {
     }
 
     async findAll(limit?: number, skip?: number): Promise<SubscriptionDto[]> {
-        const found = await this.repository.findAllPopulated(limit, skip)
+        const found = await this.repository.findAll(limit, skip)
         return SubscriptionDto.fromDocuments(found)
     }
 
     async findOne(id: string): Promise<SubscriptionDto> {
-        const found = await this.repository.findByIdPopulated(new ObjectId(id))
+        const found = await this.repository.findById(new ObjectId(id))
         if (!found) {
             throw new NotFoundException(`Subscription with id ${id} not found.`)
         }
@@ -55,7 +55,7 @@ export class SubscriptionsService {
     }
 
     async getManyForStudent(subscriptionIds: ObjectId[], limit?: number, skip?: number): Promise<StudentSubscriptionDto[]> {
-        const subscriptions: SubscriptionDocument[] = await this.repository.findManyByIdsPopulated(subscriptionIds, limit, skip)
+        const subscriptions: SubscriptionDocument[] = await this.repository.findManyByIds(subscriptionIds, limit, skip)
         return StudentSubscriptionDto.fromDocuments(subscriptions)
     }
 }

@@ -80,7 +80,10 @@ export class ManagersService {
 
     async getPrograms(id: ObjectId): Promise<ProgramDto[]> {
         const manager = await this.loadManager(id)
-        await manager.populate('programs')
+        await manager.populate([
+            { path: 'programs', populate: { path: 'levels', populate: { path: 'tasks', populate: { path: 'lessons' } } } },
+            { path: 'programs.createdBy', select: 'name email' },
+        ])
         await this.programsService.loadThumbnails(manager.programs as ProgramDocument[])
         return ProgramDto.fromDocuments(manager.programs as ProgramDocument[])
     }

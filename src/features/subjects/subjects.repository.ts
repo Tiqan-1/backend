@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
 import { RepositoryMongoBase } from '../../shared/repository/repository-mongo-base'
+import { ObjectId } from '../../shared/repository/types'
 import { Subject, SubjectDocument } from './schemas/subject.schema'
 
 @Injectable()
@@ -15,14 +16,14 @@ export class SubjectsRepository extends RepositoryMongoBase<SubjectDocument> {
         await createdElement.save()
 
         // called to populate createdBy and lessons
-        return (await this.findOne({ _id: createdElement._id })) as SubjectDocument
+        return (await this.findById(createdElement._id)) as SubjectDocument
     }
 
-    async findOne(filter: object): Promise<SubjectDocument | undefined> {
+    async findById(id: ObjectId): Promise<SubjectDocument | undefined> {
         const foundDocument: SubjectDocument | null = await this.model
-            .findOne(filter)
+            .findById(id)
             .populate('createdBy', 'name email')
-            .populate({ path: 'lessons', options: { perDocumentLimit: 10, each: true } })
+            .populate({ path: 'lessons' })
             .exec()
         if (!foundDocument) {
             return undefined

@@ -12,7 +12,7 @@ export class SubscriptionsRepository extends RepositoryMongoBase<SubscriptionDoc
         super(model)
     }
 
-    findAllPopulated(limit = 10, skip = 0): Promise<SubscriptionDocument[]> {
+    findAll(limit = 10, skip = 0): Promise<SubscriptionDocument[]> {
         return this.model
             .find()
             .populate('program')
@@ -23,7 +23,7 @@ export class SubscriptionsRepository extends RepositoryMongoBase<SubscriptionDoc
             .exec()
     }
 
-    async findByIdPopulated(id: ObjectId): Promise<SubscriptionDocument | undefined> {
+    async findById(id: ObjectId): Promise<SubscriptionDocument | undefined> {
         const found = await this.model
             .findById(id)
             .populate('program')
@@ -36,11 +36,12 @@ export class SubscriptionsRepository extends RepositoryMongoBase<SubscriptionDoc
         return found
     }
 
-    findManyByIdsPopulated(ids: ObjectId[], limit = 10, skip = 0): Promise<SubscriptionDocument[]> {
+    findManyByIds(ids: ObjectId[], limit = 10, skip = 0): Promise<SubscriptionDocument[]> {
         return this.model
             .find({ _id: { $in: ids }, state: { $ne: SubscriptionState.deleted } })
             .populate('program')
             .populate({ path: 'level', populate: { path: 'tasks', populate: { path: 'lessons' } } })
+            .populate({ path: 'subscriber', select: 'name email' })
             .limit(limit)
             .skip(skip)
             .exec()

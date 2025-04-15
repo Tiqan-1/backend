@@ -53,7 +53,7 @@ export class TasksService {
 
     async findById(id: string): Promise<TaskDto> {
         const taskId = new ObjectId(id)
-        const found = await this.taskRepository.findByIdPopulated(taskId)
+        const found = await this.taskRepository.findById(taskId)
         if (!found || found.state === TaskState.deleted) {
             this.logger.error(`Attempt to find Task ${id} failed.`)
             throw new NotFoundException('Task not found.')

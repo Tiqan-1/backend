@@ -15,7 +15,7 @@ export class TasksRepository extends RepositoryMongoBase<TaskDocument> {
         return await super.create(element)
     }
 
-    async findByIdPopulated(id: ObjectId): Promise<TaskDocument | undefined> {
+    async findById(id: ObjectId): Promise<TaskDocument | undefined> {
         const foundDocument: TaskDocument | null = await this.model
             .findById(id)
             .populate({ path: 'lessons', options: { perDocumentLimit: 10 } })
