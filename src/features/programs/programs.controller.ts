@@ -1,4 +1,19 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, Query, Req, UseGuards } from '@nestjs/common'
+import {
+    BadRequestException,
+    Body,
+    Controller,
+    Delete,
+    Get,
+    HttpCode,
+    HttpStatus,
+    Logger,
+    Param,
+    Post,
+    Put,
+    Query,
+    Req,
+    UseGuards,
+} from '@nestjs/common'
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger'
 import { FastifyRequest } from 'fastify'
 import { CreatedDto } from '../../shared/dto/created.dto'
@@ -8,12 +23,15 @@ import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { RolesGuard } from '../authentication/guards/roles.guard'
 import { CreateLevelDto, LevelDto } from '../levels/dto/level.dto'
 import { ProgramDto, SearchProgramQueryDto, UpdateProgramDto } from './dto/program.dto'
+import { ProgramState } from './enums/program-state.enum'
 import { ProgramsService } from './programs.service'
 import { ThumbnailValidator } from './validators/thumbnail.validator'
 
 @ApiBearerAuth()
 @Controller('api/programs')
 export class ProgramsController {
+    private readonly logger = new Logger(ProgramsController.name)
+
     constructor(private readonly programsService: ProgramsService) {}
 
     @ApiOperation({
@@ -90,6 +108,10 @@ export class ProgramsController {
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
     update(@Param('id') id: string, @Body() updateProgramDto: UpdateProgramDto): Promise<void> {
+        if (updateProgramDto.state === ProgramState.deleted) {
+            this.logger.error(`Attempt to update state of program to deleted.`)
+            throw new BadRequestException('Cannot update state to deleted, use the right endpoint to delete the program.')
+        }
         return this.programsService.update(id, updateProgramDto)
     }
 

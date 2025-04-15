@@ -41,7 +41,7 @@ export class TasksController {
         return this.service.update(id, task)
     }
 
-    @ApiOperation({ summary: 'Deletes a task', description: 'Deletes a task.' })
+    @ApiOperation({ summary: 'Deletes a task', description: 'Deletes a task.', deprecated: true })
     @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Task successfully deleted.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Task not found.' })

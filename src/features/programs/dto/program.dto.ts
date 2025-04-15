@@ -144,7 +144,7 @@ export class CreateProgramDto extends OmitType(ProgramDto, ['id', 'state', 'leve
     }
 }
 
-export class UpdateProgramDto extends PartialType(CreateProgramDto) {
+export class UpdateProgramDto extends PartialType(OmitType(CreateProgramDto, ['thumbnail'] as const)) {
     @ApiProperty({ type: String, enum: ProgramState, required: false })
     @IsOptional()
     @IsEnum(ProgramState)
@@ -153,7 +153,6 @@ export class UpdateProgramDto extends PartialType(CreateProgramDto) {
     static toDocument(dto: UpdateProgramDto): object {
         return {
             name: dto.name,
-            thumbnail: dto.thumbnail,
             description: dto.description,
             state: dto.state,
             start: dto.start,

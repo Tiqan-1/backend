@@ -1,5 +1,5 @@
 import { MultipartFile } from '@fastify/multipart'
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { oneMonth } from '../../shared/constants'
 import { SharedDocumentsService } from '../../shared/documents-validator/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
@@ -68,10 +68,6 @@ export class ProgramsService {
 
     async update(id: string, updateProgramDto: UpdateProgramDto): Promise<void> {
         const programId = new ObjectId(id)
-        if (updateProgramDto.state === ProgramState.deleted) {
-            this.logger.error(`Attempt to update state of program to deleted.`)
-            throw new BadRequestException('Cannot update state to deleted, use the right endpoint to delete the program.')
-        }
         const updateObject = UpdateProgramDto.toDocument(updateProgramDto)
         const updated = await this.programsRepository.update({ _id: programId }, updateObject)
         if (!updated) {
