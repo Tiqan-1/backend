@@ -61,7 +61,7 @@ export class ProgramDto {
     levels: LevelDto[]
 
     static fromDocuments(foundPrograms: ProgramDocument[] = []): ProgramDto[] {
-        return foundPrograms.map(document => this.fromDocument(document))
+        return foundPrograms.map(document => this.fromDocument(document)).sort((a, b) => a.start.getTime() - b.start.getTime())
     }
 
     static fromDocument(document: ProgramDocument): ProgramDto {
@@ -83,7 +83,9 @@ export class ProgramDto {
 
 export class StudentProgramDto extends OmitType(ProgramDto, ['state']) {
     static fromDocuments(foundPrograms: ProgramDocument[] = []): StudentProgramDto[] {
-        return foundPrograms.map(foundProgram => this.fromDocument(foundProgram))
+        return foundPrograms
+            .map(foundProgram => this.fromDocument(foundProgram))
+            .sort((a, b) => a.start.getTime() - b.start.getTime())
     }
 
     static fromDocument(document: ProgramDocument): StudentProgramDto {

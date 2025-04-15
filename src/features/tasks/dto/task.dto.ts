@@ -28,7 +28,7 @@ export class TaskDto {
     }
 
     static fromDocuments(tasks: TaskDocument[] = []): TaskDto[] {
-        return tasks.map(task => this.fromDocument(task))
+        return tasks.map(task => this.fromDocument(task)).sort((a, b) => a.date.getTime() - b.date.getTime())
     }
 }
 

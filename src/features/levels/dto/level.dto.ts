@@ -27,7 +27,7 @@ export class LevelDto {
     tasks: TaskDto[]
 
     static fromDocuments(levels: LevelDocument[] = []): LevelDto[] {
-        return levels.map(level => this.fromDocument(level))
+        return levels.map(level => this.fromDocument(level)).sort((a, b) => a.start.getTime() - b.start.getTime())
     }
 
     static fromDocument(document: LevelDocument): LevelDto {
