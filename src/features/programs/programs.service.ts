@@ -129,7 +129,7 @@ export class ProgramsService {
         await program.save()
     }
 
-    private async loadThumbnails(foundPrograms: ProgramDocument[]): Promise<void> {
+    async loadThumbnails(foundPrograms: ProgramDocument[]): Promise<void> {
         for (const program of foundPrograms) {
             await this.loadThumbnail(program)
         }
@@ -163,6 +163,7 @@ export class ProgramsService {
             .build()
 
         const result = await this.programsRepository.find(filter, 10)
+        await this.loadThumbnails(result)
         return ProgramDto.fromDocuments(result)
     }
 }

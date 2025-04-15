@@ -7,7 +7,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import * as fs from 'node:fs'
 import path from 'path'
 import request from 'supertest'
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vitest } from 'vitest'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
 import { LessonsRepository } from '../src/features/lessons/lessons.repository'
 import { LessonsService } from '../src/features/lessons/lessons.service'
@@ -88,11 +88,22 @@ describe('ProgramsController (e2e)', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
             const token = jwtService.sign({ id: manager._id, role: manager.role })
-            await request(app.getHttpServer())
+            const program = await mongoTestHelper.createProgram([], manager._id)
+
+            vitest
+                .spyOn(ProgramsThumbnailsRepository.prototype, 'findOne')
+                .mockImplementation(thumbnail => Promise.resolve(`base64-${thumbnail}`))
+
+            const response = await request(app.getHttpServer())
                 .get('/api/programs/enriched')
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.OK)
-                .expect([])
+
+            expect(response.body).toBeDefined()
+            const found = response.body as ProgramDto[]
+            expect(found.length).toEqual(1)
+            expect(found[0].id).toEqual(program._id.toString())
+            expect(found[0].thumbnail).toEqual(`base64-${program.thumbnail}`)
         })
 
         it('should fail with 403 if called by a student', async () => {
@@ -111,6 +122,10 @@ describe('ProgramsController (e2e)', () => {
             const token = jwtService.sign({ id: manager._id, role: manager.role })
             const program = await mongoTestHelper.createProgram([], manager._id)
 
+            vitest
+                .spyOn(ProgramsThumbnailsRepository.prototype, 'findOne')
+                .mockImplementation(thumbnail => Promise.resolve(`base64-${thumbnail}`))
+
             const response = await request(app.getHttpServer())
                 .get(`/api/programs/enriched/${program._id.toString()}`)
                 .set('Authorization', `Bearer ${token}`)
@@ -119,6 +134,7 @@ describe('ProgramsController (e2e)', () => {
             const found = response.body as ProgramDto
             expect(found.id).toEqual(program._id.toString())
             expect(found.state).toEqual(ProgramState.created)
+            expect(found.thumbnail).toEqual(`base64-${program.thumbnail}`)
         })
 
         it('should fail with 403 if called by a student', async () => {
@@ -153,6 +169,10 @@ describe('ProgramsController (e2e)', () => {
             const state = program.state
             const start = new Date(program.start.valueOf() - oneMonth.valueOf())
 
+            vitest
+                .spyOn(ProgramsThumbnailsRepository.prototype, 'findOne')
+                .mockImplementation(thumbnail => Promise.resolve(`base64-${thumbnail}`))
+
             const response = await request(app.getHttpServer())
                 .get(`/api/programs/search?name=${name}&description=${description}&state=${state}&start=${start.toISOString()}`)
                 .set('Authorization', `Bearer ${token}`)
@@ -162,6 +182,7 @@ describe('ProgramsController (e2e)', () => {
             const found = response.body as ProgramDto[]
             expect(found.length).toEqual(1)
             expect(found[0].id).toEqual(program._id.toString())
+            expect(found[0].thumbnail).toEqual(`base64-${program.thumbnail}`)
         })
 
         it('should fail with 403 if called by a student', async () => {

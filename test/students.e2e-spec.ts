@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
 import request from 'supertest'
 import { App } from 'supertest/types'
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vitest } from 'vitest'
 import { AuthenticationService } from '../src/features/authentication/authentication.service'
 import { AuthenticationResponseDto } from '../src/features/authentication/dto/authentication-response.dto'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
@@ -294,6 +294,10 @@ describe('StudentsController (e2e)', () => {
             program.state = ProgramState.published
             await program.save()
 
+            vitest
+                .spyOn(ProgramsThumbnailsRepository.prototype, 'findOne')
+                .mockImplementation(thumbnail => Promise.resolve(`base64-${thumbnail}`))
+
             const student = await mongoTestHelper.createStudent([])
             const token = jwtService.sign({ id: student._id, role: student.role })
 
@@ -312,6 +316,7 @@ describe('StudentsController (e2e)', () => {
             expect(programs[0].levels[0].name).toEqual(level.name)
             expect(programs[0].levels[0].tasks[0].date).toEqual(task.date.toISOString())
             expect(programs[0].levels[0].tasks[0].lessons[0].url).toEqual(lesson.url)
+            expect(programs[0].thumbnail).toContain(`base64-`)
         })
     })
 })

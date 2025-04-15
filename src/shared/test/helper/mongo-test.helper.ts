@@ -225,6 +225,7 @@ export class MongoTestHelper {
             registrationEnd: new Date(date.setMonth(date.getMonth() + 2)),
             end: new Date(date.setFullYear(date.getFullYear() + 1)),
             description: 'program description',
+            thumbnail: 'test-image.jpg',
             levels,
             createdBy,
         }

@@ -27,7 +27,7 @@ export class SubscriptionsService {
     }
 
     async findAll(limit?: number, skip?: number): Promise<SubscriptionDto[]> {
-        const found = await this.repository.findAll(limit, skip)
+        const found = await this.repository.findAllPopulated(limit, skip)
         return SubscriptionDto.fromDocuments(found)
     }
 

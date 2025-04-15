@@ -77,6 +77,12 @@ describe('SubscriptionsController (e2e)', () => {
             const ids = body.map(item => item.id)
             expect(ids).toContain(subscription1._id.toString())
             expect(ids).toContain(subscription2._id.toString())
+
+            // test populated fields
+            const firstSubscription = body[0]
+            expect(firstSubscription.subscriber?.name).toEqual(student.name)
+            expect(firstSubscription.program?.name).toEqual(program.name)
+            expect(firstSubscription.level?.name).toEqual(level.name)
         })
 
         it('should fail with 403 if called by a student', async () => {
