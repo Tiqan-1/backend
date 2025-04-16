@@ -1,5 +1,5 @@
 import { MultipartFile } from '@fastify/multipart'
-import { Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common'
 import { oneMonth } from '../../shared/constants'
 import { SharedDocumentsService } from '../../shared/documents-validator/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
@@ -25,12 +25,25 @@ export class ProgramsService {
         private readonly documentsService: SharedDocumentsService
     ) {}
 
-    async create(createProgramDto: CreateProgramDto, createdBy: ObjectId): Promise<CreatedDto> {
+    async createForManager(createProgramDto: CreateProgramDto, createdBy: ObjectId): Promise<CreatedDto> {
         const levels = (await this.documentsService.getLevels(createProgramDto.levelIds))?.map(level => level._id)
         const document = CreateProgramDto.toDocument(createProgramDto, createdBy)
         const createObject = levels ? { ...document, levels } : { ...document }
         const created = await this.programsRepository.create(createObject)
         this.logger.log(`Program ${created.id} created by ${createdBy.toString()}.`)
+        return { id: created._id.toString() }
+    }
+
+    async create(createProgramDto: CreateProgramDto, createdBy: ObjectId): Promise<CreatedDto> {
+        const levels = (await this.documentsService.getLevels(createProgramDto.levelIds))?.map(level => level._id)
+        const document = CreateProgramDto.toDocument(createProgramDto, createdBy)
+        const createObject = levels ? { ...document, levels } : { ...document }
+        const created = await this.programsRepository.create(createObject)
+        const managerId = createdBy.toString()
+        const manager = await this.documentsService.getManager(managerId)
+        ;(manager?.programs as ObjectId[]).push(created._id)
+        await manager?.save()
+        this.logger.log(`Program ${created.id} created by ${managerId}.`)
         return { id: created._id.toString() }
     }
 
@@ -54,29 +67,54 @@ export class ProgramsService {
         return StudentProgramDto.fromDocuments(foundPrograms)
     }
 
-    async findAllForManagers(limit?: number, skip?: number): Promise<ProgramDto[]> {
-        const foundPrograms = await this.programsRepository.findAll(limit, skip)
-        await this.loadThumbnails(foundPrograms)
-        return ProgramDto.fromDocuments(foundPrograms)
+    async find(searchProgramQueryDto: SearchProgramQueryDto, searchUserId: ObjectId): Promise<ProgramDto[]> {
+        const filter = SearchFilterBuilder.init()
+            .withObjectId('_id', searchProgramQueryDto.id)
+            .withObjectId('createdBy', searchUserId)
+            .withParam('state', searchProgramQueryDto.state)
+            .withStringLike('name', searchProgramQueryDto.name)
+            .withStringLike('description', searchProgramQueryDto.description)
+            .withDateAfter('start', searchProgramQueryDto.start)
+            .withDateBefore('end', searchProgramQueryDto.end)
+            .withDateAfter('registrationStart', searchProgramQueryDto.registrationStart)
+            .withDateBefore('registrationEnd', searchProgramQueryDto.registrationEnd)
+            .build()
+        const limit = searchProgramQueryDto.limit ?? 20
+        const skip = searchProgramQueryDto.skip ?? 0
+
+        const result = await this.programsRepository.find(filter, limit, skip)
+        await this.loadThumbnails(result)
+        return ProgramDto.fromDocuments(result)
     }
 
-    async findOneForManagers(id: string): Promise<ProgramDto> {
+    async findOne(id: string): Promise<ProgramDto> {
         const found = await this.loadProgram(id)
         await this.loadThumbnail(found)
         return ProgramDto.fromDocument(found)
     }
 
-    async update(id: string, updateProgramDto: UpdateProgramDto): Promise<void> {
+    async update(id: string, updateProgramDto: UpdateProgramDto, managerObjectId: ObjectId): Promise<void> {
+        const managerId = managerObjectId.toString()
+        const manager = await this.documentsService.getManager(managerId)
+        if (!manager) {
+            this.logger.error(`Illegal state: Manager ${managerId} is logged in but not found in db.`)
+            throw new InternalServerErrorException('Manager not found.')
+        }
+        const program = manager.programs.find(program => program._id.toString() === id)
+        if (!program) {
+            this.logger.error(`Attempt to update program ${id} by manager ${managerId} failed. Program not found`)
+            throw new NotFoundException('Program not found.')
+        }
         const programId = new ObjectId(id)
         const updateObject = UpdateProgramDto.toDocument(updateProgramDto)
         const updated = await this.programsRepository.update({ _id: programId }, updateObject)
         if (!updated) {
             this.logger.error(`Attempt to update program ${id} failed.`)
-            throw new NotFoundException('Program not found')
+            throw new NotFoundException('Program not found.')
         }
     }
 
-    async remove(id: string): Promise<void> {
+    async removeForManager(id: string): Promise<void> {
         const programId = new ObjectId(id)
         const found = await this.programsRepository.update(
             { _id: programId },
@@ -93,6 +131,43 @@ export class ProgramsService {
 
         for (const level of found.levels) {
             await this.levelsService.remove(level._id.toString())
+        }
+        this.logger.log(`Program ${id} removed.`)
+    }
+
+    async remove(id: string, managerObjectId: ObjectId): Promise<void> {
+        const managerId = managerObjectId.toString()
+        const manager = await this.documentsService.getManager(managerId)
+        if (!manager) {
+            this.logger.error(`Illegal state: Manager ${managerId} is logged in but not found in db.`)
+            throw new InternalServerErrorException('Manager not found.')
+        }
+        const programIndex = manager.programs.findIndex(program => program._id.toString() === id)
+        if (programIndex === -1) {
+            this.logger.error(`Attempt to remove program ${id} from manager ${managerId} failed.`)
+            throw new NotFoundException('Program not found in the managers programs.')
+        }
+        ;(manager.programs as ObjectId[]).splice(programIndex, 1)
+        await manager.save()
+        const found = await this.programsRepository.update(
+            { _id: new ObjectId(id) },
+            { state: ProgramState.deleted, expireAt: oneMonth }
+        )
+        if (!found) {
+            this.logger.error(`Attempt to remove program ${id} failed.`)
+            throw new NotFoundException('Program not found.')
+        }
+        if (found.thumbnail) {
+            await this.programsThumbnailsRepository.remove(found.thumbnail)
+            this.logger.log(`Thumbnail ${found.thumbnail} removed because program ${id} was removed.`)
+        }
+
+        for (const level of found.levels) {
+            try {
+                await this.levelsService.remove(level._id.toString())
+            } catch (error) {
+                this.logger.error(`Attempt to remove level ${level._id.toString()} from program ${id} failed.`, error)
+            }
         }
         this.logger.log(`Program ${id} removed.`)
     }
@@ -144,22 +219,5 @@ export class ProgramsService {
             throw new NotFoundException('Program not found')
         }
         return program
-    }
-
-    async findForManagers(searchProgramQueryDto: SearchProgramQueryDto): Promise<ProgramDto[]> {
-        const filter = SearchFilterBuilder.init()
-            .withObjectId('_id', searchProgramQueryDto.id)
-            .withParam('state', searchProgramQueryDto.state)
-            .withStringLike('name', searchProgramQueryDto.name)
-            .withStringLike('description', searchProgramQueryDto.description)
-            .withDateAfter('start', searchProgramQueryDto.start)
-            .withDateBefore('end', searchProgramQueryDto.end)
-            .withDateAfter('registrationStart', searchProgramQueryDto.registrationStart)
-            .withDateBefore('registrationEnd', searchProgramQueryDto.registrationEnd)
-            .build()
-
-        const result = await this.programsRepository.find(filter, 10)
-        await this.loadThumbnails(result)
-        return ProgramDto.fromDocuments(result)
     }
 }

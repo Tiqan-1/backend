@@ -1,5 +1,6 @@
-import { ApiProperty, OmitType, PartialType } from '@nestjs/swagger'
+import { ApiProperty, IntersectionType, OmitType, PartialType } from '@nestjs/swagger'
 import { IsBase64, IsDateString, IsEnum, IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
+import { SearchQueryDto } from '../../../shared/dto/search.query.dto'
 import { normalizeDate } from '../../../shared/helper/date.helper'
 import { areNotPopulated, arePopulated } from '../../../shared/helper/populated-type.helper'
 import { ObjectId, Populated } from '../../../shared/repository/types'
@@ -151,7 +152,7 @@ export class UpdateProgramDto extends PartialType(CreateProgramDto) {
     @ApiProperty({ type: String, enum: ProgramState, required: false })
     @IsOptional()
     @IsEnum(ProgramState)
-    state: ProgramState
+    state?: ProgramState
 
     static toDocument(dto: UpdateProgramDto): object {
         return {
@@ -167,28 +168,7 @@ export class UpdateProgramDto extends PartialType(CreateProgramDto) {
     }
 }
 
-export class SearchProgramQueryDto extends PartialType(OmitType(ProgramDto, ['thumbnail', 'levels', 'createdBy'] as const)) {
-    @ApiProperty({ example: '' })
-    id: string
-
-    @ApiProperty({ example: '' })
-    name: string
-
-    @ApiProperty({ example: '' })
-    description: string
-
-    @ApiProperty({ example: '' })
-    state: ProgramState
-
-    @ApiProperty({ example: '' })
-    start: Date
-
-    @ApiProperty({ example: '' })
-    end: Date
-
-    @ApiProperty({ example: '' })
-    registrationStart?: Date
-
-    @ApiProperty({ example: '' })
-    registrationEnd?: Date
-}
+export class SearchProgramQueryDto extends IntersectionType(
+    PartialType(OmitType(ProgramDto, ['thumbnail', 'levels', 'createdBy'] as const)),
+    SearchQueryDto
+) {}

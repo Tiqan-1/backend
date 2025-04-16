@@ -1,4 +1,5 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common'
+import { SharedDocumentsService } from '../../shared/documents-validator/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { SearchFilterBuilder } from '../../shared/helper/search-filter.builder'
 import { ObjectId } from '../../shared/repository/types'
@@ -16,19 +17,41 @@ export class SubjectsService {
 
     constructor(
         private readonly subjectsRepository: SubjectsRepository,
-        private readonly lessonsService: LessonsService
+        private readonly lessonsService: LessonsService,
+        private readonly documentsService: SharedDocumentsService
     ) {}
 
-    async create(subject: CreateSubjectDto, createdBy: ObjectId): Promise<CreatedDto> {
+    async createForManager(subject: CreateSubjectDto, createdBy: ObjectId): Promise<CreatedDto> {
         const createDocument = { ...subject, createdBy }
         const created = await this.subjectsRepository.create(createDocument)
         this.logger.log(`Subject ${created._id.toString()} created by ${createdBy.toString()}.`)
         return { id: created._id.toString() }
     }
 
-    async findAll(limit?: number, skip?: number): Promise<SubjectDto[]> {
-        const result = await this.subjectsRepository.findAll(limit, skip)
-        return SubjectDto.fromDocuments(result)
+    async create(subject: CreateSubjectDto, createdBy: ObjectId): Promise<CreatedDto> {
+        const createDocument = { ...subject, createdBy }
+        const { _id } = await this.subjectsRepository.create(createDocument)
+        const manager = await this.documentsService.getManager(createdBy.toString())
+        if (!manager) {
+            this.logger.error(`Illegal state: Manager ${createdBy.toString()} is logged in but not found in db.`)
+            throw new InternalServerErrorException('Manager not found.')
+        }
+        ;(manager.subjects as ObjectId[]).push(_id)
+        await manager.save()
+        this.logger.log(`Subject ${_id.toString()} created by ${createdBy.toString()}.`)
+        return { id: _id.toString() }
+    }
+
+    async find(searchSubjectQueryDto: SearchSubjectQueryDto, userObjectId: ObjectId): Promise<SubjectDto[]> {
+        const filter = SearchFilterBuilder.init()
+            .withObjectId('_id', searchSubjectQueryDto.id)
+            .withObjectId('createdBy', userObjectId)
+            .withStringLike('name', searchSubjectQueryDto.name)
+            .withStringLike('description', searchSubjectQueryDto.description)
+            .build()
+
+        const found = await this.subjectsRepository.find(filter)
+        return SubjectDto.fromDocuments(found)
     }
 
     async findOne(id: string): Promise<SubjectDto> {
@@ -72,7 +95,7 @@ export class SubjectsService {
         return subject
     }
 
-    async remove(subjectId: string): Promise<void> {
+    async removeForManager(subjectId: string): Promise<void> {
         const removed = await this.subjectsRepository.update({ _id: new ObjectId(subjectId) }, { state: SubjectState.deleted })
         if (!removed) {
             this.logger.error(`Attempt to remove subject ${subjectId} failed.`)
@@ -81,22 +104,51 @@ export class SubjectsService {
         this.logger.log(`Subject ${subjectId} removed.`)
     }
 
-    async update(id: string, dto: UpdateSubjectDto): Promise<void> {
+    async remove(subjectId: string, managerObjectId: ObjectId): Promise<void> {
+        const managerId = managerObjectId.toString()
+        const manager = await this.documentsService.getManager(managerId)
+        if (!manager) {
+            this.logger.error(`Illegal state: Manager ${managerId} is logged in but not found in db.`)
+            throw new InternalServerErrorException('Manager not found.')
+        }
+        const subjectIndex = manager.subjects.findIndex(subject => subject._id.toString() === subjectId)
+        if (subjectIndex === -1) {
+            this.logger.error(`Attempt to remove subject ${subjectId} from manager ${managerId} failed.`)
+            throw new NotFoundException('Subject not found in the managers subjects.')
+        }
+        ;(manager.subjects as ObjectId[]).splice(subjectIndex, 1)
+        await manager.save()
+        const removed = await this.subjectsRepository.update({ _id: new ObjectId(subjectId) }, { state: SubjectState.deleted })
+        if (!removed) {
+            this.logger.error(`Attempt to remove subject ${subjectId} failed.`)
+            throw new NotFoundException('Subject not found.')
+        }
+        for (const lesson of removed.lessons as ObjectId[]) {
+            try {
+                await this.lessonsService.remove(lesson._id.toString())
+            } catch (error) {
+                this.logger.error(`Attempt to remove lesson ${lesson._id.toString()} from subject ${subjectId} failed.`, error)
+            }
+        }
+        this.logger.log(`Subject ${subjectId} removed.`)
+    }
+
+    async update(id: string, dto: UpdateSubjectDto, managerObjectId: ObjectId): Promise<void> {
+        const managerId = managerObjectId.toString()
+        const manager = await this.documentsService.getManager(managerId)
+        if (!manager) {
+            this.logger.error(`Illegal state: Manager ${managerId} is logged in but not found in db.`)
+            throw new InternalServerErrorException('Manager not found.')
+        }
+        const subject = manager.subjects.find(subject => subject._id.toString() === id)
+        if (!subject) {
+            this.logger.error(`Attempt to update subject ${id} from manager ${managerId} failed.`)
+            throw new NotFoundException('Subject not found in the managers subjects.')
+        }
         const updated = await this.subjectsRepository.update({ _id: new ObjectId(id), state: { $ne: SubjectState.deleted } }, dto)
         if (!updated) {
             this.logger.error(`Attempt to update subject ${id} failed.`)
             throw new NotFoundException(`Subject not found.`)
         }
-    }
-
-    async search(searchSubjectQueryDto: SearchSubjectQueryDto): Promise<SubjectDto[]> {
-        const filter = SearchFilterBuilder.init()
-            .withObjectId('_id', searchSubjectQueryDto.id)
-            .withStringLike('name', searchSubjectQueryDto.name)
-            .withStringLike('description', searchSubjectQueryDto.description)
-            .build()
-
-        const found = await this.subjectsRepository.find(filter)
-        return SubjectDto.fromDocuments(found)
     }
 }

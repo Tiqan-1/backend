@@ -94,7 +94,7 @@ export class SharedDocumentsService {
         }
         const found = await model.findById(new ObjectId(id)).exec()
         if (!found) {
-            throw new NotFoundException(`Document with id ${id} not found.`)
+            throw new NotFoundException(`Document with id ${id} not found in ${model.name}.`)
         }
         return found
     }
@@ -106,7 +106,7 @@ export class SharedDocumentsService {
         const objectIds = ids.map(id => new ObjectId(id))
         const found = await model.find({ _id: { $in: objectIds } }).exec()
         if (!found?.length || found.length !== ids.length) {
-            throw new NotFoundException(`Documents with the given ids not found.`)
+            throw new NotFoundException(`Documents with the given ids not found in ${model.name}.`)
         }
         return found
     }

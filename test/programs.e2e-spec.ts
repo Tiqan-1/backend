@@ -6,6 +6,7 @@ import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify
 import { Test, TestingModule } from '@nestjs/testing'
 import * as fs from 'node:fs'
 import path from 'path'
+import { ObjectId } from 'src/shared/repository/types'
 import request from 'supertest'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vitest } from 'vitest'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
@@ -15,7 +16,8 @@ import { CreateLevelDto, LevelDto } from '../src/features/levels/dto/level.dto'
 import { LevelsRepository } from '../src/features/levels/levels.repository'
 import { LevelsService } from '../src/features/levels/levels.service'
 import { LevelDocument } from '../src/features/levels/schemas/level.schema'
-import { ProgramDto } from '../src/features/programs/dto/program.dto'
+import { ManagerDocument } from '../src/features/managers/schemas/manager.schema'
+import { CreateProgramDto, ProgramDto } from '../src/features/programs/dto/program.dto'
 import { ProgramState } from '../src/features/programs/enums/program-state.enum'
 import { ProgramsController } from '../src/features/programs/programs.controller'
 import { ProgramsRepository } from '../src/features/programs/programs.repository'
@@ -84,8 +86,51 @@ describe('ProgramsController (e2e)', () => {
         await mongoTestHelper.clearCollections()
     })
 
-    describe('GET /api/programs/enriched', () => {
+    describe('POST /api/programs', () => {
         it('should succeed', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+
+            const body: CreateProgramDto = {
+                name: 'program name',
+                description: 'program description',
+                start: new Date(),
+                end: new Date(),
+            }
+
+            const response = await request(app.getHttpServer())
+                .post('/api/programs')
+                .set('Authorization', `Bearer ${token}`)
+                .send(body)
+                .expect(HttpStatus.CREATED)
+
+            expect(response.body).toBeDefined()
+            const created = response.body as CreatedDto
+            expect(created.id).toBeDefined()
+
+            const found = (await mongoTestHelper.getProgramModel().findOne()) as ProgramDocument
+            expect(found).toBeDefined()
+            expect(found.name).toEqual(body.name)
+            expect(found.description).toEqual(body.description)
+            expect(found.start).toEqual(body.start)
+            expect(found.state).toEqual(ProgramState.created)
+            expect(found.createdBy).toEqual(manager._id)
+        })
+
+        it('should fail with 403 if called by a student', async () => {
+            const student = await mongoTestHelper.createStudent()
+            const token = jwtService.sign({ id: student._id, role: student.role })
+
+            await request(app.getHttpServer())
+                .post('/api/programs')
+                .set('Authorization', `Bearer ${token}`)
+                .send({})
+                .expect(HttpStatus.FORBIDDEN)
+        })
+    })
+
+    describe('GET /api/programs', () => {
+        it('deprecated /enriched should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
             const token = jwtService.sign({ id: manager._id, role: manager.role })
             const program = await mongoTestHelper.createProgram([], manager._id)
@@ -106,11 +151,82 @@ describe('ProgramsController (e2e)', () => {
             expect(found[0].thumbnail).toEqual(`base64-${program.thumbnail}`)
         })
 
+        it('should succeed and return all programs when called with no query parameters', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+            const program = await mongoTestHelper.createProgram([], manager._id)
+            const program2 = await mongoTestHelper.createProgram([], manager._id)
+
+            vitest
+                .spyOn(ProgramsThumbnailsRepository.prototype, 'findOne')
+                .mockImplementation(thumbnail => Promise.resolve(`base64-${thumbnail}`))
+
+            const response = await request(app.getHttpServer())
+                .get('/api/programs')
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.OK)
+
+            expect(response.body).toBeDefined()
+            const found = response.body as ProgramDto[]
+            expect(found.length).toEqual(2)
+            expect(found[0].id).toEqual(program._id.toString())
+            expect(found[0].thumbnail).toEqual(`base64-${program.thumbnail}`)
+            expect(found[1].id).toEqual(program2._id.toString())
+            expect(found[1].thumbnail).toEqual(`base64-${program2.thumbnail}`)
+        })
+
+        it('should return the correct program selected by query parameters', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+            const program = await mongoTestHelper.createProgram([], manager._id)
+            const otherProgram = await mongoTestHelper.createProgram([], manager._id)
+
+            // change other program so is won't be found
+            otherProgram.name = 'other'
+            otherProgram.description = 'other'
+            otherProgram.state = ProgramState.published
+            otherProgram.start = new Date(oneMonth.valueOf())
+            await otherProgram.save()
+
+            const name = program.name
+            const description = program.description
+            const state = program.state
+            const start = new Date(program.start.valueOf() - oneMonth.valueOf())
+
+            vitest
+                .spyOn(ProgramsThumbnailsRepository.prototype, 'findOne')
+                .mockImplementation(thumbnail => Promise.resolve(`base64-${thumbnail}`))
+
+            const response = await request(app.getHttpServer())
+                .get(`/api/programs?name=${name}&description=${description}&state=${state}&start=${start.toISOString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.OK)
+
+            expect(response.body).toBeDefined()
+            const found = response.body as ProgramDto[]
+            expect(found.length).toEqual(1)
+            expect(found[0].id).toEqual(program._id.toString())
+            expect(found[0].thumbnail).toEqual(`base64-${program.thumbnail}`)
+        })
+
+        it('should not return programs that do not belong to the manager', async () => {
+            const creator = await mongoTestHelper.createManager('1')
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+            await mongoTestHelper.createProgram([], creator._id)
+
+            await request(app.getHttpServer())
+                .get('/api/programs')
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.OK)
+                .expect([])
+        })
+
         it('should fail with 403 if called by a student', async () => {
             const student = await mongoTestHelper.createStudent()
             const token = jwtService.sign({ id: student._id, role: student.role })
             await request(app.getHttpServer())
-                .get('/api/programs/enriched')
+                .get('/api/programs')
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.FORBIDDEN)
         })
@@ -150,57 +266,13 @@ describe('ProgramsController (e2e)', () => {
         })
     })
 
-    describe('GET /api/programs/search', () => {
-        it('should succeed', async () => {
-            const manager = await mongoTestHelper.createManager()
-            const token = jwtService.sign({ id: manager._id, role: manager.role })
-            const program = await mongoTestHelper.createProgram([], manager._id)
-            const otherProgram = await mongoTestHelper.createProgram([], manager._id)
-
-            // change other program so is won't be found
-            otherProgram.name = 'other'
-            otherProgram.description = 'other'
-            otherProgram.state = ProgramState.published
-            otherProgram.start = new Date(oneMonth.valueOf())
-            await otherProgram.save()
-
-            const name = program.name
-            const description = program.description
-            const state = program.state
-            const start = new Date(program.start.valueOf() - oneMonth.valueOf())
-
-            vitest
-                .spyOn(ProgramsThumbnailsRepository.prototype, 'findOne')
-                .mockImplementation(thumbnail => Promise.resolve(`base64-${thumbnail}`))
-
-            const response = await request(app.getHttpServer())
-                .get(`/api/programs/search?name=${name}&description=${description}&state=${state}&start=${start.toISOString()}`)
-                .set('Authorization', `Bearer ${token}`)
-                .expect(HttpStatus.OK)
-
-            expect(response.body).toBeDefined()
-            const found = response.body as ProgramDto[]
-            expect(found.length).toEqual(1)
-            expect(found[0].id).toEqual(program._id.toString())
-            expect(found[0].thumbnail).toEqual(`base64-${program.thumbnail}`)
-        })
-
-        it('should fail with 403 if called by a student', async () => {
-            const student = await mongoTestHelper.createStudent()
-            const token = jwtService.sign({ id: student._id, role: student.role })
-
-            await request(app.getHttpServer())
-                .get(`/api/programs/search`)
-                .set('Authorization', `Bearer ${token}`)
-                .expect(HttpStatus.FORBIDDEN)
-        })
-    })
-
     describe('PUT /api/programs/:id', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
             const token = jwtService.sign({ id: manager._id, role: manager.role })
             const program = await mongoTestHelper.createProgram([], manager._id)
+            manager.programs = [program._id]
+            await manager.save()
 
             const updateBody = {
                 state: ProgramState.published,
@@ -216,6 +288,40 @@ describe('ProgramsController (e2e)', () => {
             expect(found.state).toEqual(ProgramState.published)
         })
 
+        it('should fail with 404 if called with a non-existent program id', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+
+            const updateBody = {
+                state: ProgramState.published,
+            }
+
+            await request(app.getHttpServer())
+                .put(`/api/programs/${new ObjectId().toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send(updateBody)
+                .expect(HttpStatus.NOT_FOUND)
+        })
+
+        it('should fail with 404 if called with a program id that does not belong to the current manager', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+            const creator = await mongoTestHelper.createManager('1')
+            const program = await mongoTestHelper.createProgram([], creator._id)
+            creator.programs = [program._id]
+            await creator.save()
+
+            const updateBody = {
+                state: ProgramState.published,
+            }
+
+            await request(app.getHttpServer())
+                .put(`/api/programs/${program._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send(updateBody)
+                .expect(HttpStatus.NOT_FOUND)
+        })
+
         it('should fail with 403 if called by a student', async () => {
             const student = await mongoTestHelper.createStudent()
             const token = jwtService.sign({ id: student._id, role: student.role })
@@ -224,6 +330,61 @@ describe('ProgramsController (e2e)', () => {
 
             await request(app.getHttpServer())
                 .put(`/api/programs/${program._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.FORBIDDEN)
+        })
+    })
+
+    describe('DELETE /api/programs/:id', () => {
+        it('should succeed', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+            const program = await mongoTestHelper.createProgram([], manager._id)
+            manager.programs = [program._id]
+            await manager.save()
+
+            await request(app.getHttpServer())
+                .delete(`/api/programs/${program._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.NO_CONTENT)
+
+            const found = (await mongoTestHelper.getProgramModel().findOne()) as ProgramDocument
+            expect(found.state).toEqual(ProgramState.deleted)
+
+            const foundManager = (await mongoTestHelper.getManagerModel().findOne()) as ManagerDocument
+            expect(foundManager.programs.length).toEqual(0)
+        })
+
+        it('should fail with 404 called with a non-existent program id', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+
+            await request(app.getHttpServer())
+                .delete(`/api/programs/${new ObjectId().toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.NOT_FOUND)
+        })
+
+        it('should fail with 404 called with a program id that does not belong to the current manager', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+            const creator = await mongoTestHelper.createManager('1')
+            const program = await mongoTestHelper.createProgram([], creator._id)
+            creator.programs = [program._id]
+            await creator.save()
+
+            await request(app.getHttpServer())
+                .delete(`/api/programs/${program._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.NOT_FOUND)
+        })
+
+        it('should fail with 403 if called by a student', async () => {
+            const student = await mongoTestHelper.createStudent()
+            const token = jwtService.sign({ id: student._id, role: student.role })
+
+            await request(app.getHttpServer())
+                .delete(`/api/programs/any`)
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.FORBIDDEN)
         })

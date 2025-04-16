@@ -41,21 +41,24 @@ export class ManagersService {
         }
     }
 
+    /** @deprecated */
     async createSubject(id: ObjectId, subject: CreateSubjectDto): Promise<CreatedDto> {
         const manager = await this.loadManager(id)
-        const created = await this.subjectsService.create(subject, id)
+        const created = await this.subjectsService.createForManager(subject, id)
         ;(manager.subjects as ObjectId[]).push(new ObjectId(created.id))
         await manager.save()
         this.logger.log(`Manager ${manager.email} created subject ${created.id}.`)
         return created
     }
 
+    /** @deprecated */
     async getSubjects(id: ObjectId): Promise<SubjectDto[]> {
         const manager = await this.loadManager(id)
         await manager.populate({ path: 'subjects', populate: ['lessons', { path: 'createdBy', select: 'name email' }] })
         return SubjectDto.fromDocuments(manager.subjects as SubjectDocument[])
     }
 
+    /** @deprecated */
     async removeSubject(managerId: ObjectId, subjectId: string): Promise<void> {
         const manager = await this.loadManager(managerId)
         const subjectIndex = manager.subjects.findIndex(id => id._id.toString() === subjectId)
@@ -64,20 +67,22 @@ export class ManagersService {
             throw new NotFoundException('Subject not found.')
         }
         ;(manager.subjects as ObjectId[]).splice(subjectIndex, 1)
-        await this.subjectsService.remove(subjectId)
+        await this.subjectsService.removeForManager(subjectId)
         await manager.save()
         this.logger.log(`Manager ${manager.email} removed subject ${subjectId}.`)
     }
 
+    /** @deprecated */
     async createProgram(id: ObjectId, createProgramDto: CreateProgramDto): Promise<CreatedDto> {
         const manager = await this.loadManager(id)
-        const created = await this.programsService.create(createProgramDto, id)
+        const created = await this.programsService.createForManager(createProgramDto, id)
         ;(manager.programs as ObjectId[]).push(new ObjectId(created.id))
         await manager.save()
         this.logger.log(`Manager ${manager.email} created program ${created.id}.`)
         return created
     }
 
+    /** @deprecated */
     async getPrograms(id: ObjectId): Promise<ProgramDto[]> {
         const manager = await this.loadManager(id)
         await manager.populate([
@@ -88,6 +93,7 @@ export class ManagersService {
         return ProgramDto.fromDocuments(manager.programs as ProgramDocument[])
     }
 
+    /** @deprecated */
     async removeProgram(managerId: ObjectId, programId: string): Promise<void> {
         const manager = await this.loadManager(managerId)
         const programIndex = manager.programs.findIndex(id => id._id.toString() === programId)
@@ -95,7 +101,7 @@ export class ManagersService {
             throw new NotFoundException('Program not found.')
         }
         ;(manager.programs as ObjectId[]).splice(programIndex, 1)
-        await this.programsService.remove(programId)
+        await this.programsService.removeForManager(programId)
         await manager.save()
         this.logger.log(`Manager ${manager.email} removed program ${programId}.`)
     }

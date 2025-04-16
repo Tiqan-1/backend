@@ -27,7 +27,11 @@ export class ManagersController {
         return this.managersService.create(signUpManagerDto)
     }
 
-    @ApiOperation({ summary: 'Creates a subject', description: `Creates a subject and adds it to the manager.` })
+    @ApiOperation({
+        summary: 'Creates a subject',
+        description: `Creates a subject and adds it to the manager.`,
+        deprecated: true,
+    })
     @ApiResponse({ status: HttpStatus.CREATED, type: CreatedDto, description: 'Subject successfully created.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
@@ -41,7 +45,7 @@ export class ManagersController {
         return this.managersService.createSubject(request.user.id, subject)
     }
 
-    @ApiOperation({ summary: 'Gets subjects of the manager', description: `Gets subjects of the manager.` })
+    @ApiOperation({ summary: 'Gets subjects of the manager', description: `Gets subjects of the manager.`, deprecated: true })
     @ApiResponse({ status: HttpStatus.OK, type: SubjectDto, isArray: true, description: 'Got subjects successfully.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
@@ -54,7 +58,7 @@ export class ManagersController {
         return this.managersService.getSubjects(request.user.id)
     }
 
-    @ApiOperation({ summary: 'Removes a subject', description: 'Removes a subject from the manager.' })
+    @ApiOperation({ summary: 'Removes a subject', description: 'Removes a subject from the manager.', deprecated: true })
     @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Subject successfully removed.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
@@ -69,7 +73,11 @@ export class ManagersController {
         return this.managersService.removeSubject(request.user.id, subjectId)
     }
 
-    @ApiOperation({ summary: 'Creates a program', description: `Creates a program and adds it to the manager.` })
+    @ApiOperation({
+        summary: 'Creates a program',
+        description: `Creates a program and adds it to the manager.`,
+        deprecated: true,
+    })
     @ApiResponse({ status: HttpStatus.CREATED, type: CreatedDto, description: 'Program successfully created.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
@@ -83,7 +91,7 @@ export class ManagersController {
         return this.managersService.createProgram(request.user.id, createProgramDto)
     }
 
-    @ApiOperation({ summary: 'Gets programs of the manager', description: `Gets programs of the manager.` })
+    @ApiOperation({ summary: 'Gets programs of the manager', description: `Gets programs of the manager.`, deprecated: true })
     @ApiResponse({ status: HttpStatus.OK, type: ProgramDto, isArray: true, description: 'Got programs successfully.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
@@ -96,7 +104,7 @@ export class ManagersController {
         return this.managersService.getPrograms(request.user.id)
     }
 
-    @ApiOperation({ summary: 'Removes a program', description: 'Removes a program from the manager.' })
+    @ApiOperation({ summary: 'Removes a program', description: 'Removes a program from the manager.', deprecated: true })
     @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Program successfully removed.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })

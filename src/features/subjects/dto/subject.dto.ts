@@ -1,5 +1,6 @@
-import { ApiProperty, OmitType, PartialType } from '@nestjs/swagger'
+import { ApiProperty, IntersectionType, OmitType, PartialType } from '@nestjs/swagger'
 import { IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
+import { SearchQueryDto } from '../../../shared/dto/search.query.dto'
 import { arePopulated } from '../../../shared/helper/populated-type.helper'
 import { WrapperType } from '../../../shared/types/shared-types'
 import { LessonDto } from '../../lessons/dto/lesson.dto'
@@ -50,4 +51,7 @@ export class CreateSubjectDto extends OmitType(SubjectDto, ['id', 'lessons', 'cr
 
 export class UpdateSubjectDto extends PartialType(CreateSubjectDto) {}
 
-export class SearchSubjectQueryDto extends PartialType(OmitType(SubjectDto, ['createdBy', 'lessons'])) {}
+export class SearchSubjectQueryDto extends IntersectionType(
+    PartialType(OmitType(SubjectDto, ['createdBy', 'lessons'])),
+    SearchQueryDto
+) {}
