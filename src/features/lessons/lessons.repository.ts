@@ -12,6 +12,14 @@ export class LessonsRepository extends RepositoryMongoBase<LessonDocument> {
         super(model)
     }
 
+    async find(filter: object, limit: number = 10, skip: number = 0): Promise<LessonDocument[]> {
+        const found = await this.model.find(filter).limit(limit).skip(skip).exec()
+        if (found) {
+            return found
+        }
+        return []
+    }
+
     findActiveByIds(ids: ObjectId[]): Promise<LessonDocument[]> {
         return this.model.find({ _id: { $in: ids }, state: LessonState.active }).exec()
     }

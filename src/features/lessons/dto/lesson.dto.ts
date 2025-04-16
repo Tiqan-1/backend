@@ -1,5 +1,6 @@
-import { ApiProperty, OmitType, PartialType } from '@nestjs/swagger'
-import { IsEnum, IsMongoId, IsString } from 'class-validator'
+import { ApiProperty, IntersectionType, OmitType, PartialType } from '@nestjs/swagger'
+import { IsEnum, IsMongoId, IsOptional, IsString } from 'class-validator'
+import { SearchQueryDto } from '../../../shared/dto/search.query.dto'
 import { LessonType } from '../enums/lesson-type.enum'
 import { LessonDocument } from '../schemas/lesson.schema'
 
@@ -39,3 +40,10 @@ export class LessonDto {
 export class CreateLessonDto extends OmitType(LessonDto, ['id']) {}
 
 export class UpdateLessonDto extends PartialType(CreateLessonDto) {}
+
+export class SearchLessonsQueryDto extends IntersectionType(PartialType(LessonDto), SearchQueryDto) {
+    @ApiProperty({ type: String, required: false, example: 'subjectId' })
+    @IsMongoId()
+    @IsOptional()
+    subjectId?: string
+}

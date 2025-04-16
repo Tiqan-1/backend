@@ -1,6 +1,8 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { SharedDocumentsService } from '../../shared/documents-validator/shared-documents.service'
+import { SearchFilterBuilder } from '../../shared/helper/search-filter.builder'
 import { ObjectId } from '../../shared/repository/types'
-import { CreateLessonDto, LessonDto, UpdateLessonDto } from './dto/lesson.dto'
+import { CreateLessonDto, LessonDto, SearchLessonsQueryDto, UpdateLessonDto } from './dto/lesson.dto'
 import { LessonState } from './enums/lesson-state.enum'
 import { LessonsRepository } from './lessons.repository'
 
@@ -8,7 +10,10 @@ import { LessonsRepository } from './lessons.repository'
 export class LessonsService {
     private readonly logger = new Logger(LessonsService.name)
 
-    constructor(private readonly repository: LessonsRepository) {}
+    constructor(
+        private readonly repository: LessonsRepository,
+        private readonly documentsService: SharedDocumentsService
+    ) {}
 
     async create(lesson: CreateLessonDto): Promise<LessonDto> {
         const lessonDocument = await this.repository.create(lesson)
@@ -42,5 +47,40 @@ export class LessonsService {
             throw new NotFoundException('Lesson not found.')
         }
         return objectIds
+    }
+
+    async find(queryDto: SearchLessonsQueryDto): Promise<LessonDto[]> {
+        let subjectLessons: ObjectId[] | undefined
+        if (queryDto.subjectId) {
+            const subject = await this.documentsService.getSubject(queryDto.subjectId)
+            if (!subject?.lessons.length) {
+                this.logger.warn(`Subject ${queryDto.subjectId} not found or has no lessons.`)
+                return []
+            }
+            subjectLessons = subject.lessons as ObjectId[]
+        }
+        const filterBuilder = SearchFilterBuilder.init()
+
+        if (queryDto.id) {
+            if (subjectLessons && !subjectLessons.some(id => id.equals(queryDto.id))) {
+                this.logger.warn(`Lesson ${queryDto.id} requested but not found within subject ${queryDto.subjectId}.`)
+                return []
+            }
+            filterBuilder.withObjectId('_id', queryDto.id)
+        } else if (subjectLessons) {
+            filterBuilder.withObjectIds('_id', subjectLessons)
+        }
+
+        filterBuilder
+            .withStringLike('title', queryDto.title)
+            .withExactString('type', queryDto.type)
+            .withStringLike('url', queryDto.url)
+
+        const filter = filterBuilder.build()
+        const limit = queryDto.limit
+        const skip = queryDto.skip
+
+        const lessons = await this.repository.find(filter, limit, skip)
+        return LessonDto.fromDocuments(lessons)
     }
 }

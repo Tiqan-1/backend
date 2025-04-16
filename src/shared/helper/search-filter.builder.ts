@@ -15,8 +15,23 @@ export class SearchFilterBuilder {
         return this
     }
 
+    withObjectIds(key: string, ids?: string[] | ObjectId[]): SearchFilterBuilder {
+        if (ids?.length) {
+            const objectIds = ids[0] instanceof ObjectId ? ids : ids.map(id => new ObjectId(id))
+            this.filter[key] = { $in: objectIds }
+        }
+        return this
+    }
+
     withParam(key: string, value?: unknown): SearchFilterBuilder {
         if (value !== undefined && value !== null) {
+            this.filter[key] = value
+        }
+        return this
+    }
+
+    withExactString(key: string, value?: string): SearchFilterBuilder {
+        if (value) {
             this.filter[key] = value
         }
         return this
