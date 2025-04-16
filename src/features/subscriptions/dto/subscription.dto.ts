@@ -1,5 +1,5 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
-import { IsDateString, IsEnum, IsOptional, IsString, ValidateNested } from 'class-validator'
+import { IsDateString, IsEnum, IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { isPopulated } from '../../../shared/helper/populated-type.helper'
 import { LevelDto } from '../../levels/dto/level.dto'
 import { ProgramDto, StudentProgramUnpopulatedDto } from '../../programs/dto/program.dto'
@@ -9,7 +9,7 @@ import { SubscriptionDocument } from '../schemas/subscription.schema'
 
 export class SubscriptionDto {
     @ApiProperty({ type: String, required: true, example: 'subscription' })
-    @IsString()
+    @IsMongoId()
     id: string
 
     @ApiProperty({ type: ProgramDto, required: false })
@@ -83,11 +83,11 @@ export class StudentSubscriptionDto extends OmitType(SubscriptionDto, ['program'
 
 export class CreateSubscriptionDto {
     @ApiProperty({ type: String, required: true, example: 'programId' })
-    @IsString()
+    @IsMongoId()
     programId: string
 
     @ApiProperty({ type: String, required: true, example: 'levelId' })
-    @IsString()
+    @IsMongoId()
     levelId: string
 }
 
@@ -95,7 +95,7 @@ export class UpdateSubscriptionDto {
     @ApiProperty({ type: String, required: false, enum: SubscriptionState, example: 'subjectId' })
     @IsOptional()
     @IsEnum(SubscriptionState)
-    state: SubscriptionState
+    state?: SubscriptionState
 
     @ApiProperty({ type: String, required: false })
     @IsString()

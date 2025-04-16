@@ -1,5 +1,5 @@
 import { ApiProperty, OmitType, PartialType } from '@nestjs/swagger'
-import { IsOptional, IsString, ValidateNested } from 'class-validator'
+import { IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { arePopulated } from '../../../shared/helper/populated-type.helper'
 import { WrapperType } from '../../../shared/types/shared-types'
 import { LessonDto } from '../../lessons/dto/lesson.dto'
@@ -9,7 +9,7 @@ import { SubjectDocument } from '../schemas/subject.schema'
 
 export class SubjectDto {
     @ApiProperty({ type: String, required: true, example: 'subjectId' })
-    @IsString()
+    @IsMongoId()
     id: string
 
     @ApiProperty({ type: String, required: true, example: 'الفقه' })

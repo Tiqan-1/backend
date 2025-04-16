@@ -15,6 +15,9 @@ export class Task {
     @Prop({ required: true, type: [ObjectId], ref: Lesson.name, default: [] })
     lessons: ObjectId[] | Populated<LessonDocument[]>
 
+    @Prop({ required: false, type: String })
+    note?: string
+
     @Prop({ type: Date, index: { expireAfterSeconds: 0 } })
     expireAt?: Date
 

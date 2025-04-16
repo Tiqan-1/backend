@@ -16,9 +16,6 @@ export class Lesson {
     @Prop({ required: true, type: String })
     url: string
 
-    @Prop({ required: false, type: String })
-    note?: string
-
     @Prop({ required: true, type: String, enum: LessonState, default: LessonState.active })
     state: LessonState
 }

@@ -1,5 +1,5 @@
 import { ApiProperty, OmitType, PartialType } from '@nestjs/swagger'
-import { IsDateString, IsEnum, IsOptional, IsString, ValidateNested } from 'class-validator'
+import { IsBase64, IsDateString, IsEnum, IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { normalizeDate } from '../../../shared/helper/date.helper'
 import { areNotPopulated, arePopulated } from '../../../shared/helper/populated-type.helper'
 import { ObjectId, Populated } from '../../../shared/repository/types'
@@ -14,7 +14,7 @@ const now = normalizeDate(new Date())
 
 export class ProgramDto {
     @ApiProperty({ type: String, required: true, example: 'programId' })
-    @IsString()
+    @IsMongoId()
     id: string
 
     @ApiProperty({ type: String, required: true, example: 'مبادرة التأسيس' })
@@ -27,7 +27,7 @@ export class ProgramDto {
 
     @ApiProperty({ type: String, required: false, description: 'صورة للبرنامج بصيغة base64' })
     @IsOptional()
-    @IsString()
+    @IsBase64()
     thumbnail?: string
 
     @ApiProperty({ type: () => SimpleManagerDto, required: true })
@@ -104,10 +104,11 @@ export class StudentProgramDto extends OmitType(ProgramDto, ['state']) {
     }
 }
 
-export class StudentProgramUnpopulatedDto extends OmitType(StudentProgramDto, ['levels']) {
+export class StudentProgramUnpopulatedDto extends OmitType(StudentProgramDto, ['levels'] as const) {
     @ApiProperty({ type: String, required: false, isArray: true })
     @IsOptional()
     @ValidateNested({ each: true })
+    @IsMongoId({ each: true })
     levelIds?: string[]
 
     static fromDocument(document: ProgramDocument): StudentProgramUnpopulatedDto {
@@ -126,16 +127,16 @@ export class StudentProgramUnpopulatedDto extends OmitType(StudentProgramDto, ['
     }
 }
 
-export class CreateProgramDto extends OmitType(ProgramDto, ['id', 'state', 'levels', 'createdBy']) {
+export class CreateProgramDto extends OmitType(ProgramDto, ['id', 'state', 'levels', 'createdBy', 'thumbnail'] as const) {
     @ApiProperty({ type: String, required: false, isArray: true })
     @IsOptional()
     @ValidateNested({ each: true })
+    @IsMongoId({ each: true })
     levelIds?: string[]
 
     static toDocument(dto: CreateProgramDto, createdBy: ObjectId): object {
         return {
             name: dto.name,
-            thumbnail: dto.thumbnail,
             description: dto.description,
             start: dto.start,
             end: dto.end,
@@ -146,7 +147,7 @@ export class CreateProgramDto extends OmitType(ProgramDto, ['id', 'state', 'leve
     }
 }
 
-export class UpdateProgramDto extends PartialType(OmitType(CreateProgramDto, ['thumbnail'] as const)) {
+export class UpdateProgramDto extends PartialType(CreateProgramDto) {
     @ApiProperty({ type: String, enum: ProgramState, required: false })
     @IsOptional()
     @IsEnum(ProgramState)
@@ -166,7 +167,7 @@ export class UpdateProgramDto extends PartialType(OmitType(CreateProgramDto, ['t
     }
 }
 
-export class SearchProgramQueryDto extends PartialType(OmitType(ProgramDto, ['thumbnail', 'levels', 'createdBy'])) {
+export class SearchProgramQueryDto extends PartialType(OmitType(ProgramDto, ['thumbnail', 'levels', 'createdBy'] as const)) {
     @ApiProperty({ example: '' })
     id: string
 

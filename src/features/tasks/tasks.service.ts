@@ -1,10 +1,12 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { oneMonth } from '../../shared/constants'
 import { CreatedDto } from '../../shared/dto/created.dto'
+import { normalizeDate } from '../../shared/helper/date.helper'
 import { ObjectId } from '../../shared/repository/types'
 import { LessonsService } from '../lessons/lessons.service'
 import { CreateTaskDto, TaskDto, UpdateTaskDto } from './dto/task.dto'
 import { TaskState } from './enums'
+import { TaskDocument } from './schemas/task.schema'
 import { TasksRepository } from './tasks.repository'
 
 @Injectable()
@@ -17,10 +19,14 @@ export class TasksService {
     ) {}
 
     async create(task: CreateTaskDto): Promise<CreatedDto> {
-        const createObject: { date?: Date; lessons?: ObjectId[] } = { date: task.date }
-        if (task.lessonIds?.length) {
-            createObject.lessons = await this.lessonsService.validateLessonIds(task.lessonIds)
+        const validatedLessons = task.lessonIds?.length ? await this.lessonsService.validateLessonIds(task.lessonIds) : undefined
+
+        const createObject: Partial<TaskDocument> = {
+            date: normalizeDate(new Date(task.date)),
+            ...(task.note && { note: task.note }),
+            ...(validatedLessons && { lessons: validatedLessons }),
         }
+
         const created = await this.taskRepository.create(createObject)
         this.logger.log(`Task ${created._id.toString()} created.`)
         return { id: created._id.toString() }
@@ -28,10 +34,14 @@ export class TasksService {
 
     async update(id: string, task: UpdateTaskDto): Promise<void> {
         const taskId = new ObjectId(id)
-        const updateObject: { date?: Date; lessons?: ObjectId[] } = { date: task.date }
-        if (task.lessonIds?.length) {
-            updateObject.lessons = await this.lessonsService.validateLessonIds(task.lessonIds)
+        const validatedLessons = task.lessonIds?.length ? await this.lessonsService.validateLessonIds(task.lessonIds) : undefined
+
+        const updateObject: Partial<TaskDocument> = {
+            ...(task.date && { date: normalizeDate(new Date(task.date)) }),
+            ...(task.note && { note: task.note }),
+            ...(validatedLessons && { lessons: validatedLessons }),
         }
+
         const updated = await this.taskRepository.update({ _id: taskId, state: { $ne: TaskState.deleted } }, updateObject)
         if (!updated) {
             this.logger.error(`Attempt to update Task ${id} failed.`)

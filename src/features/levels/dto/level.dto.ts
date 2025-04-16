@@ -1,5 +1,5 @@
 import { ApiProperty, OmitType, PartialType } from '@nestjs/swagger'
-import { IsDateString, IsString, ValidateNested } from 'class-validator'
+import { IsDateString, IsMongoId, IsString, ValidateNested } from 'class-validator'
 import { Populated } from '../../../shared/repository/types'
 import { TaskDto } from '../../tasks/dto/task.dto'
 import { TaskDocument } from '../../tasks/schemas/task.schema'
@@ -7,7 +7,7 @@ import { LevelDocument } from '../schemas/level.schema'
 
 export class LevelDto {
     @ApiProperty({ type: String, required: true, example: 'levelId' })
-    @IsString()
+    @IsMongoId()
     id: string
 
     @ApiProperty({ type: String, required: true, example: 'المستوى الأول' })
