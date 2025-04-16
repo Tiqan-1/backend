@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsNumber, IsOptional } from 'class-validator'
+import { IsNumberString, IsOptional } from 'class-validator'
 
 export class SearchQueryDto {
     @ApiProperty({
@@ -8,7 +8,7 @@ export class SearchQueryDto {
         description: 'Controls the number of returned elements',
         default: 20,
     })
-    @IsNumber()
+    @IsNumberString()
     @IsOptional()
     limit?: number
 
@@ -18,7 +18,7 @@ export class SearchQueryDto {
         description: 'Controls the number of elements to be skipped (for paging)',
         default: 0,
     })
-    @IsNumber()
+    @IsNumberString()
     @IsOptional()
     skip?: number
 }
