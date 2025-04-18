@@ -34,7 +34,7 @@ import { TokensRepository } from '../src/features/tokens/tokens.repository'
 import { TokensService } from '../src/features/tokens/tokens.service'
 import { UsersRepository } from '../src/features/users/users.repository'
 import { UsersService } from '../src/features/users/users.service'
-import { SharedDocumentsService } from '../src/shared/documents-validator/shared-documents.service'
+import { SharedDocumentsService } from '../src/shared/database-services/shared-documents.service'
 import { CreatedDto } from '../src/shared/dto/created.dto'
 import {
     ConfigServiceProvider,
@@ -198,7 +198,7 @@ describe('StudentsController (e2e)', () => {
     describe('GET /api/students/subscriptions', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
-            const lesson = await mongoTestHelper.createLesson()
+            const lesson = await mongoTestHelper.createLesson(manager._id)
             const task = await mongoTestHelper.createTask([lesson._id])
             const level = await mongoTestHelper.createLevel([task._id])
             const program = await mongoTestHelper.createProgram([level._id], manager._id)
@@ -280,7 +280,7 @@ describe('StudentsController (e2e)', () => {
     describe('GET /api/students/open-programs', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
-            const lesson = await mongoTestHelper.createLesson()
+            const lesson = await mongoTestHelper.createLesson(manager._id)
             const task = await mongoTestHelper.createTask([lesson._id])
             const level = await mongoTestHelper.createLevel([task._id])
             const program = await mongoTestHelper.createProgram([level._id], manager._id)

@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { SharedDocumentsService } from '../../shared/documents-validator/shared-documents.service'
+import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
 import { SearchFilterBuilder } from '../../shared/helper/search-filter.builder'
 import { ObjectId } from '../../shared/repository/types'
 import { CreateLessonDto, LessonDto, SearchLessonsQueryDto, UpdateLessonDto } from './dto/lesson.dto'
@@ -15,18 +15,39 @@ export class LessonsService {
         private readonly documentsService: SharedDocumentsService
     ) {}
 
-    async create(lesson: CreateLessonDto): Promise<LessonDto> {
-        const lessonDocument = await this.repository.create(lesson)
-        this.logger.log(`Lesson ${lessonDocument._id.toString()} created.`)
-        return LessonDto.fromDocument(lessonDocument)
+    async create(lesson: CreateLessonDto, createdBy: ObjectId): Promise<LessonDto> {
+        const subject = await this.documentsService.getSubject(lesson.subjectId)
+        const created = await this.repository.create({ ...lesson, createdBy })
+        ;(subject.lessons as ObjectId[]).push(created._id)
+        await subject.save()
+        this.logger.log(`Lesson ${created._id.toString()} created.`)
+        return LessonDto.fromDocument(created)
     }
 
-    async remove(lessonId: string): Promise<void> {
+    async removeForSubjects(lessonId: string): Promise<void> {
         const deleted = await this.repository.update({ _id: new ObjectId(lessonId) }, { state: LessonState.deleted })
         if (!deleted) {
             this.logger.error(`Attempt to remove lesson ${lessonId} failed.`)
             throw new NotFoundException(`Lesson not found`)
         }
+        this.logger.log(`Lesson ${lessonId} removed.`)
+    }
+
+    async remove(lessonId: string): Promise<void> {
+        const deleted = await this.repository.update({ _id: new ObjectId(lessonId) }, { state: LessonState.deleted })
+        if (!deleted) {
+            this.logger.error(`Attempt to remove lesson ${lessonId} failed. Lesson not found in the db.`)
+            throw new NotFoundException(`Lesson not found`)
+        }
+        const subjectId = deleted.subjectId.toString()
+        const subject = await this.documentsService.getSubject(subjectId)
+        const lessonIndex = subject.lessons.findIndex(id => id._id.toString() === lessonId)
+        if (lessonIndex === -1) {
+            this.logger.error(`Attempt to remove lesson ${lessonId} from subject ${subjectId} failed.`)
+            throw new NotFoundException(`Lesson not found in the subjects lessons.`)
+        }
+        ;(subject.lessons as ObjectId[]).splice(lessonIndex, 1)
+        await subject.save()
         this.logger.log(`Lesson ${lessonId} removed.`)
     }
 

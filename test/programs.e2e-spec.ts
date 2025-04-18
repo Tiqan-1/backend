@@ -27,7 +27,7 @@ import { ProgramDocument } from '../src/features/programs/schemas/program.schema
 import { TasksRepository } from '../src/features/tasks/tasks.repository'
 import { TasksService } from '../src/features/tasks/tasks.service'
 import { oneMonth } from '../src/shared/constants'
-import { SharedDocumentsService } from '../src/shared/documents-validator/shared-documents.service'
+import { SharedDocumentsService } from '../src/shared/database-services/shared-documents.service'
 import { CreatedDto } from '../src/shared/dto/created.dto'
 import {
     ConfigServiceProvider,
@@ -468,7 +468,7 @@ describe('ProgramsController (e2e)', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
             const token = jwtService.sign({ id: manager._id, role: manager.role })
-            const lesson = await mongoTestHelper.createLesson()
+            const lesson = await mongoTestHelper.createLesson(manager._id)
             const task = await mongoTestHelper.createTask([lesson._id])
             const level = await mongoTestHelper.createLevel([task._id])
             const program = await mongoTestHelper.createProgram([level._id], manager._id)

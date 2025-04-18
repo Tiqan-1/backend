@@ -11,7 +11,7 @@ import { SubscriptionDocument } from '../src/features/subscriptions/schemas/subs
 import { SubscriptionsController } from '../src/features/subscriptions/subscriptions.controller'
 import { SubscriptionsRepository } from '../src/features/subscriptions/subscriptions.repository'
 import { SubscriptionsService } from '../src/features/subscriptions/subscriptions.service'
-import { SharedDocumentsService } from '../src/shared/documents-validator/shared-documents.service'
+import { SharedDocumentsService } from '../src/shared/database-services/shared-documents.service'
 import {
     ConfigServiceProvider,
     JwtMockModule,

@@ -56,7 +56,7 @@ export class SubjectsController {
         return this.service.find(searchSubjectQueryDto, request.user.id)
     }
 
-    @ApiOperation({ summary: 'Finds subject by id', description: 'Finds subject by id.' })
+    @ApiOperation({ summary: 'Finds subject by id', description: 'Finds subject by id.', deprecated: true })
     @ApiResponse({ status: HttpStatus.OK, type: SubjectDto, description: 'Got subject successfully.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Subject not found.' })
@@ -99,7 +99,7 @@ export class SubjectsController {
         return this.service.remove(subjectId, request.user.id)
     }
 
-    @ApiOperation({ summary: 'Creates a lesson', description: 'Creates a lesson and adds it to the subject.' })
+    @ApiOperation({ summary: 'Creates a lesson', description: 'Creates a lesson and adds it to the subject.', deprecated: true })
     @ApiResponse({
         status: HttpStatus.CREATED,
         type: CreatedDto,
@@ -114,11 +114,11 @@ export class SubjectsController {
     @HttpCode(HttpStatus.CREATED)
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
-    createLesson(@Param('subjectId') subjectId: string, @Body() createLessonDto: CreateLessonDto): Promise<CreatedDto> {
-        return this.service.createLesson(subjectId, createLessonDto)
+    createLesson(@Body() createLessonDto: CreateLessonDto, @Request() request: { user: TokenUser }): Promise<CreatedDto> {
+        return this.service.createLesson(createLessonDto, request.user.id)
     }
 
-    @ApiOperation({ summary: 'Gets lessons of the subject.', description: `Gets lessons of the subject.` })
+    @ApiOperation({ summary: 'Gets lessons of the subject.', description: `Gets lessons of the subject.`, deprecated: true })
     @ApiResponse({ status: HttpStatus.OK, type: LessonDto, isArray: true, description: 'Got lessons successfully.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
@@ -132,7 +132,7 @@ export class SubjectsController {
         return this.service.getLessons(subjectId)
     }
 
-    @ApiOperation({ summary: 'Removes a lesson', description: 'Removes a lesson from the subject.' })
+    @ApiOperation({ summary: 'Removes a lesson', description: 'Removes a lesson from the subject.', deprecated: true })
     @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Lesson successfully removed.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })

@@ -37,9 +37,13 @@ export class LessonDto {
     url: string
 }
 
-export class CreateLessonDto extends OmitType(LessonDto, ['id']) {}
+export class CreateLessonDto extends OmitType(LessonDto, ['id'] as const) {
+    @ApiProperty({ type: String, required: true, example: 'subjectId' })
+    @IsMongoId()
+    subjectId: string
+}
 
-export class UpdateLessonDto extends PartialType(CreateLessonDto) {}
+export class UpdateLessonDto extends PartialType(OmitType(CreateLessonDto, ['subjectId'] as const)) {}
 
 export class SearchLessonsQueryDto extends IntersectionType(PartialType(LessonDto), SearchQueryDto) {
     @ApiProperty({ type: String, required: false, example: 'subjectId' })

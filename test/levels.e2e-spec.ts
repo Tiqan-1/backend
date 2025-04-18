@@ -16,7 +16,7 @@ import { CreateTaskDto, TaskDto } from '../src/features/tasks/dto/task.dto'
 import { TaskDocument } from '../src/features/tasks/schemas/task.schema'
 import { TasksRepository } from '../src/features/tasks/tasks.repository'
 import { TasksService } from '../src/features/tasks/tasks.service'
-import { SharedDocumentsService } from '../src/shared/documents-validator/shared-documents.service'
+import { SharedDocumentsService } from '../src/shared/database-services/shared-documents.service'
 import { CreatedDto } from '../src/shared/dto/created.dto'
 import { normalizeDate } from '../src/shared/helper/date.helper'
 import {
@@ -71,7 +71,7 @@ describe('LevelsController', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
             const token = jwtService.sign({ id: manager._id, role: manager.role })
-            const lesson = await mongoTestHelper.createLesson()
+            const lesson = await mongoTestHelper.createLesson(manager._id)
             const task = await mongoTestHelper.createTask([lesson._id])
             const level = await mongoTestHelper.createLevel([task._id])
 
@@ -160,7 +160,7 @@ describe('LevelsController', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
             const token = jwtService.sign({ id: manager._id, role: manager.role })
-            const lesson = await mongoTestHelper.createLesson()
+            const lesson = await mongoTestHelper.createLesson(manager._id)
             const level = await mongoTestHelper.createLevel([])
 
             const body: CreateTaskDto = {
@@ -203,7 +203,7 @@ describe('LevelsController', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
             const token = jwtService.sign({ id: manager._id, role: manager.role })
-            const lesson = await mongoTestHelper.createLesson()
+            const lesson = await mongoTestHelper.createLesson(manager._id)
             const task = await mongoTestHelper.createTask([lesson._id])
             const level = await mongoTestHelper.createLevel([task._id])
 

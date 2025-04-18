@@ -9,10 +9,13 @@ import { Subject, SubjectSchema } from '../../features/subjects/schemas/subject.
 import { Subscription, SubscriptionSchema } from '../../features/subscriptions/schemas/subscription.schema'
 import { Task, TaskSchema } from '../../features/tasks/schemas/task.schema'
 import { User, UserSchema } from '../../features/users/schemas/user.schema'
+import { MigrationService } from './migration.service'
+import { DbVersion, DbVersionSchema } from './schema/db-version.schema'
 import { SharedDocumentsService } from './shared-documents.service'
 
 @Module({
     imports: [
+        MongooseModule.forFeature([{ name: DbVersion.name, schema: DbVersionSchema }]),
         MongooseModule.forFeature([{ name: Lesson.name, schema: LessonSchema }]),
         MongooseModule.forFeature([{ name: Subject.name, schema: SubjectSchema }]),
         MongooseModule.forFeature([{ name: Task.name, schema: TaskSchema }]),
@@ -26,7 +29,7 @@ import { SharedDocumentsService } from './shared-documents.service'
             { name: User.name, schema: UserSchema, discriminators: [{ name: Student.name, schema: StudentSchema }] },
         ]),
     ],
-    providers: [SharedDocumentsService],
-    exports: [SharedDocumentsService, MongooseModule],
+    providers: [SharedDocumentsService, MigrationService],
+    exports: [SharedDocumentsService, MigrationService, MongooseModule],
 })
 export class SharedDocumentsModule {}

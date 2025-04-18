@@ -6,6 +6,7 @@ import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify
 import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger'
 import * as process from 'node:process'
 import { AppModule } from './app.module'
+import { MigrationService } from './shared/database-services/migration.service'
 import { MongoDbExceptionFilter } from './shared/exceptions/mongo-db-exception.filter'
 import { SecurityExceptionFilter } from './shared/exceptions/security-exception.filter'
 
@@ -15,6 +16,9 @@ async function bootstrap(): Promise<void> {
     const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter(), {
         logger: new ConsoleLogger({ logLevels, json: true, colors: process.env.NODE_ENV === 'development' }),
     })
+
+    const migrationService = app.get(MigrationService)
+    await migrationService.migrate()
 
     await app.register(multipart)
     app.enableCors({

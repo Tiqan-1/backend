@@ -1,7 +1,7 @@
 import { MultipartFile } from '@fastify/multipart'
 import { Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common'
 import { oneMonth } from '../../shared/constants'
-import { SharedDocumentsService } from '../../shared/documents-validator/shared-documents.service'
+import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { SearchFilterBuilder } from '../../shared/helper/search-filter.builder'
 import { ObjectId } from '../../shared/repository/types'
@@ -26,7 +26,9 @@ export class ProgramsService {
     ) {}
 
     async createForManager(createProgramDto: CreateProgramDto, createdBy: ObjectId): Promise<CreatedDto> {
-        const levels = (await this.documentsService.getLevels(createProgramDto.levelIds))?.map(level => level._id)
+        const levels =
+            createProgramDto.levelIds &&
+            (await this.documentsService.getLevels(createProgramDto.levelIds))?.map(level => level._id)
         const document = CreateProgramDto.toDocument(createProgramDto, createdBy)
         const createObject = levels ? { ...document, levels } : { ...document }
         const created = await this.programsRepository.create(createObject)
@@ -35,7 +37,9 @@ export class ProgramsService {
     }
 
     async create(createProgramDto: CreateProgramDto, createdBy: ObjectId): Promise<CreatedDto> {
-        const levels = (await this.documentsService.getLevels(createProgramDto.levelIds))?.map(level => level._id)
+        const levels =
+            createProgramDto.levelIds &&
+            (await this.documentsService.getLevels(createProgramDto.levelIds))?.map(level => level._id)
         const document = CreateProgramDto.toDocument(createProgramDto, createdBy)
         const createObject = levels ? { ...document, levels } : { ...document }
         const created = await this.programsRepository.create(createObject)

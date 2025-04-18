@@ -1,5 +1,5 @@
 import { Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common'
-import { SharedDocumentsService } from '../../shared/documents-validator/shared-documents.service'
+import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { SearchFilterBuilder } from '../../shared/helper/search-filter.builder'
 import { ObjectId } from '../../shared/repository/types'
@@ -60,12 +60,8 @@ export class SubjectsService {
         return SubjectDto.fromDocument(subject)
     }
 
-    async createLesson(subjectId: string, dto: CreateLessonDto): Promise<CreatedDto> {
-        const subject = await this.loadSubject(subjectId)
-        const created = await this.lessonsService.create(dto)
-        ;(subject.lessons as ObjectId[]).push(new ObjectId(created.id))
-        await subject.save()
-        return created
+    async createLesson(dto: CreateLessonDto, createdBy: ObjectId): Promise<CreatedDto> {
+        return await this.lessonsService.create(dto, createdBy)
     }
 
     async getLessons(id: string): Promise<LessonDto[]> {
@@ -82,7 +78,7 @@ export class SubjectsService {
             throw new NotFoundException('Lesson not found.')
         }
         ;(subject.lessons as ObjectId[]).splice(lessonIndex, 1)
-        await this.lessonsService.remove(lessonId)
+        await this.lessonsService.removeForSubjects(lessonId)
         await subject.save()
     }
 
@@ -125,7 +121,7 @@ export class SubjectsService {
         }
         for (const lesson of removed.lessons as ObjectId[]) {
             try {
-                await this.lessonsService.remove(lesson._id.toString())
+                await this.lessonsService.removeForSubjects(lesson._id.toString())
             } catch (error) {
                 this.logger.error(`Attempt to remove lesson ${lesson._id.toString()} from subject ${subjectId} failed.`, error)
             }

@@ -10,10 +10,12 @@ import { Subject, SubjectDocument } from '../../features/subjects/schemas/subjec
 import { Subscription, SubscriptionDocument } from '../../features/subscriptions/schemas/subscription.schema'
 import { Task, TaskDocument } from '../../features/tasks/schemas/task.schema'
 import { ObjectId } from '../repository/types'
+import { DbVersion, DbVersionDocument } from './schema/db-version.schema'
 
 @Injectable()
 export class SharedDocumentsService {
     constructor(
+        @InjectModel(DbVersion.name) private dbVersion: Model<DbVersionDocument>,
         @InjectModel(Lesson.name) private lessonModel: Model<LessonDocument>,
         @InjectModel(Subject.name) private subjectModel: Model<SubjectDocument>,
         @InjectModel(Manager.name) private managerModel: Model<ManagerDocument>,
@@ -24,74 +26,75 @@ export class SharedDocumentsService {
         @InjectModel(Subscription.name) private subscriptionModel: Model<SubscriptionDocument>
     ) {}
 
-    async getLesson(id?: string): Promise<LessonDocument | undefined> {
+    async getDbVersion(): Promise<DbVersionDocument> {
+        return (await this.dbVersion.findOne().exec()) ?? (await this.dbVersion.create({}))
+    }
+
+    async getLesson(id: string): Promise<LessonDocument> {
         return this.getDocument<LessonDocument>(id, this.lessonModel)
     }
 
-    async getLessons(ids?: string[]): Promise<LessonDocument[] | undefined> {
+    async getLessons(ids: string[]): Promise<LessonDocument[]> {
         return this.getDocuments<LessonDocument>(ids, this.lessonModel)
     }
 
-    async getSubject(id?: string): Promise<SubjectDocument | undefined> {
+    async getSubject(id: string): Promise<SubjectDocument> {
         return this.getDocument<SubjectDocument>(id, this.subjectModel)
     }
 
-    async getSubjects(ids?: string[]): Promise<SubjectDocument[] | undefined> {
+    async getSubjects(ids: string[]): Promise<SubjectDocument[]> {
         return this.getDocuments<SubjectDocument>(ids, this.subjectModel)
     }
 
-    async getManager(id?: string): Promise<ManagerDocument | undefined> {
+    async getManager(id: string): Promise<ManagerDocument> {
         return this.getDocument<ManagerDocument>(id, this.managerModel)
     }
 
-    async getManagers(ids?: string[]): Promise<ManagerDocument[] | undefined> {
+    async getManagers(ids: string[]): Promise<ManagerDocument[]> {
         return this.getDocuments<ManagerDocument>(ids, this.managerModel)
     }
 
-    async getStudent(id?: string): Promise<StudentDocument | undefined> {
+    async getStudent(id: string): Promise<StudentDocument> {
         return this.getDocument<StudentDocument>(id, this.studentModel)
     }
 
-    async getStudents(ids?: string[]): Promise<StudentDocument[] | undefined> {
+    async getStudents(ids: string[]): Promise<StudentDocument[]> {
         return this.getDocuments<StudentDocument>(ids, this.studentModel)
     }
 
-    async getTask(id?: string): Promise<TaskDocument | undefined> {
+    async getTask(id: string): Promise<TaskDocument> {
         return this.getDocument<TaskDocument>(id, this.taskModel)
     }
 
-    async getTasks(ids?: string[]): Promise<TaskDocument[] | undefined> {
+    async getTasks(ids: string[]): Promise<TaskDocument[]> {
         return this.getDocuments<TaskDocument>(ids, this.taskModel)
     }
 
-    async getLevel(id?: string): Promise<LevelDocument | undefined> {
+    async getLevel(id: string): Promise<LevelDocument> {
         return this.getDocument<LevelDocument>(id, this.levelModel)
     }
 
-    async getLevels(ids?: string[]): Promise<LevelDocument[] | undefined> {
+    async getLevels(ids: string[]): Promise<LevelDocument[]> {
         return this.getDocuments<LevelDocument>(ids, this.levelModel)
     }
 
-    async getProgram(id?: string): Promise<ProgramDocument | undefined> {
+    async getProgram(id: string): Promise<ProgramDocument> {
         return this.getDocument<ProgramDocument>(id, this.programModel)
     }
 
-    async getPrograms(ids?: string[]): Promise<ProgramDocument[] | undefined> {
+    async getPrograms(ids: string[]): Promise<ProgramDocument[]> {
         return this.getDocuments<ProgramDocument>(ids, this.programModel)
     }
 
-    async getSubscription(id?: string): Promise<SubscriptionDocument | undefined> {
+    async getSubscription(id: string): Promise<SubscriptionDocument> {
         return this.getDocument<SubscriptionDocument>(id, this.subscriptionModel)
     }
 
-    async getSubscriptions(ids?: string[]): Promise<SubscriptionDocument[] | undefined> {
+    async getSubscriptions(ids: string[]): Promise<SubscriptionDocument[]> {
         return this.getDocuments<SubscriptionDocument>(ids, this.subscriptionModel)
     }
 
-    private async getDocument<T>(id: string | undefined, model: Model<T>): Promise<T | undefined> {
-        if (!id) {
-            return undefined
-        }
+    private async getDocument<T>(id: string, model: Model<T>): Promise<T> {
         const found = await model.findById(new ObjectId(id)).exec()
         if (!found) {
             throw new NotFoundException(`Document with id ${id} not found in ${model.name}.`)
@@ -99,14 +102,13 @@ export class SharedDocumentsService {
         return found
     }
 
-    private async getDocuments<T>(ids: string[] | undefined, model: Model<T>): Promise<T[] | undefined> {
-        if (!ids) {
-            return undefined
-        }
+    private async getDocuments<T>(ids: string[], model: Model<T>): Promise<T[]> {
         const objectIds = ids.map(id => new ObjectId(id))
-        const found = await model.find({ _id: { $in: objectIds } }).exec()
-        if (!found?.length || found.length !== ids.length) {
-            throw new NotFoundException(`Documents with the given ids not found in ${model.name}.`)
+        let found: T[]
+        if (objectIds.length > 0) {
+            found = await model.find({ _id: { $in: objectIds } }).exec()
+        } else {
+            found = await model.find({}).exec()
         }
         return found
     }

@@ -21,7 +21,7 @@ export class Subject {
     @Prop({ required: true, type: ObjectId, ref: 'Manager' })
     createdBy: ObjectId | Populated<ManagerDocument>
 
-    @Prop({ required: true, type: [ObjectId], ref: Lesson.name })
+    @Prop({ required: true, type: [ObjectId], ref: 'Lesson' })
     lessons: ObjectId[] | Populated<LessonDocument[]>
 }
 

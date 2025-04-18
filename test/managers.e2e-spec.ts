@@ -25,7 +25,7 @@ import { TokensRepository } from '../src/features/tokens/tokens.repository'
 import { TokensService } from '../src/features/tokens/tokens.service'
 import { UsersRepository } from '../src/features/users/users.repository'
 import { UsersService } from '../src/features/users/users.service'
-import { SharedDocumentsService } from '../src/shared/documents-validator/shared-documents.service'
+import { SharedDocumentsService } from '../src/shared/database-services/shared-documents.service'
 import { ConfigServiceProvider, JwtMockModule } from '../src/shared/test/helper/jwt-authentication-test.helper'
 import { MongoTestHelper } from '../src/shared/test/helper/mongo-test.helper'
 

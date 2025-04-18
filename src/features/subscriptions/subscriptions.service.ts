@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { oneMonth } from '../../shared/constants'
-import { SharedDocumentsService } from '../../shared/documents-validator/shared-documents.service'
+import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { ObjectId } from '../../shared/repository/types'
 import { LevelDocument } from '../levels/schemas/level.schema'

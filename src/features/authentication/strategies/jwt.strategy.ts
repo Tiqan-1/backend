@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { PassportStrategy } from '@nestjs/passport'
 import { ExtractJwt, Strategy } from 'passport-jwt'
+import { ObjectId } from '../../../shared/repository/types'
 import { TokenUser } from '../types/token-user'
 
 @Injectable()
@@ -15,6 +16,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     }
 
     validate(payload?: TokenUser): TokenUser | undefined {
-        return payload
+        return payload?.id ? { ...payload, id: new ObjectId(payload.id) } : payload
     }
 }

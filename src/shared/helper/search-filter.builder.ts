@@ -10,7 +10,7 @@ export class SearchFilterBuilder {
 
     withObjectId(key: string, id?: string | ObjectId): SearchFilterBuilder {
         if (id) {
-            this.filter[key] = id instanceof ObjectId ? id : new ObjectId(id)
+            this.filter[key] = typeof id === 'string' ? new ObjectId(id) : id
         }
         return this
     }

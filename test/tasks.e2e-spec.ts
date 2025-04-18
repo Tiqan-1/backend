@@ -13,7 +13,7 @@ import { TaskDocument } from '../src/features/tasks/schemas/task.schema'
 import { TasksController } from '../src/features/tasks/tasks.controller'
 import { TasksRepository } from '../src/features/tasks/tasks.repository'
 import { TasksService } from '../src/features/tasks/tasks.service'
-import { SharedDocumentsService } from '../src/shared/documents-validator/shared-documents.service'
+import { SharedDocumentsService } from '../src/shared/database-services/shared-documents.service'
 import { ObjectId } from '../src/shared/repository/types'
 import {
     ConfigServiceProvider,
@@ -65,7 +65,7 @@ describe('TasksController (e2e)', () => {
     describe('Get /api/tasks/:id', () => {
         it('should succeed when called by a manager', async () => {
             const manager = await mongoTestHelper.createManager()
-            const lesson = await mongoTestHelper.createLesson()
+            const lesson = await mongoTestHelper.createLesson(manager._id)
             const task = await mongoTestHelper.createTask([lesson._id])
             const token = jwtService.sign({ id: manager._id, role: manager.role })
 
@@ -92,7 +92,8 @@ describe('TasksController (e2e)', () => {
 
         it('should succeed when called by a student', async () => {
             const student = await mongoTestHelper.createStudent()
-            const lesson = await mongoTestHelper.createLesson()
+            const manager = await mongoTestHelper.createManager()
+            const lesson = await mongoTestHelper.createLesson(manager._id)
             const task = await mongoTestHelper.createTask([lesson._id])
             const token = jwtService.sign({ id: student._id, role: student.role })
 
@@ -116,11 +117,11 @@ describe('TasksController (e2e)', () => {
     describe('Put /api/tasks/:id', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
-            const lesson = await mongoTestHelper.createLesson()
+            const lesson = await mongoTestHelper.createLesson(manager._id)
             const task = await mongoTestHelper.createTask([lesson._id])
             const token = jwtService.sign({ id: manager._id, role: manager.role })
 
-            const newLesson = await mongoTestHelper.createLesson()
+            const newLesson = await mongoTestHelper.createLesson(manager._id)
             const body: UpdateTaskDto = {
                 date: new Date(2020, 5),
                 lessonIds: [newLesson._id.toString()],
@@ -142,7 +143,7 @@ describe('TasksController (e2e)', () => {
 
         it('should succeed when only updating date', async () => {
             const manager = await mongoTestHelper.createManager()
-            const lesson = await mongoTestHelper.createLesson()
+            const lesson = await mongoTestHelper.createLesson(manager._id)
             const task = await mongoTestHelper.createTask([lesson._id])
             const token = jwtService.sign({ id: manager._id, role: manager.role })
 
@@ -166,11 +167,11 @@ describe('TasksController (e2e)', () => {
 
         it('should succeed when only updating lessons', async () => {
             const manager = await mongoTestHelper.createManager()
-            const lesson = await mongoTestHelper.createLesson()
+            const lesson = await mongoTestHelper.createLesson(manager._id)
             const task = await mongoTestHelper.createTask([lesson._id])
             const token = jwtService.sign({ id: manager._id, role: manager.role })
 
-            const newLesson = await mongoTestHelper.createLesson()
+            const newLesson = await mongoTestHelper.createLesson(manager._id)
             const body: UpdateTaskDto = {
                 lessonIds: [newLesson._id.toString()],
             }
@@ -190,7 +191,8 @@ describe('TasksController (e2e)', () => {
 
         it('should fail with 403 if called by a student', async () => {
             const student = await mongoTestHelper.createStudent()
-            const lesson = await mongoTestHelper.createLesson()
+            const manager = await mongoTestHelper.createManager()
+            const lesson = await mongoTestHelper.createLesson(manager._id)
             const task = await mongoTestHelper.createTask([lesson._id])
             const token = jwtService.sign({ id: student._id, role: student.role })
 
@@ -224,7 +226,7 @@ describe('TasksController (e2e)', () => {
     describe('Delete /api/tasks/:id', () => {
         it('should succeed when called by a manager', async () => {
             const manager = await mongoTestHelper.createManager()
-            const lesson = await mongoTestHelper.createLesson()
+            const lesson = await mongoTestHelper.createLesson(manager._id)
             const task = await mongoTestHelper.createTask([lesson._id])
             const token = jwtService.sign({ id: manager._id, role: manager.role })
 
@@ -239,7 +241,8 @@ describe('TasksController (e2e)', () => {
 
         it('should fail with 403 when called by a student', async () => {
             const student = await mongoTestHelper.createStudent()
-            const lesson = await mongoTestHelper.createLesson()
+            const manager = await mongoTestHelper.createManager()
+            const lesson = await mongoTestHelper.createLesson(manager._id)
             const task = await mongoTestHelper.createTask([lesson._id])
             const token = jwtService.sign({ id: student._id, role: student.role })
 

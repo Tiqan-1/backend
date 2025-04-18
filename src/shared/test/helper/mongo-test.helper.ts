@@ -27,12 +27,14 @@ import { TaskState } from '../../../features/tasks/enums'
 import { Task, TaskDocument, TaskSchema } from '../../../features/tasks/schemas/task.schema'
 import { RefreshToken, RefreshTokenSchema } from '../../../features/tokens/schemas/refresh-token.schema'
 import { User, UserDocument, UserSchema } from '../../../features/users/schemas/user.schema'
+import { DbVersion, DbVersionSchema } from '../../database-services/schema/db-version.schema'
 import { ObjectId } from '../../repository/types'
 
 export class MongoTestHelper {
     private mongoServer: MongoMemoryServer
     private mongoConnection: Connection
 
+    private dbVersionModel: Model<DbVersion>
     private userModel: Model<User>
     private managerModel: Model<Manager>
     private studentModel: Model<Student>
@@ -52,6 +54,7 @@ export class MongoTestHelper {
 
     get providers(): Provider[] {
         return [
+            { provide: getModelToken(DbVersion.name), useValue: this.getDbVersionModel() },
             { provide: getModelToken(Lesson.name), useValue: this.getLessonModel() },
             { provide: getModelToken(Task.name), useValue: this.getTaskModel() },
             { provide: getModelToken(Level.name), useValue: this.getLevelModel() },
@@ -63,6 +66,13 @@ export class MongoTestHelper {
             { provide: getModelToken(Subscription.name), useValue: this.getSubscriptionModel() },
             { provide: getModelToken(User.name), useValue: this.getUserModel() },
         ]
+    }
+
+    getDbVersionModel(): Model<DbVersion> {
+        if (!this.dbVersionModel) {
+            this.dbVersionModel = this.mongoConnection.model(DbVersion.name, DbVersionSchema)
+        }
+        return this.dbVersionModel
     }
 
     getRefreshTokenModel(): Model<RefreshToken> {
@@ -183,23 +193,25 @@ export class MongoTestHelper {
         return token.token
     }
 
-    async createLesson(): Promise<LessonDocument> {
+    async createLesson(createdBy: ObjectId, subjectId: ObjectId = new ObjectId()): Promise<LessonDocument> {
         const lesson: Lesson = {
             url: 'test url',
             state: LessonState.active,
             type: LessonType.Video,
             title: 'lesson title',
+            createdBy,
+            subjectId,
         }
         const model = this.getLessonModel()
         return model.create(lesson)
     }
 
-    async createSubject(lessons: ObjectId[], createdBy: ObjectId): Promise<SubjectDocument> {
+    async createSubject(createdBy: ObjectId): Promise<SubjectDocument> {
         const subject: Subject = {
             name: 'subject name',
             description: 'subject description',
             createdBy: createdBy,
-            lessons: lessons,
+            lessons: [],
         }
         const model = this.getSubjectModel()
         return model.create(subject)

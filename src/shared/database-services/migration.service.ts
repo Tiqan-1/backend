@@ -1,0 +1,34 @@
+import { Injectable, Logger } from '@nestjs/common'
+import { MIGRATION_SCRIPTS_MAP } from './migration-scripts/migration-scripts.map'
+import { SharedDocumentsService } from './shared-documents.service'
+
+@Injectable()
+export class MigrationService {
+    private readonly migrationVersion = 2
+    private readonly logger = new Logger(MigrationService.name)
+
+    constructor(private readonly documentsService: SharedDocumentsService) {}
+
+    async migrate(): Promise<void> {
+        const dbVersion = await this.documentsService.getDbVersion()
+        if (dbVersion.version >= this.migrationVersion) {
+            this.logger.log(`Migration not needed.`)
+            return
+        }
+
+        this.logger.log('Starting migration process')
+
+        while (dbVersion.version < this.migrationVersion) {
+            const migrationScript = MIGRATION_SCRIPTS_MAP.get(dbVersion.version)
+            if (!migrationScript) {
+                this.logger.error(`Migration to version ${dbVersion.version} not found`)
+                return
+            }
+            await migrationScript?.up(this.documentsService)
+            this.logger.log(`Migration to version ${dbVersion.version} completed`)
+            dbVersion.version++
+            await dbVersion.save()
+        }
+        this.logger.log('Migration completed successfully')
+    }
+}

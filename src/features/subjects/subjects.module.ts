@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common'
-import { SharedDocumentsModule } from '../../shared/documents-validator/shared-documents.module'
+import { SharedDocumentsModule } from '../../shared/database-services/shared-documents.module'
 import { AuthenticationModule } from '../authentication/authentication.module'
 import { LessonsModule } from '../lessons/lessons.module'
 import { SubjectsController } from './subjects.controller'

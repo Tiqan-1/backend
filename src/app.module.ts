@@ -14,7 +14,7 @@ import { SubscriptionsModule } from './features/subscriptions/subscriptions.modu
 import { TasksModule } from './features/tasks/tasks.module'
 import { TokensModule } from './features/tokens/tokens.module'
 import { UsersModule } from './features/users/users.module'
-import { SharedDocumentsModule } from './shared/documents-validator/shared-documents.module'
+import { SharedDocumentsModule } from './shared/database-services/shared-documents.module'
 
 @Module({
     imports: [
