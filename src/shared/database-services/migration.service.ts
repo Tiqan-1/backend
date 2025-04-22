@@ -10,8 +10,10 @@ export class MigrationService {
 
     async migrate(): Promise<void> {
         const dbVersion = await this.documentsService.getDbVersion()
-        if (dbVersion.version >= MIGRATION_SCRIPTS_MAP.size) {
-            this.logger.log(`Migration not needed.`)
+        if (dbVersion.version > MIGRATION_SCRIPTS_MAP.size) {
+            this.logger.log(
+                `Migration not needed. Current version is ${dbVersion.version}. Max version is ${MIGRATION_SCRIPTS_MAP.size}.`
+            )
             return
         }
 
@@ -28,6 +30,6 @@ export class MigrationService {
             dbVersion.version++
             await dbVersion.save()
         }
-        this.logger.log('Migration completed successfully')
+        this.logger.log(`Migration to version ${dbVersion.version} completed successfully`)
     }
 }
