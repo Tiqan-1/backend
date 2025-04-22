@@ -28,7 +28,7 @@ describe('MigrationService', () => {
 
         service = module.get<MigrationService>(MigrationService)
         documentsService = module.get<SharedDocumentsService>(SharedDocumentsService)
-        vi.spyOn(service as any, 'migrationVersion', 'get').mockReturnValue(2)
+        vi.spyOn(MIGRATION_SCRIPTS_MAP, 'size', 'get').mockReturnValue(2)
     })
 
     it('should skip migration when version is up to date', async () => {

@@ -4,21 +4,20 @@ import { SharedDocumentsService } from './shared-documents.service'
 
 @Injectable()
 export class MigrationService {
-    private readonly migrationVersion = 2
     private readonly logger = new Logger(MigrationService.name)
 
     constructor(private readonly documentsService: SharedDocumentsService) {}
 
     async migrate(): Promise<void> {
         const dbVersion = await this.documentsService.getDbVersion()
-        if (dbVersion.version >= this.migrationVersion) {
+        if (dbVersion.version >= MIGRATION_SCRIPTS_MAP.size) {
             this.logger.log(`Migration not needed.`)
             return
         }
 
         this.logger.log('Starting migration process')
 
-        while (dbVersion.version < this.migrationVersion) {
+        while (dbVersion.version <= MIGRATION_SCRIPTS_MAP.size) {
             const migrationScript = MIGRATION_SCRIPTS_MAP.get(dbVersion.version)
             if (!migrationScript) {
                 this.logger.error(`Migration to version ${dbVersion.version} not found`)
