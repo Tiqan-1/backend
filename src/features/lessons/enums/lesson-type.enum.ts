@@ -1,5 +1,5 @@
 export enum LessonType {
-    Video = 'video',
-    Pdf = 'pdf',
-    Other = 'other',
+    video = 'video',
+    pdf = 'pdf',
+    other = 'other',
 }

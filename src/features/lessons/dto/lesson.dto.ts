@@ -28,7 +28,7 @@ export class LessonDto {
     @IsString()
     title: string
 
-    @ApiProperty({ type: String, enum: LessonType, required: true, example: LessonType.Video })
+    @ApiProperty({ type: String, enum: LessonType, required: true, example: LessonType.video })
     @IsEnum(LessonType)
     type: LessonType
 

@@ -70,7 +70,7 @@ describe('LessonsController (e2e)', () => {
 
             const body: CreateLessonDto = {
                 url: 'test url',
-                type: LessonType.Pdf,
+                type: LessonType.pdf,
                 title: 'test title',
                 subjectId: subject._id.toString(),
             }
@@ -150,7 +150,7 @@ describe('LessonsController (e2e)', () => {
             const subject = await mongoTestHelper.createSubject(manager._id)
             const lesson1 = await mongoTestHelper.createLesson(manager._id, subject._id)
             const lesson2 = await mongoTestHelper.createLesson(manager._id, subject._id)
-            lesson2.type = LessonType.Other
+            lesson2.type = LessonType.other
             await lesson2.save()
             const lesson3 = await mongoTestHelper.createLesson(manager._id)
             await mongoTestHelper.createLesson(manager._id)
@@ -158,7 +158,7 @@ describe('LessonsController (e2e)', () => {
             await subject.save()
 
             const response = await request(app.getHttpServer())
-                .get(`/api/lessons?subjectId=${subject.id}&type=${LessonType.Video}&url=${lesson3.url}`)
+                .get(`/api/lessons?subjectId=${subject.id}&type=${LessonType.video}&url=${lesson3.url}`)
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.OK)
 
@@ -188,7 +188,7 @@ describe('LessonsController (e2e)', () => {
             await mongoTestHelper.createLesson(manager._id)
 
             const response = await request(app.getHttpServer())
-                .get(`/api/lessons?id=${lesson1._id.toString()}&type=${LessonType.Video}`)
+                .get(`/api/lessons?id=${lesson1._id.toString()}&type=${LessonType.video}`)
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.OK)
 
@@ -216,7 +216,7 @@ describe('LessonsController (e2e)', () => {
             const lesson = await mongoTestHelper.createLesson(manager._id)
 
             const body: UpdateLessonDto = {
-                type: LessonType.Pdf,
+                type: LessonType.pdf,
                 url: 'pdf url',
             }
 

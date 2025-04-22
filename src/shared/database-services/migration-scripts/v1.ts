@@ -5,7 +5,6 @@ import { MigrationScript } from './migration-script'
 
 export class V1 implements MigrationScript {
     private readonly logger = new Logger(V1.name)
-    constructor() {}
 
     async up(documentsService: SharedDocumentsService): Promise<void> {
         this.logger.log(`Starting migration process of script ${V1.name}`)

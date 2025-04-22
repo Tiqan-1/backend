@@ -197,7 +197,7 @@ export class MongoTestHelper {
         const lesson: Lesson = {
             url: 'test url',
             state: LessonState.active,
-            type: LessonType.Video,
+            type: LessonType.video,
             title: 'lesson title',
             createdBy,
             subjectId,
