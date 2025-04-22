@@ -32,7 +32,7 @@ describe('MigrationService', () => {
     })
 
     it('should skip migration when version is up to date', async () => {
-        vi.spyOn(documentsService, 'getDbVersion').mockResolvedValue({ version: 2, save: vi.fn() } as any)
+        vi.spyOn(documentsService, 'getDbVersion').mockResolvedValue({ version: 3, save: vi.fn() } as any)
         await service.migrate()
         expect(documentsService.getDbVersion).toHaveBeenCalled()
     })
