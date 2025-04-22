@@ -91,6 +91,7 @@ export class ProgramsService {
         return ProgramDto.fromDocuments(result)
     }
 
+    /** @deprecated */
     async findOne(id: string): Promise<ProgramDto> {
         const found = await this.loadProgram(id)
         await this.loadThumbnail(found)
@@ -176,21 +177,19 @@ export class ProgramsService {
         this.logger.log(`Program ${id} removed.`)
     }
 
-    async createLevel(programId: string, createLevelDto: CreateLevelDto): Promise<CreatedDto> {
-        const program = await this.loadProgram(programId)
-        const level = await this.levelsService.create(createLevelDto)
-        ;(program.levels as ObjectId[]).push(new ObjectId(level.id))
-        await program.save()
-        this.logger.log(`Level ${level.id} created and added to Program ${programId}.`)
-        return level
+    /** @deprecated */
+    async createLevel(programId: string, createLevelDto: CreateLevelDto, createdBy: ObjectId): Promise<CreatedDto> {
+        return await this.levelsService.create({ ...createLevelDto, programId }, createdBy)
     }
 
+    /** @deprecated */
     async getLevels(id: string): Promise<LevelDto[]> {
         const program = await this.loadProgram(id)
         await program.populate({ path: 'levels', populate: { path: 'tasks', populate: { path: 'lessons' } } })
         return LevelDto.fromDocuments(program.levels as LevelDocument[])
     }
 
+    /** @deprecated */
     async removeLevel(programId: string, levelId: string): Promise<void> {
         const program = await this.loadProgram(programId)
         const levelIndex = program.levels.findIndex(id => id._id.toString() === levelId)
@@ -216,6 +215,7 @@ export class ProgramsService {
         }
     }
 
+    /** @deprecated */
     private async loadProgram(id: string): Promise<ProgramDocument> {
         const program = await this.programsRepository.findById(new ObjectId(id))
         if (!program || program.state === ProgramState.deleted) {

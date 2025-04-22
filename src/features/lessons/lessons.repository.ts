@@ -13,11 +13,7 @@ export class LessonsRepository extends RepositoryMongoBase<LessonDocument> {
     }
 
     async find(filter: object, limit: number = 10, skip: number = 0): Promise<LessonDocument[]> {
-        const found = await this.model.find(filter).limit(limit).skip(skip).exec()
-        if (found) {
-            return found
-        }
-        return []
+        return this.model.find(filter).limit(limit).skip(skip).exec()
     }
 
     findActiveByIds(ids: ObjectId[]): Promise<LessonDocument[]> {

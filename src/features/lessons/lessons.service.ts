@@ -1,5 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
+import { CreatedDto } from '../../shared/dto/created.dto'
 import { SearchFilterBuilder } from '../../shared/helper/search-filter.builder'
 import { ObjectId } from '../../shared/repository/types'
 import { CreateLessonDto, LessonDto, SearchLessonsQueryDto, UpdateLessonDto } from './dto/lesson.dto'
@@ -15,13 +16,14 @@ export class LessonsService {
         private readonly documentsService: SharedDocumentsService
     ) {}
 
-    async create(lesson: CreateLessonDto, createdBy: ObjectId): Promise<LessonDto> {
+    async create(lesson: CreateLessonDto, createdBy: ObjectId): Promise<CreatedDto> {
         const subject = await this.documentsService.getSubject(lesson.subjectId)
-        const created = await this.repository.create({ ...lesson, createdBy })
+        const created = await this.repository.create({ ...lesson, createdBy, subjectId: subject._id })
         ;(subject.lessons as ObjectId[]).push(created._id)
         await subject.save()
-        this.logger.log(`Lesson ${created._id.toString()} created.`)
-        return LessonDto.fromDocument(created)
+        const createdId = created._id.toString()
+        this.logger.log(`Lesson ${createdId} created.`)
+        return { id: createdId }
     }
 
     async removeForSubjects(lessonId: string): Promise<void> {

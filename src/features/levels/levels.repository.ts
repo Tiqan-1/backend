@@ -11,6 +11,16 @@ export class LevelsRepository extends RepositoryMongoBase<LevelDocument> {
         super(model)
     }
 
+    async find(filter: object, limit: number = 10, skip: number = 0): Promise<LevelDocument[]> {
+        return await this.model
+            .find(filter)
+            .limit(limit)
+            .skip(skip)
+            .populate({ path: 'tasks', populate: { path: 'lessons' } })
+            .populate('createdBy', 'name email')
+            .exec()
+    }
+
     async findById(id: ObjectId): Promise<LevelDocument | undefined> {
         const found = await this.model
             .findById(id)

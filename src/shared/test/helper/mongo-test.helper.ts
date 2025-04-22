@@ -227,7 +227,7 @@ export class MongoTestHelper {
         return model.create(task)
     }
 
-    async createProgram(levels: ObjectId[], createdBy: ObjectId): Promise<ProgramDocument> {
+    async createProgram(createdBy: ObjectId, levels: ObjectId[] = []): Promise<ProgramDocument> {
         const date = new Date()
         const program: Program = {
             name: 'program name',
@@ -245,7 +245,7 @@ export class MongoTestHelper {
         return model.create(program)
     }
 
-    async createLevel(tasks: ObjectId[]): Promise<LevelDocument> {
+    async createLevel(createdBy: ObjectId, programId: ObjectId = new ObjectId(), tasks: ObjectId[] = []): Promise<LevelDocument> {
         const date = new Date()
         const level: Level = {
             name: 'level name',
@@ -253,6 +253,8 @@ export class MongoTestHelper {
             start: new Date(date.valueOf()),
             end: new Date(date.setFullYear(date.getFullYear() + 1)),
             tasks: tasks,
+            createdBy,
+            programId,
         }
         const model = this.getLevelModel()
         return model.create(level)

@@ -71,7 +71,7 @@ export class LessonsController {
     @HttpCode(HttpStatus.NO_CONTENT)
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
-    removeLessons(@Param('id') lessonId: string): Promise<void> {
+    remove(@Param('id') lessonId: string): Promise<void> {
         return this.service.remove(lessonId)
     }
 }

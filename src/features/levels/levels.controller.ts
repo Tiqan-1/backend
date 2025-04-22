@@ -1,28 +1,45 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, Query, Request, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { Roles } from '../authentication/decorators/roles.decorator'
 import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { RolesGuard } from '../authentication/guards/roles.guard'
+import { TokenUser } from '../authentication/types/token-user'
 import { CreateTaskDto, TaskDto } from '../tasks/dto/task.dto'
-import { LevelDto, UpdateLevelDto } from './dto/level.dto'
+import { CreateLevelDto, LevelDto, SearchLevelsQueryDto, UpdateLevelDto } from './dto/level.dto'
 import { LevelsService } from './levels.service'
 
 @ApiBearerAuth()
 @Controller('api/levels')
 export class LevelsController {
-    constructor(private readonly levelsService: LevelsService) {}
+    constructor(private readonly service: LevelsService) {}
 
-    @ApiOperation({ summary: 'Gets a level', description: 'Gets a level.' })
-    @ApiResponse({ status: HttpStatus.OK, type: LevelDto, description: 'Level successfully found.' })
+    @ApiOperation({ summary: 'Creates a level', description: 'Creates a level and adds it to the program.' })
+    @ApiResponse({ status: HttpStatus.CREATED, type: CreatedDto, description: 'Level successfully created.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @Get(':id')
-    @HttpCode(HttpStatus.OK)
-    @UseGuards(JwtAuthGuard)
-    findOne(@Param('id') id: string): Promise<LevelDto> {
-        return this.levelsService.findOne(id)
+    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Program not found.' })
+    @Post()
+    @HttpCode(HttpStatus.CREATED)
+    @Roles(Role.Manager)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    create(@Body() createLevelDto: CreateLevelDto, @Request() request: { user: TokenUser }): Promise<CreatedDto> {
+        return this.service.create(createLevelDto, request.user.id)
+    }
+
+    @ApiOperation({ summary: 'Gets levels of the program', description: `Gets levels of the program.` })
+    @ApiResponse({ status: HttpStatus.OK, type: LevelDto, isArray: true, description: 'Got levels successfully.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
+    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
+    @Get()
+    @Roles(Role.Manager)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @ApiBearerAuth()
+    find(@Query() searchQuery: SearchLevelsQueryDto): Promise<LevelDto[]> {
+        return this.service.find(searchQuery)
     }
 
     @ApiOperation({ summary: 'Updates a level', description: 'Updates a level.' })
@@ -37,11 +54,11 @@ export class LevelsController {
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
     update(@Param('id') id: string, @Body() updateLevelDto: UpdateLevelDto): Promise<void> {
-        return this.levelsService.update(id, updateLevelDto)
+        return this.service.update(id, updateLevelDto)
     }
 
-    @ApiOperation({ summary: 'Deletes a level', description: 'Deletes a level.' })
-    @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Level successfully deleted.' })
+    @ApiOperation({ summary: 'Removes a level', description: 'Removes a level.' })
+    @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Level successfully removed.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Level not found.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
@@ -51,10 +68,21 @@ export class LevelsController {
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
     remove(@Param('id') id: string): Promise<void> {
-        return this.levelsService.remove(id)
+        return this.service.remove(id)
     }
 
-    @ApiOperation({ summary: 'Creates a task', description: 'Creates a task and adds it to the level.' })
+    @ApiOperation({ summary: 'Gets a level', description: 'Gets a level.', deprecated: true })
+    @ApiResponse({ status: HttpStatus.OK, type: LevelDto, description: 'Level successfully found.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
+    @Get(':id')
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(JwtAuthGuard)
+    findOne(@Param('id') id: string): Promise<LevelDto> {
+        return this.service.findOne(id)
+    }
+
+    @ApiOperation({ summary: 'Creates a task', description: 'Creates a task and adds it to the level.', deprecated: true })
     @ApiResponse({ status: HttpStatus.CREATED, type: CreatedDto, description: 'Task successfully created.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
@@ -65,10 +93,10 @@ export class LevelsController {
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
     createTask(@Body() createTaskDto: CreateTaskDto, @Param('id') levelId: string): Promise<CreatedDto> {
-        return this.levelsService.createTask(levelId, createTaskDto)
+        return this.service.createTask(levelId, createTaskDto)
     }
 
-    @ApiOperation({ summary: 'Gets tasks of the level', description: `Gets tasks of the level.` })
+    @ApiOperation({ summary: 'Gets tasks of the level', description: `Gets tasks of the level.`, deprecated: true })
     @ApiResponse({ status: HttpStatus.OK, type: TaskDto, isArray: true, description: 'Got tasks successfully.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
@@ -78,10 +106,10 @@ export class LevelsController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiBearerAuth()
     getTasks(@Param('levelId') levelId: string): Promise<TaskDto[]> {
-        return this.levelsService.getTasks(levelId)
+        return this.service.getTasks(levelId)
     }
 
-    @ApiOperation({ summary: 'Removes a task', description: 'Removes a task from the level.' })
+    @ApiOperation({ summary: 'Removes a task', description: 'Removes a task from the level.', deprecated: true })
     @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Task successfully removed.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
@@ -92,6 +120,6 @@ export class LevelsController {
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
     removeTask(@Param('levelId') levelId: string, @Param('taskId') taskId: string): Promise<void> {
-        return this.levelsService.removeTask(levelId, taskId)
+        return this.service.removeTask(levelId, taskId)
     }
 }

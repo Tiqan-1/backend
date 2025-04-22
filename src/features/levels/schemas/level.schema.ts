@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { HydratedDocument } from 'mongoose'
 import { ObjectId, Populated } from '../../../shared/repository/types'
+import { ManagerDocument } from '../../managers/schemas/manager.schema'
 import { Task, TaskDocument } from '../../tasks/schemas/task.schema'
 import { LevelState } from '../enums/level-stats.enum'
 
@@ -25,6 +26,12 @@ export class Level {
 
     @Prop({ required: true, type: String, enum: LevelState, default: LevelState.active })
     state: LevelState
+
+    @Prop({ required: true, type: ObjectId, ref: 'Manager' })
+    createdBy: ObjectId | Populated<ManagerDocument>
+
+    @Prop({ required: true, type: ObjectId, ref: 'Program' })
+    programId: ObjectId
 }
 
 export const LevelSchema = SchemaFactory.createForClass(Level)

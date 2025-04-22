@@ -92,7 +92,7 @@ export class ProgramsController {
         return this.programsService.findOne(id)
     }
 
-    @ApiOperation({ summary: 'Finds program by id', description: 'Finds program by id.' })
+    @ApiOperation({ summary: 'Finds program by id', description: 'Finds program by id.', deprecated: true })
     @ApiResponse({ status: HttpStatus.OK, type: ProgramDto, description: 'Got program successfully.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Program not found.' })
@@ -175,7 +175,7 @@ export class ProgramsController {
         }
     }
 
-    @ApiOperation({ summary: 'Creates a level', description: 'Creates a level and adds it to the program.' })
+    @ApiOperation({ summary: 'Creates a level', description: 'Creates a level and adds it to the program.', deprecated: true })
     @ApiResponse({ status: HttpStatus.CREATED, type: CreatedDto, description: 'Level successfully created.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
@@ -185,11 +185,15 @@ export class ProgramsController {
     @HttpCode(HttpStatus.CREATED)
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
-    createLevel(@Body() createLevelDto: CreateLevelDto, @Param('programId') programId: string): Promise<CreatedDto> {
-        return this.programsService.createLevel(programId, createLevelDto)
+    createLevel(
+        @Body() createLevelDto: CreateLevelDto,
+        @Param('programId') programId: string,
+        @Request() request: { user: TokenUser }
+    ): Promise<CreatedDto> {
+        return this.programsService.createLevel(programId, createLevelDto, request.user.id)
     }
 
-    @ApiOperation({ summary: 'Gets levels of the program', description: `Gets levels of the program.` })
+    @ApiOperation({ summary: 'Gets levels of the program', description: `Gets levels of the program.`, deprecated: true })
     @ApiResponse({ status: HttpStatus.OK, type: LevelDto, isArray: true, description: 'Got levels successfully.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
@@ -202,7 +206,7 @@ export class ProgramsController {
         return this.programsService.getLevels(programId)
     }
 
-    @ApiOperation({ summary: 'Removes a level', description: 'Removes a level from the program.' })
+    @ApiOperation({ summary: 'Removes a level', description: 'Removes a level from the program.', deprecated: true })
     @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Level successfully removed.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
