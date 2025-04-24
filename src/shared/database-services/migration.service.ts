@@ -26,10 +26,10 @@ export class MigrationService {
                 return
             }
             await migrationScript?.up(this.documentsService)
-            this.logger.log(`Migration to version ${dbVersion.version} completed`)
             dbVersion.version++
+            this.logger.log(`Migration to version ${dbVersion.version} completed`)
             await dbVersion.save()
         }
-        this.logger.log(`Migration to version ${dbVersion.version} completed successfully`)
+        this.logger.log(`Migration completed successfully. Current version is ${dbVersion.version}.`)
     }
 }
