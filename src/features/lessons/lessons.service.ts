@@ -72,11 +72,11 @@ export class LessonsService {
         return objectIds
     }
 
-    async find(queryDto: SearchLessonsQueryDto): Promise<LessonDto[]> {
+    async find(queryDto: SearchLessonsQueryDto, createdBy: ObjectId): Promise<LessonDto[]> {
         let subjectLessons: ObjectId[] | undefined
         if (queryDto.subjectId) {
             const subject = await this.documentsService.getSubject(queryDto.subjectId)
-            if (!subject?.lessons.length) {
+            if (!subject?.lessons.length || !createdBy.equals(subject.createdBy as ObjectId)) {
                 this.logger.warn(`Subject ${queryDto.subjectId} not found or has no lessons.`)
                 return []
             }
@@ -95,6 +95,7 @@ export class LessonsService {
         }
 
         filterBuilder
+            .withObjectId('createdBy', createdBy)
             .withStringLike('title', queryDto.title)
             .withExactString('type', queryDto.type)
             .withStringLike('url', queryDto.url)

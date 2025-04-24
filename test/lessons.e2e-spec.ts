@@ -144,6 +144,24 @@ describe('LessonsController (e2e)', () => {
             expect(body[0].id).toEqual(lesson1._id.toString())
         })
 
+        it('should only return lessons created by the same manager', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+            const lesson1 = await mongoTestHelper.createLesson(manager._id)
+
+            const manager2 = await mongoTestHelper.createManager('2')
+            await mongoTestHelper.createLesson(manager2._id)
+
+            const response = await request(app.getHttpServer())
+                .get(`/api/lessons`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.OK)
+
+            expect(response.body).toHaveLength(1)
+            const body = response.body as LessonDto[]
+            expect(body[0].id).toEqual(lesson1._id.toString())
+        })
+
         it('should only return lessons matching query', async () => {
             const manager = await mongoTestHelper.createManager()
             const token = jwtService.sign({ id: manager._id, role: manager.role })

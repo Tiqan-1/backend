@@ -43,8 +43,8 @@ export class LessonsController {
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiBearerAuth()
-    find(@Query() queryDto: SearchLessonsQueryDto): Promise<LessonDto[]> {
-        return this.service.find(queryDto)
+    find(@Query() queryDto: SearchLessonsQueryDto, @Request() request: { user: TokenUser }): Promise<LessonDto[]> {
+        return this.service.find(queryDto, request.user.id)
     }
 
     @ApiOperation({ summary: 'Updates a lesson', description: 'Updates a lesson.' })
