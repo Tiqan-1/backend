@@ -218,37 +218,4 @@ describe('LevelsController', () => {
                 .expect(HttpStatus.FORBIDDEN)
         })
     })
-
-    describe('GET /api/levels/:id', () => {
-        it('should succeed', async () => {
-            const manager = await mongoTestHelper.createManager()
-            const token = jwtService.sign({ id: manager._id, role: manager.role })
-            const lesson = await mongoTestHelper.createLesson(manager._id)
-            const program = await mongoTestHelper.createProgram(manager._id)
-            const level = await mongoTestHelper.createLevel(manager._id, program._id)
-            const task = await mongoTestHelper.createTask(manager._id, level._id, [lesson._id])
-            level.tasks = [task._id]
-            await level.save()
-
-            const response = await request(app.getHttpServer())
-                .get(`/api/levels/${level._id.toString()}`)
-                .set('Authorization', `Bearer ${token}`)
-                .expect(HttpStatus.OK)
-
-            expect(response).toBeDefined()
-            const body = response.body as LevelDto
-
-            expect(body.name).toEqual(level.name)
-            expect(body.start).toEqual(level.start.toISOString())
-            expect(body.end).toEqual(level.end.toISOString())
-            expect(body.tasks).toEqual([
-                {
-                    id: task._id.toString(),
-                    date: task.date.toISOString(),
-                    levelId: level._id.toString(),
-                    lessons: [{ id: lesson._id.toString(), url: lesson.url, type: lesson.type, title: lesson.title }],
-                },
-            ])
-        })
-    })
 })

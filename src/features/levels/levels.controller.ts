@@ -71,17 +71,6 @@ export class LevelsController {
         return this.service.remove(id)
     }
 
-    @ApiOperation({ summary: 'Gets a level', description: 'Gets a level.', deprecated: true })
-    @ApiResponse({ status: HttpStatus.OK, type: LevelDto, description: 'Level successfully found.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @Get(':id')
-    @HttpCode(HttpStatus.OK)
-    @UseGuards(JwtAuthGuard)
-    findOne(@Param('id') id: string): Promise<LevelDto> {
-        return this.service.findOne(id)
-    }
-
     @ApiOperation({ summary: 'Creates a task', description: 'Creates a task and adds it to the level.', deprecated: true })
     @ApiResponse({ status: HttpStatus.CREATED, type: CreatedDto, description: 'Task successfully created.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })

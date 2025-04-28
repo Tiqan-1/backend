@@ -5,9 +5,7 @@ import { SharedDocumentsService } from '../../shared/database-services/shared-do
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { SearchFilterBuilder } from '../../shared/helper/search-filter.builder'
 import { ObjectId } from '../../shared/repository/types'
-import { CreateLevelDto, LevelDto } from '../levels/dto/level.dto'
 import { LevelsService } from '../levels/levels.service'
-import { LevelDocument } from '../levels/schemas/level.schema'
 import { CreateProgramDto, ProgramDto, SearchProgramQueryDto, StudentProgramDto, UpdateProgramDto } from './dto/program.dto'
 import { ProgramState } from './enums/program-state.enum'
 import { ProgramsRepository } from './programs.repository'
@@ -25,17 +23,6 @@ export class ProgramsService {
         private readonly documentsService: SharedDocumentsService
     ) {}
 
-    async createForManager(createProgramDto: CreateProgramDto, createdBy: ObjectId): Promise<CreatedDto> {
-        const levels =
-            createProgramDto.levelIds &&
-            (await this.documentsService.getLevels(createProgramDto.levelIds))?.map(level => level._id)
-        const document = CreateProgramDto.toDocument(createProgramDto, createdBy)
-        const createObject = levels ? { ...document, levels } : { ...document }
-        const created = await this.programsRepository.create(createObject)
-        this.logger.log(`Program ${created.id} created by ${createdBy.toString()}.`)
-        return { id: created._id.toString() }
-    }
-
     async create(createProgramDto: CreateProgramDto, createdBy: ObjectId): Promise<CreatedDto> {
         const levels =
             createProgramDto.levelIds &&
@@ -49,26 +36,6 @@ export class ProgramsService {
         await manager?.save()
         this.logger.log(`Program ${created.id} created by ${managerId}.`)
         return { id: created._id.toString() }
-    }
-
-    async updateThumbnail(id: string, uploaded: MultipartFile): Promise<void> {
-        const programId = new ObjectId(id)
-        const found = await this.programsRepository.findById(programId)
-        if (found?.thumbnail) {
-            await this.programsThumbnailsRepository.remove(found.thumbnail)
-            this.logger.log(`Thumbnail ${found.thumbnail} removed.`)
-        }
-        const thumbnail = await this.programsThumbnailsRepository.create(uploaded)
-        await this.programsRepository.update({ _id: id }, { thumbnail })
-        this.logger.log(`Thumbnail ${uploaded.filename} added to Program ${id}.`)
-    }
-
-    async findAllForStudents(limit?: number, skip?: number): Promise<StudentProgramDto[]> {
-        const now = new Date()
-        const filter = { state: ProgramState.published, registrationStart: { $lt: now }, registrationEnd: { $gt: now } }
-        const foundPrograms = await this.programsRepository.find(filter, limit, skip)
-        await this.loadThumbnails(foundPrograms)
-        return StudentProgramDto.fromDocuments(foundPrograms)
     }
 
     async find(searchProgramQueryDto: SearchProgramQueryDto, searchUserId: ObjectId): Promise<ProgramDto[]> {
@@ -91,11 +58,12 @@ export class ProgramsService {
         return ProgramDto.fromDocuments(result)
     }
 
-    /** @deprecated */
-    async findOne(id: string): Promise<ProgramDto> {
-        const found = await this.loadProgram(id)
-        await this.loadThumbnail(found)
-        return ProgramDto.fromDocument(found)
+    async findAllForStudents(limit?: number, skip?: number): Promise<StudentProgramDto[]> {
+        const now = new Date()
+        const filter = { state: ProgramState.published, registrationStart: { $lt: now }, registrationEnd: { $gt: now } }
+        const foundPrograms = await this.programsRepository.find(filter, limit, skip)
+        await this.loadThumbnails(foundPrograms)
+        return StudentProgramDto.fromDocuments(foundPrograms)
     }
 
     async update(id: string, updateProgramDto: UpdateProgramDto, managerObjectId: ObjectId): Promise<void> {
@@ -119,25 +87,16 @@ export class ProgramsService {
         }
     }
 
-    async removeForManager(id: string): Promise<void> {
+    async updateThumbnail(id: string, uploaded: MultipartFile): Promise<void> {
         const programId = new ObjectId(id)
-        const found = await this.programsRepository.update(
-            { _id: programId },
-            { state: ProgramState.deleted, expireAt: oneMonth }
-        )
-        if (!found) {
-            this.logger.error(`Attempt to remove program ${id} failed.`)
-            throw new NotFoundException('Program not found.')
-        }
-        if (found.thumbnail) {
+        const found = await this.programsRepository.findById(programId)
+        if (found?.thumbnail) {
             await this.programsThumbnailsRepository.remove(found.thumbnail)
-            this.logger.log(`Thumbnail ${found.thumbnail} removed because program ${id} was removed.`)
+            this.logger.log(`Thumbnail ${found.thumbnail} removed.`)
         }
-
-        for (const level of found.levels) {
-            await this.levelsService.remove(level._id.toString())
-        }
-        this.logger.log(`Program ${id} removed.`)
+        const thumbnail = await this.programsThumbnailsRepository.create(uploaded)
+        await this.programsRepository.update({ _id: id }, { thumbnail })
+        this.logger.log(`Thumbnail ${uploaded.filename} added to Program ${id}.`)
     }
 
     async remove(id: string, managerObjectId: ObjectId): Promise<void> {
@@ -177,32 +136,6 @@ export class ProgramsService {
         this.logger.log(`Program ${id} removed.`)
     }
 
-    /** @deprecated */
-    async createLevel(programId: string, createLevelDto: CreateLevelDto, createdBy: ObjectId): Promise<CreatedDto> {
-        return await this.levelsService.create({ ...createLevelDto, programId }, createdBy)
-    }
-
-    /** @deprecated */
-    async getLevels(id: string): Promise<LevelDto[]> {
-        const program = await this.loadProgram(id)
-        await program.populate({ path: 'levels', populate: { path: 'tasks', populate: { path: 'lessons' } } })
-        return LevelDto.fromDocuments(program.levels as LevelDocument[])
-    }
-
-    /** @deprecated */
-    async removeLevel(programId: string, levelId: string): Promise<void> {
-        const program = await this.loadProgram(programId)
-        const levelIndex = program.levels.findIndex(id => id._id.toString() === levelId)
-        if (levelIndex === -1) {
-            this.logger.error(`Attempt to remove level ${levelId} from program ${programId} failed.`)
-            throw new NotFoundException('Level not found.')
-        }
-        ;(program.levels as ObjectId[]).splice(levelIndex, 1)
-        await this.levelsService.remove(levelId)
-        this.logger.log(`Level ${levelId} removed from Program ${programId}.`)
-        await program.save()
-    }
-
     async loadThumbnails(foundPrograms: ProgramDocument[]): Promise<void> {
         for (const program of foundPrograms) {
             await this.loadThumbnail(program)
@@ -213,15 +146,5 @@ export class ProgramsService {
         if (program.thumbnail) {
             program.thumbnail = await this.programsThumbnailsRepository.findOne(program.thumbnail)
         }
-    }
-
-    /** @deprecated */
-    private async loadProgram(id: string): Promise<ProgramDocument> {
-        const program = await this.programsRepository.findById(new ObjectId(id))
-        if (!program || program.state === ProgramState.deleted) {
-            this.logger.error(`Attempt to find program ${id} failed.`, program)
-            throw new NotFoundException('Program not found')
-        }
-        return program
     }
 }

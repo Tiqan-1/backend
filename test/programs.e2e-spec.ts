@@ -8,14 +8,14 @@ import * as fs from 'node:fs'
 import path from 'path'
 import { ObjectId } from 'src/shared/repository/types'
 import request from 'supertest'
-import { afterAll, afterEach, beforeAll, describe, expect, it, vitest } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
 import { LessonsRepository } from '../src/features/lessons/lessons.repository'
 import { LessonsService } from '../src/features/lessons/lessons.service'
 import { LevelsRepository } from '../src/features/levels/levels.repository'
 import { LevelsService } from '../src/features/levels/levels.service'
 import { ManagerDocument } from '../src/features/managers/schemas/manager.schema'
-import { CreateProgramDto, ProgramDto } from '../src/features/programs/dto/program.dto'
+import { CreateProgramDto } from '../src/features/programs/dto/program.dto'
 import { ProgramState } from '../src/features/programs/enums/program-state.enum'
 import { ProgramsController } from '../src/features/programs/programs.controller'
 import { ProgramsRepository } from '../src/features/programs/programs.repository'
@@ -24,7 +24,6 @@ import { ProgramsThumbnailsRepository } from '../src/features/programs/programs.
 import { ProgramDocument } from '../src/features/programs/schemas/program.schema'
 import { TasksRepository } from '../src/features/tasks/tasks.repository'
 import { TasksService } from '../src/features/tasks/tasks.service'
-import { oneMonth } from '../src/shared/constants'
 import { SharedDocumentsService } from '../src/shared/database-services/shared-documents.service'
 import { CreatedDto } from '../src/shared/dto/created.dto'
 import {
@@ -123,143 +122,6 @@ describe('ProgramsController (e2e)', () => {
                 .post('/api/programs')
                 .set('Authorization', `Bearer ${token}`)
                 .send({})
-                .expect(HttpStatus.FORBIDDEN)
-        })
-    })
-
-    describe('GET /api/programs', () => {
-        it('deprecated /enriched should succeed', async () => {
-            const manager = await mongoTestHelper.createManager()
-            const token = jwtService.sign({ id: manager._id, role: manager.role })
-            const program = await mongoTestHelper.createProgram(manager._id)
-
-            vitest
-                .spyOn(ProgramsThumbnailsRepository.prototype, 'findOne')
-                .mockImplementation(thumbnail => Promise.resolve(`base64-${thumbnail}`))
-
-            const response = await request(app.getHttpServer())
-                .get('/api/programs/enriched')
-                .set('Authorization', `Bearer ${token}`)
-                .expect(HttpStatus.OK)
-
-            expect(response.body).toBeDefined()
-            const found = response.body as ProgramDto[]
-            expect(found.length).toEqual(1)
-            expect(found[0].id).toEqual(program._id.toString())
-            expect(found[0].thumbnail).toEqual(`base64-${program.thumbnail}`)
-        })
-
-        it('should succeed and return all programs when called with no query parameters', async () => {
-            const manager = await mongoTestHelper.createManager()
-            const token = jwtService.sign({ id: manager._id, role: manager.role })
-            const program = await mongoTestHelper.createProgram(manager._id)
-            const program2 = await mongoTestHelper.createProgram(manager._id)
-
-            vitest
-                .spyOn(ProgramsThumbnailsRepository.prototype, 'findOne')
-                .mockImplementation(thumbnail => Promise.resolve(`base64-${thumbnail}`))
-
-            const response = await request(app.getHttpServer())
-                .get('/api/programs')
-                .set('Authorization', `Bearer ${token}`)
-                .expect(HttpStatus.OK)
-
-            expect(response.body).toBeDefined()
-            const found = response.body as ProgramDto[]
-            expect(found.length).toEqual(2)
-            expect(found[0].id).toEqual(program._id.toString())
-            expect(found[0].thumbnail).toEqual(`base64-${program.thumbnail}`)
-            expect(found[1].id).toEqual(program2._id.toString())
-            expect(found[1].thumbnail).toEqual(`base64-${program2.thumbnail}`)
-        })
-
-        it('should return the correct program selected by query parameters', async () => {
-            const manager = await mongoTestHelper.createManager()
-            const token = jwtService.sign({ id: manager._id, role: manager.role })
-            const program = await mongoTestHelper.createProgram(manager._id)
-            const otherProgram = await mongoTestHelper.createProgram(manager._id)
-
-            // change other program so is won't be found
-            otherProgram.name = 'other'
-            otherProgram.description = 'other'
-            otherProgram.state = ProgramState.published
-            otherProgram.start = new Date(oneMonth.valueOf())
-            await otherProgram.save()
-
-            const name = program.name
-            const description = program.description
-            const state = program.state
-            const start = new Date(program.start.valueOf() - oneMonth.valueOf())
-
-            vitest
-                .spyOn(ProgramsThumbnailsRepository.prototype, 'findOne')
-                .mockImplementation(thumbnail => Promise.resolve(`base64-${thumbnail}`))
-
-            const response = await request(app.getHttpServer())
-                .get(`/api/programs?name=${name}&description=${description}&state=${state}&start=${start.toISOString()}`)
-                .set('Authorization', `Bearer ${token}`)
-                .expect(HttpStatus.OK)
-
-            expect(response.body).toBeDefined()
-            const found = response.body as ProgramDto[]
-            expect(found.length).toEqual(1)
-            expect(found[0].id).toEqual(program._id.toString())
-            expect(found[0].thumbnail).toEqual(`base64-${program.thumbnail}`)
-        })
-
-        it('should not return programs that do not belong to the manager', async () => {
-            const creator = await mongoTestHelper.createManager('1')
-            const manager = await mongoTestHelper.createManager()
-            const token = jwtService.sign({ id: manager._id, role: manager.role })
-            await mongoTestHelper.createProgram(creator._id)
-
-            await request(app.getHttpServer())
-                .get('/api/programs')
-                .set('Authorization', `Bearer ${token}`)
-                .expect(HttpStatus.OK)
-                .expect([])
-        })
-
-        it('should fail with 403 if called by a student', async () => {
-            const student = await mongoTestHelper.createStudent()
-            const token = jwtService.sign({ id: student._id, role: student.role })
-            await request(app.getHttpServer())
-                .get('/api/programs')
-                .set('Authorization', `Bearer ${token}`)
-                .expect(HttpStatus.FORBIDDEN)
-        })
-    })
-
-    describe('GET /api/programs/enriched/:id', () => {
-        it('should succeed', async () => {
-            const manager = await mongoTestHelper.createManager()
-            const token = jwtService.sign({ id: manager._id, role: manager.role })
-            const program = await mongoTestHelper.createProgram(manager._id)
-
-            vitest
-                .spyOn(ProgramsThumbnailsRepository.prototype, 'findOne')
-                .mockImplementation(thumbnail => Promise.resolve(`base64-${thumbnail}`))
-
-            const response = await request(app.getHttpServer())
-                .get(`/api/programs/enriched/${program._id.toString()}`)
-                .set('Authorization', `Bearer ${token}`)
-                .expect(HttpStatus.OK)
-            expect(response.body).toBeDefined()
-            const found = response.body as ProgramDto
-            expect(found.id).toEqual(program._id.toString())
-            expect(found.state).toEqual(ProgramState.created)
-            expect(found.thumbnail).toEqual(`base64-${program.thumbnail}`)
-        })
-
-        it('should fail with 403 if called by a student', async () => {
-            const student = await mongoTestHelper.createStudent()
-            const token = jwtService.sign({ id: student._id, role: student.role })
-            const manager = await mongoTestHelper.createManager()
-            const program = await mongoTestHelper.createProgram(manager._id)
-
-            await request(app.getHttpServer())
-                .get(`/api/programs/enriched/${program._id.toString()}`)
-                .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.FORBIDDEN)
         })
     })

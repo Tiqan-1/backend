@@ -205,42 +205,6 @@ describe('SubjectsController (e2e)', () => {
         })
     })
 
-    describe('GET /api/subjects/:id', () => {
-        it('should succeed', async () => {
-            const manager = await mongoTestHelper.createManager()
-            const token = jwtService.sign({ id: manager._id.toString(), role: Role.Manager })
-            const subject = await mongoTestHelper.createSubject(manager._id)
-
-            await request(app.getHttpServer())
-                .get(`/api/subjects/${subject._id.toString()}`)
-                .set('Authorization', `Bearer ${token}`)
-                .expect(HttpStatus.OK)
-                .expect(res => (res.body as SubjectDto).id === subject._id.toString())
-        })
-
-        it('should fail with 404, if no subjects were found', async () => {
-            const manager = await mongoTestHelper.createManager()
-            const token = jwtService.sign({ id: manager._id.toString(), role: Role.Manager })
-
-            await request(app.getHttpServer())
-                .get(`/api/subjects/${manager._id.toString()}`)
-                .set('Authorization', `Bearer ${token}`)
-                .expect(HttpStatus.NOT_FOUND)
-        })
-
-        it('called with a student, should throw 401', async () => {
-            const student = await mongoTestHelper.createStudent()
-            const manager = await mongoTestHelper.createManager()
-            const token = jwtService.sign({ id: student._id.toString(), role: Role.Student })
-            const subject = await mongoTestHelper.createSubject(manager._id)
-
-            await request(app.getHttpServer())
-                .get(`/api/subjects/${subject._id.toString()}`)
-                .set('Authorization', `Bearer ${token}`)
-                .expect(HttpStatus.FORBIDDEN)
-        })
-    })
-
     describe('PUT /api/subjects/:id', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
