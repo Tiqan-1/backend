@@ -3,8 +3,6 @@ import { oneMonth } from '../../shared/constants'
 import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { ObjectId } from '../../shared/repository/types'
-import { LevelDocument } from '../levels/schemas/level.schema'
-import { ProgramDocument } from '../programs/schemas/program.schema'
 import { CreateSubscriptionDto, StudentSubscriptionDto, SubscriptionDto, UpdateSubscriptionDto } from './dto/subscription.dto'
 import { SubscriptionState } from './enums/subscription-state.enum'
 import { SubscriptionDocument } from './schemas/subscription.schema'
@@ -20,8 +18,8 @@ export class SubscriptionsService {
     ) {}
 
     async create(createSubscriptionDto: CreateSubscriptionDto, subscriber: ObjectId): Promise<CreatedDto> {
-        const program = (await this.sharedDocumentsService.getProgram(createSubscriptionDto.programId)) as ProgramDocument
-        const level = (await this.sharedDocumentsService.getLevel(createSubscriptionDto.levelId)) as LevelDocument
+        const program = await this.sharedDocumentsService.getProgram(createSubscriptionDto.programId)
+        const level = await this.sharedDocumentsService.getLevel(createSubscriptionDto.levelId)
         const createdObject = await this.repository.create({ program: program._id, level: level._id, subscriber })
         return { id: createdObject._id.toString() }
     }

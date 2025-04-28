@@ -3,9 +3,11 @@ import { Injectable, InternalServerErrorException, Logger, NotFoundException } f
 import { oneMonth } from '../../shared/constants'
 import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
+import { PaginationHelper } from '../../shared/helper/pagination-helper'
 import { SearchFilterBuilder } from '../../shared/helper/search-filter.builder'
 import { ObjectId } from '../../shared/repository/types'
 import { LevelsService } from '../levels/levels.service'
+import { PaginatedProgramDto } from './dto/paginated-program.dto'
 import { CreateProgramDto, ProgramDto, SearchProgramQueryDto, StudentProgramDto, UpdateProgramDto } from './dto/program.dto'
 import { ProgramState } from './enums/program-state.enum'
 import { ProgramsRepository } from './programs.repository'
@@ -38,24 +40,27 @@ export class ProgramsService {
         return { id: created._id.toString() }
     }
 
-    async find(searchProgramQueryDto: SearchProgramQueryDto, searchUserId: ObjectId): Promise<ProgramDto[]> {
+    async find(query: SearchProgramQueryDto, searchUserId: ObjectId): Promise<PaginatedProgramDto> {
         const filter = SearchFilterBuilder.init()
-            .withObjectId('_id', searchProgramQueryDto.id)
+            .withObjectId('_id', query.id)
             .withObjectId('createdBy', searchUserId)
-            .withParam('state', searchProgramQueryDto.state)
-            .withStringLike('name', searchProgramQueryDto.name)
-            .withStringLike('description', searchProgramQueryDto.description)
-            .withDateAfter('start', searchProgramQueryDto.start)
-            .withDateBefore('end', searchProgramQueryDto.end)
-            .withDateAfter('registrationStart', searchProgramQueryDto.registrationStart)
-            .withDateBefore('registrationEnd', searchProgramQueryDto.registrationEnd)
+            .withParam('state', query.state)
+            .withStringLike('name', query.name)
+            .withStringLike('description', query.description)
+            .withDateAfter('start', query.start)
+            .withDateBefore('end', query.end)
+            .withDateAfter('registrationStart', query.registrationStart)
+            .withDateBefore('registrationEnd', query.registrationEnd)
             .build()
-        const limit = searchProgramQueryDto.limit ?? 20
-        const skip = searchProgramQueryDto.skip ?? 0
 
-        const result = await this.programsRepository.find(filter, limit, skip)
-        await this.loadThumbnails(result)
-        return ProgramDto.fromDocuments(result)
+        const skip = PaginationHelper.calculateSkip(query.page, query.pageSize)
+
+        const [found, total] = await Promise.all([
+            await this.programsRepository.find(filter, query.pageSize, skip),
+            await this.programsRepository.countDocuments(filter),
+        ])
+        await this.loadThumbnails(found)
+        return PaginationHelper.wrapResponse(ProgramDto.fromDocuments(found), query.page, query.pageSize, total)
     }
 
     async findAllForStudents(limit?: number, skip?: number): Promise<StudentProgramDto[]> {

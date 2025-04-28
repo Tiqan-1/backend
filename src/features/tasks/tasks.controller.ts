@@ -20,6 +20,7 @@ import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { RolesGuard } from '../authentication/guards/roles.guard'
 import { TokenUser } from '../authentication/types/token-user'
+import { PaginatedTaskDto } from './dto/paginated-task.dto'
 import { CreateTaskDto, SearchTasksQueryDto, TaskDto, UpdateTaskDto } from './dto/task.dto'
 import { TasksService } from './tasks.service'
 
@@ -43,7 +44,7 @@ export class TasksController {
     }
 
     @ApiOperation({ summary: 'Searches for tasks', description: `Searches for tasks.` })
-    @ApiResponse({ status: HttpStatus.OK, type: TaskDto, isArray: true, description: 'Got tasks successfully.' })
+    @ApiResponse({ status: HttpStatus.OK, type: PaginatedTaskDto, description: 'Got tasks successfully.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
     @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
@@ -51,7 +52,7 @@ export class TasksController {
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiBearerAuth()
-    getTasks(@Query() query: SearchTasksQueryDto, @Request() request: { user: TokenUser }): Promise<TaskDto[]> {
+    find(@Query() query: SearchTasksQueryDto, @Request() request: { user: TokenUser }): Promise<PaginatedTaskDto> {
         return this.service.find(query, request.user.id)
     }
 

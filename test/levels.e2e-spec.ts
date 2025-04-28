@@ -8,7 +8,8 @@ import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strat
 import { LessonState } from '../src/features/lessons/enums/lesson-state.enum'
 import { LessonsRepository } from '../src/features/lessons/lessons.repository'
 import { LessonsService } from '../src/features/lessons/lessons.service'
-import { CreateLevelDto, LevelDto, UpdateLevelDto } from '../src/features/levels/dto/level.dto'
+import { CreateLevelDto, UpdateLevelDto } from '../src/features/levels/dto/level.dto'
+import { PaginatedLevelDto } from '../src/features/levels/dto/paginated-level.dto'
 import { LevelsController } from '../src/features/levels/levels.controller'
 import { LevelsRepository } from '../src/features/levels/levels.repository'
 import { LevelsService } from '../src/features/levels/levels.service'
@@ -128,7 +129,8 @@ describe('LevelsController', () => {
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.OK)
 
-            const [receivedLevel] = response.body as LevelDto[]
+            const body = response.body as PaginatedLevelDto
+            const [receivedLevel] = body.items
             expect(receivedLevel).toBeDefined()
             expect(receivedLevel.id).toEqual(level._id.toString())
             expect(receivedLevel.start).toEqual(level.start.toISOString())

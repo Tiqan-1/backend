@@ -7,7 +7,8 @@ import { App } from 'supertest/types'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { Role } from '../src/features/authentication/enums/role.enum'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
-import { CreateLessonDto, LessonDto, UpdateLessonDto } from '../src/features/lessons/dto/lesson.dto'
+import { CreateLessonDto, UpdateLessonDto } from '../src/features/lessons/dto/lesson.dto'
+import { PaginatedLessonDto } from '../src/features/lessons/dto/paginated-lesson.dto'
 import { LessonState } from '../src/features/lessons/enums/lesson-state.enum'
 import { LessonType } from '../src/features/lessons/enums/lesson-type.enum'
 import { LessonsController } from '../src/features/lessons/lessons.controller'
@@ -119,10 +120,10 @@ describe('LessonsController (e2e)', () => {
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.OK)
 
-            expect(response.body).toHaveLength(2)
-            const body = response.body as LessonDto[]
-            expect(body[0].id).toEqual(lesson1._id.toString())
-            expect(body[1].id).toEqual(lesson2._id.toString())
+            const body = response.body as PaginatedLessonDto
+            expect(body.items).toHaveLength(2)
+            expect(body.items[0].id).toEqual(lesson1._id.toString())
+            expect(body.items[1].id).toEqual(lesson2._id.toString())
         })
 
         it('should only return lessons of the subject', async () => {
@@ -139,9 +140,9 @@ describe('LessonsController (e2e)', () => {
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.OK)
 
-            expect(response.body).toHaveLength(1)
-            const body = response.body as LessonDto[]
-            expect(body[0].id).toEqual(lesson1._id.toString())
+            const body = response.body as PaginatedLessonDto
+            expect(body.items).toHaveLength(1)
+            expect(body.items[0].id).toEqual(lesson1._id.toString())
         })
 
         it('should only return lessons created by the same manager', async () => {
@@ -157,9 +158,9 @@ describe('LessonsController (e2e)', () => {
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.OK)
 
-            expect(response.body).toHaveLength(1)
-            const body = response.body as LessonDto[]
-            expect(body[0].id).toEqual(lesson1._id.toString())
+            const body = response.body as PaginatedLessonDto
+            expect(body.items).toHaveLength(1)
+            expect(body.items[0].id).toEqual(lesson1._id.toString())
         })
 
         it('should only return lessons matching query', async () => {
@@ -180,9 +181,9 @@ describe('LessonsController (e2e)', () => {
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.OK)
 
-            expect(response.body).toHaveLength(1)
-            const body = response.body as LessonDto[]
-            expect(body[0].id).toEqual(lesson1._id.toString())
+            const body = response.body as PaginatedLessonDto
+            expect(body.items).toHaveLength(1)
+            expect(body.items[0].id).toEqual(lesson1._id.toString())
         })
 
         it('should match id of lesson only if in given subject', async () => {
@@ -196,7 +197,8 @@ describe('LessonsController (e2e)', () => {
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.OK)
 
-            expect(response.body).toHaveLength(0)
+            const body = response.body as PaginatedLessonDto
+            expect(body.items).toHaveLength(0)
         })
 
         it('should match id of lesson when no subject id is provided', async () => {
@@ -210,9 +212,9 @@ describe('LessonsController (e2e)', () => {
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.OK)
 
-            expect(response.body).toHaveLength(1)
-            const body = response.body as LessonDto[]
-            expect(body[0].id).toEqual(lesson1._id.toString())
+            const body = response.body as PaginatedLessonDto
+            expect(body.items).toHaveLength(1)
+            expect(body.items[0].id).toEqual(lesson1._id.toString())
         })
 
         it('should fail with 403 if called by a student', async () => {

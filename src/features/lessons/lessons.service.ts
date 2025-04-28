@@ -1,9 +1,11 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
+import { PaginationHelper } from '../../shared/helper/pagination-helper'
 import { SearchFilterBuilder } from '../../shared/helper/search-filter.builder'
 import { ObjectId } from '../../shared/repository/types'
 import { CreateLessonDto, LessonDto, SearchLessonsQueryDto, UpdateLessonDto } from './dto/lesson.dto'
+import { PaginatedLessonDto } from './dto/paginated-lesson.dto'
 import { LessonState } from './enums/lesson-state.enum'
 import { LessonsRepository } from './lessons.repository'
 
@@ -72,39 +74,41 @@ export class LessonsService {
         return objectIds
     }
 
-    async find(queryDto: SearchLessonsQueryDto, createdBy: ObjectId): Promise<LessonDto[]> {
+    async find(query: SearchLessonsQueryDto, createdBy: ObjectId): Promise<PaginatedLessonDto> {
         let subjectLessons: ObjectId[] | undefined
-        if (queryDto.subjectId) {
-            const subject = await this.documentsService.getSubject(queryDto.subjectId)
+        if (query.subjectId) {
+            const subject = await this.documentsService.getSubject(query.subjectId)
             if (!subject?.lessons.length || !createdBy.equals(subject.createdBy as ObjectId)) {
-                this.logger.warn(`Subject ${queryDto.subjectId} not found or has no lessons.`)
-                return []
+                this.logger.warn(`Subject ${query.subjectId} not found or has no lessons.`)
+                return PaginationHelper.emptyResponse(query.page, query.pageSize)
             }
             subjectLessons = subject.lessons as ObjectId[]
         }
         const filterBuilder = SearchFilterBuilder.init()
 
-        if (queryDto.id) {
-            if (subjectLessons && !subjectLessons.some(id => id.equals(queryDto.id))) {
-                this.logger.warn(`Lesson ${queryDto.id} requested but not found within subject ${queryDto.subjectId}.`)
-                return []
+        if (query.id) {
+            if (subjectLessons && !subjectLessons.some(id => id.equals(query.id))) {
+                this.logger.warn(`Lesson ${query.id} requested but not found within subject ${query.subjectId}.`)
+                PaginationHelper.emptyResponse(query.page, query.pageSize)
             }
-            filterBuilder.withObjectId('_id', queryDto.id)
+            filterBuilder.withObjectId('_id', query.id)
         } else if (subjectLessons) {
             filterBuilder.withObjectIds('_id', subjectLessons)
         }
 
         filterBuilder
             .withObjectId('createdBy', createdBy)
-            .withStringLike('title', queryDto.title)
-            .withExactString('type', queryDto.type)
-            .withStringLike('url', queryDto.url)
+            .withStringLike('title', query.title)
+            .withExactString('type', query.type)
+            .withStringLike('url', query.url)
 
         const filter = filterBuilder.build()
-        const limit = queryDto.limit
-        const skip = queryDto.skip
+        const skip = PaginationHelper.calculateSkip(query.page, query.pageSize)
 
-        const lessons = await this.repository.find(filter, limit, skip)
-        return LessonDto.fromDocuments(lessons)
+        const [lessons, total] = await Promise.all([
+            this.repository.find(filter, query.pageSize, skip),
+            this.repository.countDocuments(filter),
+        ])
+        return PaginationHelper.wrapResponse(LessonDto.fromDocuments(lessons), query.page, query.pageSize, total)
     }
 }

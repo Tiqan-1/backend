@@ -44,4 +44,8 @@ export class RepositoryMongoBase<T> extends RepositoryBase<T> {
         const result = await this.model.deleteOne({ ...filter }).exec()
         return result.deletedCount === 1
     }
+
+    async countDocuments(filter: object = {}): Promise<number> {
+        return this.model.countDocuments(filter).exec()
+    }
 }

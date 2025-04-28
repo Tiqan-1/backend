@@ -15,7 +15,7 @@ export class SearchFilterBuilder {
         return this
     }
 
-    withObjectIds(key: string, ids?: string[] | ObjectId[]): SearchFilterBuilder {
+    withObjectIds(key: string, ids?: (string | ObjectId)[]): SearchFilterBuilder {
         if (ids?.length) {
             const objectIds = ids[0] instanceof ObjectId ? ids : ids.map(id => new ObjectId(id))
             this.filter[key] = { $in: objectIds }

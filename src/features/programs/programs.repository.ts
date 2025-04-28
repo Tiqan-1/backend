@@ -12,17 +12,13 @@ export class ProgramsRepository extends RepositoryMongoBase<ProgramDocument> {
     }
 
     async find(filter: object, limit: number = 10, skip: number = 0): Promise<ProgramDocument[]> {
-        const found = await this.model
+        return this.model
             .find(filter)
             .limit(limit)
             .skip(skip)
             .populate({ path: 'createdBy', select: 'name email' })
             .populate({ path: 'levels', populate: { path: 'tasks', populate: 'lessons' } })
             .exec()
-        if (found) {
-            return found
-        }
-        return []
     }
 
     async findById(id: ObjectId): Promise<ProgramDocument | undefined> {

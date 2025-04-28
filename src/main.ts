@@ -30,6 +30,9 @@ async function bootstrap(): Promise<void> {
         new ValidationPipe({
             transform: true,
             whitelist: true,
+            transformOptions: {
+                enableImplicitConversion: true,
+            },
         })
     )
     app.useGlobalFilters(new MongoDbExceptionFilter(), new SecurityExceptionFilter())

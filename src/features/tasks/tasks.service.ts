@@ -3,9 +3,11 @@ import { oneMonth } from '../../shared/constants'
 import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { normalizeDate } from '../../shared/helper/date.helper'
+import { PaginationHelper } from '../../shared/helper/pagination-helper'
 import { SearchFilterBuilder } from '../../shared/helper/search-filter.builder'
 import { ObjectId } from '../../shared/repository/types'
 import { LessonsService } from '../lessons/lessons.service'
+import { PaginatedTaskDto } from './dto/paginated-task.dto'
 import { CreateTaskDto, SearchTasksQueryDto, TaskDto, UpdateTaskDto } from './dto/task.dto'
 import { TaskState } from './enums'
 import { TaskDocument } from './schemas/task.schema'
@@ -42,13 +44,13 @@ export class TasksService {
         return { id: created._id.toString() }
     }
 
-    async find(query: SearchTasksQueryDto, createdBy: ObjectId): Promise<TaskDto[]> {
+    async find(query: SearchTasksQueryDto, createdBy: ObjectId): Promise<PaginatedTaskDto> {
         let levelTasks: ObjectId[] | undefined
         if (query.levelId) {
             const level = await this.documentsService.getLevel(query.levelId)
             if (!level?.tasks.length) {
                 this.logger.warn(`Level ${query.levelId} not found or has no tasks.`)
-                return []
+                return PaginationHelper.emptyResponse(query.page, query.pageSize)
             }
             levelTasks = level.tasks as ObjectId[]
         }
@@ -56,7 +58,7 @@ export class TasksService {
         if (query.id) {
             if (levelTasks && !levelTasks.some(id => id.equals(query.id))) {
                 this.logger.warn(`Task ${query.id} requested but not found within level ${query.levelId}.`)
-                return []
+                return PaginationHelper.emptyResponse(query.page, query.pageSize)
             }
             filterBuilder.withObjectId('_id', query.id)
         } else if (levelTasks) {
@@ -69,11 +71,14 @@ export class TasksService {
             .withStringLike('note', query.note)
 
         const filter = filterBuilder.build()
-        const limit = query.limit
-        const skip = query.skip
 
-        const found = await this.taskRepository.find(filter, limit, skip)
-        return TaskDto.fromDocuments(found)
+        const skip = PaginationHelper.calculateSkip(query.page, query.pageSize)
+
+        const [found, total] = await Promise.all([
+            this.taskRepository.find(filter, query.pageSize, skip),
+            this.taskRepository.countDocuments(filter),
+        ])
+        return PaginationHelper.wrapResponse(TaskDto.fromDocuments(found), query.page, query.pageSize, total)
     }
 
     async update(id: string, task: UpdateTaskDto): Promise<void> {

@@ -22,7 +22,7 @@ export class SubscriptionsController {
     @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
     @HttpCode(HttpStatus.OK)
     @Get()
-    findAll(): Promise<SubscriptionDto[]> {
+    find(): Promise<SubscriptionDto[]> {
         return this.subscriptionsService.findAll()
     }
 

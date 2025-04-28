@@ -1,4 +1,4 @@
-import { HttpStatus, INestApplication } from '@nestjs/common'
+import { HttpStatus, INestApplication, ValidationPipe } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
 import { ObjectId } from 'src/shared/repository/types'
@@ -10,8 +10,9 @@ import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strat
 import { LessonsRepository } from '../src/features/lessons/lessons.repository'
 import { LessonsService } from '../src/features/lessons/lessons.service'
 import { ManagerDocument } from '../src/features/managers/schemas/manager.schema'
-import { CreateSubjectDto, SubjectDto, UpdateSubjectDto } from '../src/features/subjects/dto/subject.dto'
+import { CreateSubjectDto, UpdateSubjectDto } from '../src/features/subjects/dto/subject.dto'
 import { SubjectState } from '../src/features/subjects/enums/subject-state'
+import { PaginatedSubjectDto } from '../src/features/subjects/paginated-subject.dto'
 import { SubjectDocument } from '../src/features/subjects/schemas/subject.schema'
 import { SubjectsController } from '../src/features/subjects/subjects.controller'
 import { SubjectsRepository } from '../src/features/subjects/subjects.repository'
@@ -52,6 +53,12 @@ describe('SubjectsController (e2e)', () => {
         mockJwtStrategyValidation(module)
 
         app = module.createNestApplication()
+
+        app.useGlobalPipes(
+            new ValidationPipe({
+                transform: true,
+            })
+        )
         await app.init()
     })
 
@@ -98,6 +105,104 @@ describe('SubjectsController (e2e)', () => {
                 .set('Authorization', `Bearer ${token}`)
                 .send({})
                 .expect(HttpStatus.FORBIDDEN)
+        })
+    })
+
+    describe('GET /api/subjects/', () => {
+        it('should succeed when called without query parameters', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id.toString(), role: Role.Manager })
+            const subject1 = await mongoTestHelper.createSubject(manager._id)
+            const subject2 = await mongoTestHelper.createSubject(manager._id)
+
+            const response = await request(app.getHttpServer())
+                .get('/api/subjects')
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.OK)
+
+            expect(response.body).toBeDefined()
+            const responseBody = response.body as PaginatedSubjectDto
+            expect(responseBody.items.length).toEqual(2)
+            const ids = responseBody.items.map(s => s.id)
+            expect(ids).toContain(subject1._id.toString())
+            expect(ids).toContain(subject2._id.toString())
+        })
+
+        it('should succeed and return only subjects selected by query', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id.toString(), role: Role.Manager })
+            const subject1 = await mongoTestHelper.createSubject(manager._id)
+            const subject2 = await mongoTestHelper.createSubject(manager._id)
+            subject2.name = 'another name'
+            await subject2.save()
+
+            const response = await request(app.getHttpServer())
+                .get(`/api/subjects?name=${subject1.name}`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.OK)
+
+            expect(response.body).toBeDefined()
+            const responseBody = response.body as PaginatedSubjectDto
+            expect(responseBody.items.length).toEqual(1)
+            expect(responseBody.items[0].id).toEqual(subject1._id.toString())
+        })
+
+        it('called with a student, should throw 403', async () => {
+            const student = await mongoTestHelper.createStudent()
+            const token = jwtService.sign({ id: student._id, role: Role.Student })
+            await request(app.getHttpServer())
+                .get('/api/subjects')
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.FORBIDDEN)
+        })
+
+        describe('pagination', () => {
+            it('should succeed when called with a page size of 1', async () => {
+                const manager = await mongoTestHelper.createManager()
+                const token = jwtService.sign({ id: manager._id.toString(), role: Role.Manager })
+                const subject1 = await mongoTestHelper.createSubject(manager._id)
+                const subject2 = await mongoTestHelper.createSubject(manager._id)
+                const subject3 = await mongoTestHelper.createSubject(manager._id)
+
+                const response1 = await request(app.getHttpServer())
+                    .get('/api/subjects?pageSize=1')
+                    .set('Authorization', `Bearer ${token}`)
+                    .expect(HttpStatus.OK)
+
+                expect(response1.body).toBeDefined()
+                const responseBody1 = response1.body as PaginatedSubjectDto
+                expect(responseBody1.items.length).toEqual(1)
+                expect(responseBody1.items[0].id).toEqual(subject1._id.toString()) // should return first subject
+                expect(responseBody1.total).toEqual(3)
+                expect(responseBody1.page).toEqual(1)
+                expect(responseBody1.pageSize).toEqual(1)
+
+                const response2 = await request(app.getHttpServer())
+                    .get('/api/subjects?page=2&pageSize=1')
+                    .set('Authorization', `Bearer ${token}`)
+                    .expect(HttpStatus.OK)
+
+                expect(response2.body).toBeDefined()
+                const responseBody2 = response2.body as PaginatedSubjectDto
+                expect(responseBody2.items.length).toEqual(1)
+                expect(responseBody2.items[0].id).toEqual(subject2._id.toString()) // should return second subject
+                expect(responseBody2.total).toEqual(3)
+                expect(responseBody2.page).toEqual(2)
+                expect(responseBody2.pageSize).toEqual(1)
+
+                const response3 = await request(app.getHttpServer())
+                    .get('/api/subjects?page=2&pageSize=2')
+                    .set('Authorization', `Bearer ${token}`)
+                    .expect(HttpStatus.OK)
+
+                expect(response3.body).toBeDefined()
+                const responseBody3 = response3.body as PaginatedSubjectDto
+                expect(responseBody3.items.length).toEqual(1)
+                expect(responseBody3.items[0].id).toEqual(subject3._id.toString())
+                expect(responseBody3.total).toEqual(3)
+                expect(responseBody3.page).toEqual(2)
+                expect(responseBody3.pageSize).toEqual(2)
+            })
         })
     })
 
@@ -151,55 +256,6 @@ describe('SubjectsController (e2e)', () => {
 
             await request(app.getHttpServer())
                 .delete('/api/subjects/any')
-                .set('Authorization', `Bearer ${token}`)
-                .expect(HttpStatus.FORBIDDEN)
-        })
-    })
-
-    describe('GET /api/subjects/', () => {
-        it('should succeed when called without query parameters', async () => {
-            const manager = await mongoTestHelper.createManager()
-            const token = jwtService.sign({ id: manager._id.toString(), role: Role.Manager })
-            const subject1 = await mongoTestHelper.createSubject(manager._id)
-            const subject2 = await mongoTestHelper.createSubject(manager._id)
-
-            const response = await request(app.getHttpServer())
-                .get('/api/subjects')
-                .set('Authorization', `Bearer ${token}`)
-                .expect(HttpStatus.OK)
-
-            expect(response.body).toBeDefined()
-            const responseBody = response.body as SubjectDto[]
-            expect(responseBody.length).toEqual(2)
-            const ids = responseBody.map(s => s.id)
-            expect(ids).toContain(subject1._id.toString())
-            expect(ids).toContain(subject2._id.toString())
-        })
-
-        it('should succeed and return only subjects selected by query', async () => {
-            const manager = await mongoTestHelper.createManager()
-            const token = jwtService.sign({ id: manager._id.toString(), role: Role.Manager })
-            const subject1 = await mongoTestHelper.createSubject(manager._id)
-            const subject2 = await mongoTestHelper.createSubject(manager._id)
-            subject2.name = 'another name'
-            await subject2.save()
-
-            const response = await request(app.getHttpServer())
-                .get(`/api/subjects?name=${subject1.name}`)
-                .set('Authorization', `Bearer ${token}`)
-                .expect(HttpStatus.OK)
-
-            expect(response.body).toBeDefined()
-            const responseBody = response.body as SubjectDto[]
-            expect(responseBody.length).toEqual(1)
-            expect(responseBody[0].id).toEqual(subject1._id.toString())
-        })
-
-        it('called with a student, should throw 403', async () => {
-            const student = await mongoTestHelper.createStudent()
-            const token = jwtService.sign({ id: student._id, role: Role.Student })
-            await request(app.getHttpServer())
-                .get('/api/subjects')
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.FORBIDDEN)
         })

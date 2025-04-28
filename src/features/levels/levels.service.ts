@@ -2,12 +2,14 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { oneMonth } from '../../shared/constants'
 import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
+import { PaginationHelper } from '../../shared/helper/pagination-helper'
 import { SearchFilterBuilder } from '../../shared/helper/search-filter.builder'
 import { ObjectId } from '../../shared/repository/types'
 import { CreateTaskDto, TaskDto } from '../tasks/dto/task.dto'
 import { TaskDocument } from '../tasks/schemas/task.schema'
 import { TasksService } from '../tasks/tasks.service'
 import { CreateLevelDto, LevelDto, SearchLevelsQueryDto, UpdateLevelDto } from './dto/level.dto'
+import { PaginatedLevelDto } from './dto/paginated-level.dto'
 import { LevelState } from './enums/level-stats.enum'
 import { LevelsRepository } from './levels.repository'
 import { LevelDocument } from './schemas/level.schema'
@@ -32,13 +34,13 @@ export class LevelsService {
         return { id: createdId }
     }
 
-    async find(query: SearchLevelsQueryDto): Promise<LevelDto[]> {
+    async find(query: SearchLevelsQueryDto): Promise<PaginatedLevelDto> {
         let programLevels: ObjectId[] | undefined
         if (query.programId) {
             const program = await this.documentsService.getProgram(query.programId)
             if (!program?.levels.length) {
                 this.logger.warn(`Program ${query.programId} not found or has no lessons.`)
-                return []
+                return PaginationHelper.emptyResponse(query.page, query.pageSize)
             }
             programLevels = program.levels as ObjectId[]
         }
@@ -46,7 +48,7 @@ export class LevelsService {
         if (query.id) {
             if (programLevels && !programLevels.some(id => id.equals(query.id))) {
                 this.logger.warn(`Lesson ${query.id} requested but not found within program ${query.programId}.`)
-                return []
+                return PaginationHelper.emptyResponse(query.page, query.pageSize)
             }
             filterBuilder.withObjectId('_id', query.id)
         } else if (programLevels) {
@@ -56,18 +58,15 @@ export class LevelsService {
         filterBuilder.withStringLike('name', query.name).withDateAfter('start', query.start).withDateBefore('end', query.end)
 
         const filter = filterBuilder.build()
-        const limit = query.limit
-        const skip = query.skip
 
-        const found = await this.levelsRepository.find(filter, limit, skip)
-        return LevelDto.fromDocuments(found)
-    }
+        const skip = PaginationHelper.calculateSkip(query.page, query.pageSize)
 
-    /** @deprecated */
-    async findOne(id: string): Promise<LevelDto> {
-        const found: LevelDocument | undefined = await this.loadLevel(id)
-        await found.populate({ path: 'tasks', perDocumentLimit: 10, populate: { path: 'lessons', perDocumentLimit: 20 } })
-        return LevelDto.fromDocument(found)
+        const [found, total] = await Promise.all([
+            await this.levelsRepository.find(filter, query.pageSize, skip),
+            await this.levelsRepository.countDocuments(filter),
+        ])
+
+        return PaginationHelper.wrapResponse(LevelDto.fromDocuments(found), query.page, query.pageSize, total)
     }
 
     async update(id: string, dto: UpdateLevelDto): Promise<void> {

@@ -6,7 +6,8 @@ import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { RolesGuard } from '../authentication/guards/roles.guard'
 import { TokenUser } from '../authentication/types/token-user'
-import { CreateLessonDto, LessonDto, SearchLessonsQueryDto, UpdateLessonDto } from './dto/lesson.dto'
+import { CreateLessonDto, SearchLessonsQueryDto, UpdateLessonDto } from './dto/lesson.dto'
+import { PaginatedLessonDto } from './dto/paginated-lesson.dto'
 import { LessonsService } from './lessons.service'
 
 @ApiBearerAuth()
@@ -34,7 +35,7 @@ export class LessonsController {
     }
 
     @ApiOperation({ summary: 'Gets lessons of the subject.', description: `Gets lessons of the subject.` })
-    @ApiResponse({ status: HttpStatus.OK, type: LessonDto, isArray: true, description: 'Got lessons successfully.' })
+    @ApiResponse({ status: HttpStatus.OK, type: PaginatedLessonDto, description: 'Got lessons successfully.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
     @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
@@ -43,7 +44,7 @@ export class LessonsController {
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiBearerAuth()
-    find(@Query() queryDto: SearchLessonsQueryDto, @Request() request: { user: TokenUser }): Promise<LessonDto[]> {
+    find(@Query() queryDto: SearchLessonsQueryDto, @Request() request: { user: TokenUser }): Promise<PaginatedLessonDto> {
         return this.service.find(queryDto, request.user.id)
     }
 

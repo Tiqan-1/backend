@@ -7,7 +7,8 @@ import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { RolesGuard } from '../authentication/guards/roles.guard'
 import { TokenUser } from '../authentication/types/token-user'
 import { CreateTaskDto, TaskDto } from '../tasks/dto/task.dto'
-import { CreateLevelDto, LevelDto, SearchLevelsQueryDto, UpdateLevelDto } from './dto/level.dto'
+import { CreateLevelDto, SearchLevelsQueryDto, UpdateLevelDto } from './dto/level.dto'
+import { PaginatedLevelDto } from './dto/paginated-level.dto'
 import { LevelsService } from './levels.service'
 
 @ApiBearerAuth()
@@ -30,7 +31,7 @@ export class LevelsController {
     }
 
     @ApiOperation({ summary: 'Gets levels of the program', description: `Gets levels of the program.` })
-    @ApiResponse({ status: HttpStatus.OK, type: LevelDto, isArray: true, description: 'Got levels successfully.' })
+    @ApiResponse({ status: HttpStatus.OK, type: PaginatedLevelDto, description: 'Got levels successfully.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
     @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
@@ -38,7 +39,7 @@ export class LevelsController {
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiBearerAuth()
-    find(@Query() searchQuery: SearchLevelsQueryDto): Promise<LevelDto[]> {
+    find(@Query() searchQuery: SearchLevelsQueryDto): Promise<PaginatedLevelDto> {
         return this.service.find(searchQuery)
     }
 

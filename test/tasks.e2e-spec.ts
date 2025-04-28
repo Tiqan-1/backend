@@ -8,6 +8,7 @@ import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strat
 import { LessonsRepository } from '../src/features/lessons/lessons.repository'
 import { LessonsService } from '../src/features/lessons/lessons.service'
 import { LevelDocument } from '../src/features/levels/schemas/level.schema'
+import { PaginatedTaskDto } from '../src/features/tasks/dto/paginated-task.dto'
 import { CreateTaskDto, UpdateTaskDto } from '../src/features/tasks/dto/task.dto'
 import { TaskState } from '../src/features/tasks/enums'
 import { TaskDocument } from '../src/features/tasks/schemas/task.schema'
@@ -139,7 +140,8 @@ describe('TasksController (e2e)', () => {
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.OK)
 
-            expect(response.body).toEqual(expected)
+            const body = response.body as PaginatedTaskDto
+            expect(body.items).toEqual(expected)
         })
 
         it('should only return tasks created by manager calling the endpoint', async () => {
@@ -173,7 +175,8 @@ describe('TasksController (e2e)', () => {
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.OK)
 
-            expect(response.body).toEqual(expected)
+            const body = response.body as PaginatedTaskDto
+            expect(body.items).toEqual(expected)
         })
 
         it('should only return tasks selected by query', async () => {
@@ -222,7 +225,8 @@ describe('TasksController (e2e)', () => {
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.OK)
 
-            expect(response.body).toEqual(expected)
+            const body = response.body as PaginatedTaskDto
+            expect(body.items).toEqual(expected)
         })
 
         it('should fail with 403 when called by a student', async () => {

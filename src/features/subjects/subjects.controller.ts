@@ -6,7 +6,8 @@ import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { RolesGuard } from '../authentication/guards/roles.guard'
 import { TokenUser } from '../authentication/types/token-user'
-import { CreateSubjectDto, SearchSubjectQueryDto, SubjectDto, UpdateSubjectDto } from './dto/subject.dto'
+import { CreateSubjectDto, SearchSubjectQueryDto, UpdateSubjectDto } from './dto/subject.dto'
+import { PaginatedSubjectDto } from './paginated-subject.dto'
 import { SubjectsService } from './subjects.service'
 
 @ApiBearerAuth()
@@ -29,7 +30,7 @@ export class SubjectsController {
     }
 
     @ApiOperation({ summary: 'Searches for subjects', description: 'Searches for subjects.' })
-    @ApiResponse({ status: HttpStatus.OK, type: SubjectDto, isArray: true, description: 'Got subjects successfully.' })
+    @ApiResponse({ status: HttpStatus.OK, type: PaginatedSubjectDto, description: 'Got subjects successfully.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user.' })
     @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
@@ -37,7 +38,10 @@ export class SubjectsController {
     @HttpCode(HttpStatus.OK)
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
-    find(@Query() searchSubjectQueryDto: SearchSubjectQueryDto, @Request() request: { user: TokenUser }): Promise<SubjectDto[]> {
+    find(
+        @Query() searchSubjectQueryDto: SearchSubjectQueryDto,
+        @Request() request: { user: TokenUser }
+    ): Promise<PaginatedSubjectDto> {
         return this.service.find(searchSubjectQueryDto, request.user.id)
     }
 

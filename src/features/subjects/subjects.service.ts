@@ -1,11 +1,13 @@
 import { Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common'
 import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
+import { PaginationHelper } from '../../shared/helper/pagination-helper'
 import { SearchFilterBuilder } from '../../shared/helper/search-filter.builder'
 import { ObjectId } from '../../shared/repository/types'
 import { LessonsService } from '../lessons/lessons.service'
 import { CreateSubjectDto, SearchSubjectQueryDto, SubjectDto, UpdateSubjectDto } from './dto/subject.dto'
 import { SubjectState } from './enums/subject-state'
+import { PaginatedSubjectDto } from './paginated-subject.dto'
 import { SubjectsRepository } from './subjects.repository'
 
 @Injectable()
@@ -32,16 +34,22 @@ export class SubjectsService {
         return { id: _id.toString() }
     }
 
-    async find(searchSubjectQueryDto: SearchSubjectQueryDto, userObjectId: ObjectId): Promise<SubjectDto[]> {
+    async find(query: SearchSubjectQueryDto, userObjectId: ObjectId): Promise<PaginatedSubjectDto> {
         const filter = SearchFilterBuilder.init()
-            .withObjectId('_id', searchSubjectQueryDto.id)
+            .withObjectId('_id', query.id)
             .withObjectId('createdBy', userObjectId)
-            .withStringLike('name', searchSubjectQueryDto.name)
-            .withStringLike('description', searchSubjectQueryDto.description)
+            .withStringLike('name', query.name)
+            .withStringLike('description', query.description)
             .build()
 
-        const found = await this.subjectsRepository.find(filter)
-        return SubjectDto.fromDocuments(found)
+        const skip = PaginationHelper.calculateSkip(query.page, query.pageSize)
+
+        const [found, total] = await Promise.all([
+            await this.subjectsRepository.find(filter, query.pageSize, skip),
+            await this.subjectsRepository.countDocuments(filter),
+        ])
+
+        return PaginationHelper.wrapResponse(SubjectDto.fromDocuments(found), query.page, query.pageSize, total)
     }
 
     async remove(subjectId: string, managerObjectId: ObjectId): Promise<void> {

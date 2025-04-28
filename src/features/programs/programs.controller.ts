@@ -23,7 +23,8 @@ import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { RolesGuard } from '../authentication/guards/roles.guard'
 import { TokenUser } from '../authentication/types/token-user'
-import { CreateProgramDto, ProgramDto, SearchProgramQueryDto, UpdateProgramDto } from './dto/program.dto'
+import { PaginatedProgramDto } from './dto/paginated-program.dto'
+import { CreateProgramDto, SearchProgramQueryDto, UpdateProgramDto } from './dto/program.dto'
 import { ProgramState } from './enums/program-state.enum'
 import { ProgramsService } from './programs.service'
 import { ThumbnailValidator } from './validators/thumbnail.validator'
@@ -50,7 +51,7 @@ export class ProgramsController {
     }
 
     @ApiOperation({ summary: 'Searches for programs', description: 'Searches for programs' })
-    @ApiResponse({ status: HttpStatus.OK, type: ProgramDto, isArray: true, description: 'Got programs successfully.' })
+    @ApiResponse({ status: HttpStatus.OK, type: PaginatedProgramDto, description: 'Got programs successfully.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user,' })
     @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
@@ -58,7 +59,10 @@ export class ProgramsController {
     @UseGuards(JwtAuthGuard)
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
-    find(@Query() searchProgramQueryDto: SearchProgramQueryDto, @Request() request: { user: TokenUser }): Promise<ProgramDto[]> {
+    find(
+        @Query() searchProgramQueryDto: SearchProgramQueryDto,
+        @Request() request: { user: TokenUser }
+    ): Promise<PaginatedProgramDto> {
         return this.programsService.find(searchProgramQueryDto, request.user.id)
     }
 
