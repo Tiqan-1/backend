@@ -92,8 +92,12 @@ export class LevelsController {
     @HttpCode(HttpStatus.CREATED)
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
-    createTask(@Body() createTaskDto: CreateTaskDto, @Param('id') levelId: string): Promise<CreatedDto> {
-        return this.service.createTask(levelId, createTaskDto)
+    createTask(
+        @Body() createTaskDto: CreateTaskDto,
+        @Param('id') levelId: string,
+        @Request() request: { user: TokenUser }
+    ): Promise<CreatedDto> {
+        return this.service.createTask(levelId, createTaskDto, request.user.id)
     }
 
     @ApiOperation({ summary: 'Gets tasks of the level', description: `Gets tasks of the level.`, deprecated: true })

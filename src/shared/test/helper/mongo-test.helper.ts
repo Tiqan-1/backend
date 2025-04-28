@@ -217,8 +217,10 @@ export class MongoTestHelper {
         return model.create(subject)
     }
 
-    async createTask(lessons: ObjectId[]): Promise<TaskDocument> {
+    async createTask(createdBy: ObjectId, levelId: ObjectId = new ObjectId(), lessons: ObjectId[] = []): Promise<TaskDocument> {
         const task: Task = {
+            levelId,
+            createdBy,
             date: new Date(),
             state: TaskState.active,
             lessons: lessons.map(({ _id }) => _id),
@@ -245,14 +247,14 @@ export class MongoTestHelper {
         return model.create(program)
     }
 
-    async createLevel(createdBy: ObjectId, programId: ObjectId = new ObjectId(), tasks: ObjectId[] = []): Promise<LevelDocument> {
+    async createLevel(createdBy: ObjectId, programId: ObjectId = new ObjectId()): Promise<LevelDocument> {
         const date = new Date()
         const level: Level = {
             name: 'level name',
             state: LevelState.active,
             start: new Date(date.valueOf()),
             end: new Date(date.setFullYear(date.getFullYear() + 1)),
-            tasks: tasks,
+            tasks: [],
             createdBy,
             programId,
         }

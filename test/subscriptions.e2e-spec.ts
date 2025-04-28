@@ -60,8 +60,10 @@ describe('SubscriptionsController (e2e)', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
             const token = jwtService.sign({ id: manager._id, role: manager.role })
-            const level = await mongoTestHelper.createLevel([])
-            const program = await mongoTestHelper.createProgram([level._id], manager._id)
+            const program = await mongoTestHelper.createProgram(manager._id)
+            const level = await mongoTestHelper.createLevel(manager._id, program._id)
+            program.levels = [level._id]
+            await program.save()
             const student = await mongoTestHelper.createStudent([])
             const subscription1 = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
             const subscription2 = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
@@ -100,8 +102,10 @@ describe('SubscriptionsController (e2e)', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
             const token = jwtService.sign({ id: manager._id, role: manager.role })
-            const level = await mongoTestHelper.createLevel([])
-            const program = await mongoTestHelper.createProgram([level._id], manager._id)
+            const program = await mongoTestHelper.createProgram(manager._id)
+            const level = await mongoTestHelper.createLevel(manager._id, program._id)
+            program.levels = [level._id]
+            await program.save()
             const student = await mongoTestHelper.createStudent([])
             const subscription = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
 
@@ -132,8 +136,10 @@ describe('SubscriptionsController (e2e)', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
             const token = jwtService.sign({ id: manager._id, role: manager.role })
-            const level = await mongoTestHelper.createLevel([])
-            const program = await mongoTestHelper.createProgram([level._id], manager._id)
+            const program = await mongoTestHelper.createProgram(manager._id)
+            const level = await mongoTestHelper.createLevel(manager._id, program._id)
+            program.levels = [level._id]
+            await program.save()
             const student = await mongoTestHelper.createStudent([])
             const subscription = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
 
@@ -171,8 +177,10 @@ describe('SubscriptionsController (e2e)', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
             const token = jwtService.sign({ id: manager._id, role: manager.role })
-            const level = await mongoTestHelper.createLevel([])
-            const program = await mongoTestHelper.createProgram([level._id], manager._id)
+            const program = await mongoTestHelper.createProgram(manager._id)
+            const level = await mongoTestHelper.createLevel(manager._id, program._id)
+            program.levels = [level._id]
+            await program.save()
             const student = await mongoTestHelper.createStudent([])
             const subscription = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
 

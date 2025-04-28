@@ -1,5 +1,6 @@
-import { ApiProperty, OmitType, PartialType } from '@nestjs/swagger'
+import { ApiProperty, IntersectionType, OmitType, PartialType } from '@nestjs/swagger'
 import { ArrayNotEmpty, IsDateString, IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
+import { SearchQueryDto } from '../../../shared/dto/search.query.dto'
 import { LessonDto } from '../../lessons/dto/lesson.dto'
 import { LessonDocument } from '../../lessons/schemas/lesson.schema'
 import { TaskDocument } from '../schemas/task.schema'
@@ -8,6 +9,10 @@ export class TaskDto {
     @ApiProperty({ type: String, required: true, example: 'taskId' })
     @IsMongoId()
     id: string
+
+    @ApiProperty({ type: String, required: true })
+    @IsMongoId()
+    levelId: string
 
     @ApiProperty({ type: Date, required: true, example: new Date() })
     @IsDateString()
@@ -38,7 +43,7 @@ export class TaskDto {
     }
 }
 
-export class CreateTaskDto extends OmitType(TaskDto, ['id', 'lessons']) {
+export class CreateTaskDto extends OmitType(TaskDto, ['id', 'lessons'] as const) {
     @ApiProperty({ type: String, isArray: true, required: false })
     @IsOptional()
     @IsMongoId({ each: true })
@@ -46,4 +51,6 @@ export class CreateTaskDto extends OmitType(TaskDto, ['id', 'lessons']) {
     lessonIds?: string[]
 }
 
-export class UpdateTaskDto extends PartialType(CreateTaskDto) {}
+export class UpdateTaskDto extends PartialType(OmitType(CreateTaskDto, ['levelId'] as const)) {}
+
+export class SearchTasksQueryDto extends IntersectionType(PartialType(OmitType(TaskDto, ['lessons'] as const)), SearchQueryDto) {}

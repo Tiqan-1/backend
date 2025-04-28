@@ -207,9 +207,11 @@ describe('StudentsController (e2e)', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
             const lesson = await mongoTestHelper.createLesson(manager._id)
-            const task = await mongoTestHelper.createTask([lesson._id])
             const program = await mongoTestHelper.createProgram(manager._id)
-            const level = await mongoTestHelper.createLevel(manager._id, program._id, [task._id])
+            const level = await mongoTestHelper.createLevel(manager._id, program._id)
+            const task = await mongoTestHelper.createTask(manager._id, level._id, [lesson._id])
+            level.tasks = [task._id]
+            await level.save()
             program.levels = [level._id]
             await program.save()
             const student = await mongoTestHelper.createStudent([])
@@ -291,9 +293,11 @@ describe('StudentsController (e2e)', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
             const lesson = await mongoTestHelper.createLesson(manager._id)
-            const task = await mongoTestHelper.createTask([lesson._id])
             const program = await mongoTestHelper.createProgram(manager._id)
-            const level = await mongoTestHelper.createLevel(manager._id, program._id, [task._id])
+            const level = await mongoTestHelper.createLevel(manager._id, program._id)
+            const task = await mongoTestHelper.createTask(manager._id, level._id, [lesson._id])
+            level.tasks = [task._id]
+            await level.save()
             program.levels = [level._id]
             await program.save()
 

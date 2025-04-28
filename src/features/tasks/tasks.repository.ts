@@ -11,8 +11,12 @@ export class TasksRepository extends RepositoryMongoBase<TaskDocument> {
         super(model)
     }
 
-    async create(element: unknown): Promise<TaskDocument> {
-        return await super.create(element)
+    find(filter: object, limit: number = 10, skip: number = 0): Promise<TaskDocument[]> {
+        return this.model.find(filter).limit(limit).skip(skip).populate('lessons').exec()
+    }
+
+    create(element: unknown): Promise<TaskDocument> {
+        return super.create(element)
     }
 
     async findById(id: ObjectId): Promise<TaskDocument | undefined> {

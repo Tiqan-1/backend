@@ -3,12 +3,19 @@ import { HydratedDocument } from 'mongoose'
 import { normalizeDate } from '../../../shared/helper/date.helper'
 import { ObjectId, Populated } from '../../../shared/repository/types'
 import { Lesson, LessonDocument } from '../../lessons/schemas/lesson.schema'
+import { ManagerDocument } from '../../managers/schemas/manager.schema'
 import { TaskState } from '../enums'
 
 export type TaskDocument = HydratedDocument<Task>
 
 @Schema()
 export class Task {
+    @Prop({ required: true, type: ObjectId, ref: 'Manager' })
+    createdBy: ObjectId | Populated<ManagerDocument>
+
+    @Prop({ required: true, type: ObjectId, ref: 'Level' })
+    levelId: ObjectId
+
     @Prop({ required: true, type: Date })
     date: Date
 

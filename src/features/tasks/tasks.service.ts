@@ -1,10 +1,12 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { oneMonth } from '../../shared/constants'
+import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { normalizeDate } from '../../shared/helper/date.helper'
+import { SearchFilterBuilder } from '../../shared/helper/search-filter.builder'
 import { ObjectId } from '../../shared/repository/types'
 import { LessonsService } from '../lessons/lessons.service'
-import { CreateTaskDto, TaskDto, UpdateTaskDto } from './dto/task.dto'
+import { CreateTaskDto, SearchTasksQueryDto, TaskDto, UpdateTaskDto } from './dto/task.dto'
 import { TaskState } from './enums'
 import { TaskDocument } from './schemas/task.schema'
 import { TasksRepository } from './tasks.repository'
@@ -15,21 +17,63 @@ export class TasksService {
 
     constructor(
         private readonly taskRepository: TasksRepository,
-        private readonly lessonsService: LessonsService
+        private readonly lessonsService: LessonsService,
+        private readonly documentsService: SharedDocumentsService
     ) {}
 
-    async create(task: CreateTaskDto): Promise<CreatedDto> {
+    async create(task: CreateTaskDto, createdBy: ObjectId): Promise<CreatedDto> {
         const validatedLessons = task.lessonIds?.length ? await this.lessonsService.validateLessonIds(task.lessonIds) : undefined
 
         const createObject: Partial<TaskDocument> = {
+            createdBy,
+            levelId: new ObjectId(task.levelId),
             date: normalizeDate(new Date(task.date)),
             ...(task.note && { note: task.note }),
             ...(validatedLessons && { lessons: validatedLessons }),
         }
 
         const created = await this.taskRepository.create(createObject)
+
+        const level = await this.documentsService.getLevel(task.levelId)
+        ;(level.tasks as ObjectId[]).push(created._id)
+        await level.save()
+
         this.logger.log(`Task ${created._id.toString()} created.`)
         return { id: created._id.toString() }
+    }
+
+    async find(query: SearchTasksQueryDto, createdBy: ObjectId): Promise<TaskDto[]> {
+        let levelTasks: ObjectId[] | undefined
+        if (query.levelId) {
+            const level = await this.documentsService.getLevel(query.levelId)
+            if (!level?.tasks.length) {
+                this.logger.warn(`Level ${query.levelId} not found or has no tasks.`)
+                return []
+            }
+            levelTasks = level.tasks as ObjectId[]
+        }
+        const filterBuilder = SearchFilterBuilder.init()
+        if (query.id) {
+            if (levelTasks && !levelTasks.some(id => id.equals(query.id))) {
+                this.logger.warn(`Task ${query.id} requested but not found within level ${query.levelId}.`)
+                return []
+            }
+            filterBuilder.withObjectId('_id', query.id)
+        } else if (levelTasks) {
+            filterBuilder.withObjectIds('_id', levelTasks)
+        }
+
+        filterBuilder
+            .withObjectId('createdBy', createdBy)
+            .withDate('date', query.date && normalizeDate(new Date(query.date)))
+            .withStringLike('note', query.note)
+
+        const filter = filterBuilder.build()
+        const limit = query.limit
+        const skip = query.skip
+
+        const found = await this.taskRepository.find(filter, limit, skip)
+        return TaskDto.fromDocuments(found)
     }
 
     async update(id: string, task: UpdateTaskDto): Promise<void> {
@@ -49,7 +93,8 @@ export class TasksService {
         }
     }
 
-    async remove(id: string): Promise<void> {
+    /** @deprecated */
+    async oldRemove(id: string): Promise<void> {
         const deleted = await this.taskRepository.update(
             { _id: new ObjectId(id) },
             { state: TaskState.deleted, expireAt: oneMonth }
@@ -61,6 +106,29 @@ export class TasksService {
         this.logger.log(`Task ${id} removed.`)
     }
 
+    async remove(id: string): Promise<void> {
+        const deleted = await this.taskRepository.update(
+            { _id: new ObjectId(id) },
+            { state: TaskState.deleted, expireAt: oneMonth }
+        )
+        if (!deleted) {
+            this.logger.error(`Attempt to remove Task ${id} failed.`)
+            throw new NotFoundException('Task not found.')
+        }
+        const level = await this.documentsService.getLevel(deleted.levelId.toString())
+        if (level) {
+            const taskIndex = level.tasks.findIndex(task => task._id.toString() === id)
+            if (taskIndex === -1) {
+                this.logger.warn(`Attempt to remove Task ${id} from level ${level._id.toString()} failed.`)
+            } else {
+                ;(level.tasks as ObjectId[]).splice(taskIndex, 1)
+                await level.save()
+            }
+        }
+        this.logger.log(`Task ${id} removed.`)
+    }
+
+    /** @deprecated */
     async findById(id: string): Promise<TaskDto> {
         const taskId = new ObjectId(id)
         const found = await this.taskRepository.findById(taskId)

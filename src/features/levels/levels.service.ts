@@ -45,7 +45,7 @@ export class LevelsService {
         const filterBuilder = SearchFilterBuilder.init()
         if (query.id) {
             if (programLevels && !programLevels.some(id => id.equals(query.id))) {
-                this.logger.warn(`Lesson ${query.id} requested but not found within subject ${query.programId}.`)
+                this.logger.warn(`Lesson ${query.id} requested but not found within program ${query.programId}.`)
                 return []
             }
             filterBuilder.withObjectId('_id', query.id)
@@ -98,15 +98,15 @@ export class LevelsService {
             }
         }
         for (const task of found.tasks) {
-            await this.tasksService.remove(task._id.toString())
+            await this.tasksService.oldRemove(task._id.toString())
         }
         this.logger.log(`Level ${id} removed.`)
     }
 
     /** @deprecated */
-    async createTask(levelId: string, createTaskDto: CreateTaskDto): Promise<CreatedDto> {
+    async createTask(levelId: string, createTaskDto: CreateTaskDto, createdBy: ObjectId): Promise<CreatedDto> {
         const level = await this.loadLevel(levelId)
-        const task = await this.tasksService.create(createTaskDto)
+        const task = await this.tasksService.create(createTaskDto, createdBy)
         ;(level.tasks as ObjectId[]).push(new ObjectId(task.id))
         await level.save()
         this.logger.log(`Task ${task.id} created and added to level ${levelId}.`)

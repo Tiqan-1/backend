@@ -44,6 +44,13 @@ export class SearchFilterBuilder {
         return this
     }
 
+    withDate(key: string, date?: Date): SearchFilterBuilder {
+        if (date) {
+            this.filter[key] = date
+        }
+        return this
+    }
+
     withDateAfter(key: string, date?: Date): SearchFilterBuilder {
         if (date) {
             this.filter[key] = { $gte: date }

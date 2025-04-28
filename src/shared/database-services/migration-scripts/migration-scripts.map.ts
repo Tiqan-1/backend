@@ -5,6 +5,7 @@ import { V3 } from './v3'
 import { V4 } from './v4'
 import { V5 } from './v5'
 import { V6 } from './v6'
+import { V7 } from './v7'
 
 export const MIGRATION_SCRIPTS_MAP = new Map<number, MigrationScript>([
     [1, new V1()],
@@ -13,4 +14,5 @@ export const MIGRATION_SCRIPTS_MAP = new Map<number, MigrationScript>([
     [4, new V4()],
     [5, new V5()],
     [6, new V6()],
+    [7, new V7()],
 ])
