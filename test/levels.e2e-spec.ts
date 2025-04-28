@@ -245,6 +245,7 @@ describe('LevelsController', () => {
                 {
                     id: task._id.toString(),
                     date: task.date.toISOString(),
+                    levelId: level._id.toString(),
                     lessons: [{ id: lesson._id.toString(), url: lesson.url, type: lesson.type, title: lesson.title }],
                 },
             ])

@@ -29,6 +29,7 @@ export class TaskDto {
 
     constructor(document: TaskDocument) {
         this.id = document._id.toString()
+        this.levelId = document.levelId.toString()
         this.date = new Date(document.date)
         this.note = document.note
         this.lessons = document.lessons.map(lesson => LessonDto.fromDocument(lesson as LessonDocument))
