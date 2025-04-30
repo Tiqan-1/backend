@@ -1,4 +1,4 @@
-import { ApiProperty, IntersectionType, OmitType, PartialType } from '@nestjs/swagger'
+import { ApiHideProperty, ApiProperty, IntersectionType, OmitType, PartialType } from '@nestjs/swagger'
 import { IsBase64, IsDateString, IsEnum, IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { SearchQueryDto } from '../../../shared/dto/search.query.dto'
 import { normalizeDate } from '../../../shared/helper/date.helper'
@@ -47,15 +47,13 @@ export class ProgramDto {
     @IsDateString()
     end: Date
 
-    @ApiProperty({ type: Date, required: false, example: now })
-    @IsOptional()
+    @ApiProperty({ type: Date, required: true, example: now })
     @IsDateString()
-    registrationStart?: Date
+    registrationStart: Date
 
-    @ApiProperty({ type: Date, required: false, example: now })
-    @IsOptional()
+    @ApiProperty({ type: Date, required: true, example: now })
     @IsDateString()
-    registrationEnd?: Date
+    registrationEnd: Date
 
     @ApiProperty({ type: LevelDto, required: true, isArray: true })
     @ValidateNested({ each: true })
@@ -172,3 +170,9 @@ export class SearchProgramQueryDto extends IntersectionType(
     PartialType(OmitType(ProgramDto, ['thumbnail', 'levels', 'createdBy'] as const)),
     SearchQueryDto
 ) {}
+
+export class SearchStudentProgramQueryDto extends OmitType(SearchProgramQueryDto, ['state'] as const) {
+    @ApiHideProperty()
+    @IsEnum(ProgramState)
+    state = ProgramState.published
+}

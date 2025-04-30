@@ -12,9 +12,9 @@ export class SubscriptionsRepository extends RepositoryMongoBase<SubscriptionDoc
         super(model)
     }
 
-    findAll(limit = 10, skip = 0): Promise<SubscriptionDocument[]> {
+    find(filter: Record<string, unknown>, limit = 20, skip = 0): Promise<SubscriptionDocument[]> {
         return this.model
-            .find()
+            .find(filter)
             .populate('program')
             .populate({ path: 'level', populate: { path: 'tasks', populate: { path: 'lessons' } } })
             .populate({ path: 'subscriber', select: 'name email' })

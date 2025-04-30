@@ -2,12 +2,16 @@ import { ConflictException, Injectable, InternalServerErrorException, Logger, No
 import * as bcrypt from 'bcryptjs'
 import { oneMonth } from '../../shared/constants'
 import { CreatedDto } from '../../shared/dto/created.dto'
+import { PaginationHelper } from '../../shared/helper/pagination-helper'
 import { ObjectId } from '../../shared/repository/types'
 import { AuthenticationService } from '../authentication/authentication.service'
 import { AuthenticationResponseDto } from '../authentication/dto/authentication-response.dto'
 import { Role } from '../authentication/enums/role.enum'
-import { StudentProgramDto } from '../programs/dto/program.dto'
+import { PaginatedProgramDto } from '../programs/dto/paginated-program.dto'
+import { SearchStudentProgramQueryDto, StudentProgramDto } from '../programs/dto/program.dto'
 import { ProgramsService } from '../programs/programs.service'
+import { PaginatedStudentSubscriptionDto } from '../subscriptions/dto/paginated-subscripition.dto'
+import { SearchSubscriptionsQueryDto } from '../subscriptions/dto/search-subscriptions-query.dto'
 import { CreateSubscriptionDto, StudentSubscriptionDto } from '../subscriptions/dto/subscription.dto'
 import { SubscriptionState } from '../subscriptions/enums/subscription-state.enum'
 import { SubscriptionsService } from '../subscriptions/subscriptions.service'
@@ -47,16 +51,9 @@ export class StudentsService {
         }
     }
 
-    async createSubscription(createSubscriptionDto: CreateSubscriptionDto, studentId: ObjectId): Promise<CreatedDto> {
+    async subscribe(createSubscriptionDto: CreateSubscriptionDto, studentId: ObjectId): Promise<CreatedDto> {
         const student = await this.loadStudent(studentId)
-        const currentSubscriptions = await this.subscriptionsService.getManyForStudent(student.subscriptions as ObjectId[])
-        this.assureUniqueSubscription(createSubscriptionDto, currentSubscriptions)
-        const created = await this.subscriptionsService.create(createSubscriptionDto, student._id)
-        ;(student.subscriptions as ObjectId[]).push(new ObjectId(created.id))
-        await student.save()
-        this.logger.log(`Student ${student.email} subscribed to program ${createSubscriptionDto.programId}
-         in level ${createSubscriptionDto.levelId}. Subscription: ${created.id}.`)
-        return created
+        return await this.subscriptionsService.create(createSubscriptionDto, student)
     }
 
     async suspendSubscription(subscriptionId: string, studentId: ObjectId): Promise<void> {
@@ -73,6 +70,12 @@ export class StudentsService {
     async getSubscriptions(studentId: ObjectId, limit?: number, skip?: number): Promise<StudentSubscriptionDto[]> {
         const student = await this.loadStudent(studentId)
         return this.subscriptionsService.getManyForStudent(student.subscriptions as ObjectId[], limit, skip)
+    }
+
+    async findSubscriptions(query: SearchSubscriptionsQueryDto, studentId: ObjectId): Promise<PaginatedStudentSubscriptionDto> {
+        query.subscriberId = studentId
+        const { found, total } = await this.subscriptionsService.findRaw(query)
+        return PaginationHelper.wrapResponse(StudentSubscriptionDto.fromDocuments(found), query.page, query.pageSize, total)
     }
 
     async remove(id: ObjectId): Promise<void> {
@@ -101,8 +104,13 @@ export class StudentsService {
         this.logger.log(`Student ${student.email} removed subscription ${subscriptionId}.`)
     }
 
+    /** @deprecated */
     getOpenPrograms(limit?: number, skip?: number): Promise<StudentProgramDto[]> {
         return this.programsService.findAllForStudents(limit, skip)
+    }
+
+    findOpenPrograms(query: SearchStudentProgramQueryDto): Promise<PaginatedProgramDto> {
+        return this.programsService.find(query)
     }
 
     private async loadStudent(studentId: ObjectId): Promise<StudentDocument> {
@@ -112,16 +120,5 @@ export class StudentsService {
             throw new InternalServerErrorException('Student not found.')
         }
         return student
-    }
-
-    private assureUniqueSubscription(
-        { programId, levelId }: CreateSubscriptionDto,
-        subscriptions: StudentSubscriptionDto[]
-    ): void {
-        const hasSameSubscription = subscriptions?.some(sub => sub.program?.id === programId && sub.level?.id === levelId)
-        if (hasSameSubscription) {
-            this.logger.error(`Student already subscribed to level ${levelId} in program ${programId}.`)
-            throw new ConflictException('Student already have the same subscription.')
-        }
     }
 }

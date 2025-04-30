@@ -157,14 +157,14 @@ export class MongoTestHelper {
         return model.create(managerDto)
     }
 
-    createStudent(subscriptionIds: ObjectId[] = []): Promise<StudentDocument> {
+    createStudent(id: string = ''): Promise<StudentDocument> {
         const student: Student = {
             name: 'test student',
             password: bcrypt.hashSync('testPassword', 10),
-            email: 'student@email.com',
+            email: `student${id}@email.com`,
             gender: Gender.male,
             role: Role.Student,
-            subscriptions: subscriptionIds,
+            subscriptions: [],
             status: StudentStatus.active,
         }
         const model = this.getStudentModel()

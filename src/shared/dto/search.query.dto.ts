@@ -11,7 +11,7 @@ export class SearchQueryDto {
     @Type(() => Number)
     @IsNumber()
     @IsOptional()
-    page: number = 1
+    page?: number = 1
 
     @ApiProperty({
         type: Number,
@@ -22,5 +22,5 @@ export class SearchQueryDto {
     @Type(() => Number)
     @IsNumber()
     @IsOptional()
-    pageSize: number = 20
+    pageSize?: number = 20
 }

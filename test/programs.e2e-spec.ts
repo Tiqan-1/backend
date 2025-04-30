@@ -93,6 +93,8 @@ describe('ProgramsController (e2e)', () => {
                 description: 'program description',
                 start: new Date(),
                 end: new Date(),
+                registrationStart: new Date(),
+                registrationEnd: new Date(),
             }
 
             const response = await request(app.getHttpServer())

@@ -1,9 +1,11 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { IsDateString, IsEnum, IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
-import { isPopulated } from '../../../shared/helper/populated-type.helper'
 import { LevelDto } from '../../levels/dto/level.dto'
+import { LevelDocument } from '../../levels/schemas/level.schema'
 import { ProgramDto, StudentProgramUnpopulatedDto } from '../../programs/dto/program.dto'
+import { ProgramDocument } from '../../programs/schemas/program.schema'
 import { SimpleStudentDto } from '../../students/dto/student.dto'
+import { StudentDocument } from '../../students/schemas/student.schema'
 import { SubscriptionState } from '../enums/subscription-state.enum'
 import { SubscriptionDocument } from '../schemas/subscription.schema'
 
@@ -15,17 +17,17 @@ export class SubscriptionDto {
     @ApiProperty({ type: ProgramDto, required: false })
     @IsOptional()
     @ValidateNested()
-    program?: ProgramDto
+    program: ProgramDto
 
     @ApiProperty({ type: LevelDto, required: false })
     @IsOptional()
     @ValidateNested()
-    level?: LevelDto
+    level: LevelDto
 
     @ApiProperty({ type: SimpleStudentDto, required: false })
     @IsOptional()
     @ValidateNested()
-    subscriber?: SimpleStudentDto
+    subscriber: SimpleStudentDto
 
     @ApiProperty({ type: Date, required: true, example: new Date() })
     @IsDateString()
@@ -47,10 +49,10 @@ export class SubscriptionDto {
     static fromDocument(subscription: SubscriptionDocument): SubscriptionDto {
         return {
             id: subscription._id.toString(),
-            program: isPopulated(subscription.program) ? ProgramDto.fromDocument(subscription.program) : undefined,
-            level: isPopulated(subscription.level) ? LevelDto.fromDocument(subscription.level) : undefined,
+            program: ProgramDto.fromDocument(subscription.program as ProgramDocument),
+            level: LevelDto.fromDocument(subscription.level as LevelDocument),
             subscriptionDate: subscription.subscriptionDate,
-            subscriber: isPopulated(subscription.subscriber) ? SimpleStudentDto.fromDocument(subscription.subscriber) : undefined,
+            subscriber: SimpleStudentDto.fromDocument(subscription.subscriber as StudentDocument),
             state: subscription.state,
             notes: subscription.notes,
         }
@@ -61,7 +63,7 @@ export class StudentSubscriptionDto extends OmitType(SubscriptionDto, ['program'
     @ApiProperty({ type: StudentProgramUnpopulatedDto, required: false })
     @IsOptional()
     @ValidateNested()
-    program?: StudentProgramUnpopulatedDto
+    program: StudentProgramUnpopulatedDto
 
     static fromDocuments(subscriptions: SubscriptionDocument[] = []): StudentSubscriptionDto[] {
         return subscriptions.map(subscription => this.fromDocument(subscription))
@@ -70,10 +72,8 @@ export class StudentSubscriptionDto extends OmitType(SubscriptionDto, ['program'
     static fromDocument(subscription: SubscriptionDocument): StudentSubscriptionDto {
         return {
             id: subscription._id.toString(),
-            program: isPopulated(subscription.program)
-                ? StudentProgramUnpopulatedDto.fromDocument(subscription.program)
-                : undefined,
-            level: isPopulated(subscription.level) ? LevelDto.fromDocument(subscription.level) : undefined,
+            program: StudentProgramUnpopulatedDto.fromDocument(subscription.program as ProgramDocument),
+            level: LevelDto.fromDocument(subscription.level as LevelDocument),
             subscriptionDate: subscription.subscriptionDate,
             state: subscription.state,
             notes: subscription.notes,

@@ -30,11 +30,11 @@ export class Program {
     @Prop({ required: true, type: Date })
     end: Date
 
-    @Prop({ required: false, type: Date })
-    registrationStart?: Date
+    @Prop({ required: true, type: Date })
+    registrationStart: Date
 
-    @Prop({ required: false, type: Date })
-    registrationEnd?: Date
+    @Prop({ required: true, type: Date })
+    registrationEnd: Date
 
     @Prop({ required: true, type: [ObjectId], ref: Level.name, default: [] })
     levels: ObjectId[] | Populated<LevelDocument[]>

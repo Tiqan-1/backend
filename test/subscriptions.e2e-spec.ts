@@ -5,6 +5,7 @@ import request from 'supertest'
 import { App } from 'supertest/types'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
+import { PaginatedSubscriptionDto } from '../src/features/subscriptions/dto/paginated-subscripition.dto'
 import { SubscriptionDto, UpdateSubscriptionDto } from '../src/features/subscriptions/dto/subscription.dto'
 import { SubscriptionState } from '../src/features/subscriptions/enums/subscription-state.enum'
 import { SubscriptionDocument } from '../src/features/subscriptions/schemas/subscription.schema'
@@ -64,7 +65,7 @@ describe('SubscriptionsController (e2e)', () => {
             const level = await mongoTestHelper.createLevel(manager._id, program._id)
             program.levels = [level._id]
             await program.save()
-            const student = await mongoTestHelper.createStudent([])
+            const student = await mongoTestHelper.createStudent()
             const subscription1 = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
             const subscription2 = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
 
@@ -98,6 +99,72 @@ describe('SubscriptionsController (e2e)', () => {
         })
     })
 
+    describe('GET api/subscriptions/v2', () => {
+        it('should succeed', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+            const program = await mongoTestHelper.createProgram(manager._id)
+            const level = await mongoTestHelper.createLevel(manager._id, program._id)
+            program.levels = [level._id]
+            await program.save()
+            const student = await mongoTestHelper.createStudent()
+            const subscription1 = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
+            const subscription2 = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
+
+            const response = await request(app.getHttpServer())
+                .get('/api/subscriptions/v2')
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.OK)
+
+            expect(response.body).toBeTruthy()
+            const body = response.body as PaginatedSubscriptionDto
+            expect(body.items.length).toEqual(2)
+            const ids = body.items.map(item => item.id)
+            expect(ids).toContain(subscription1._id.toString())
+            expect(ids).toContain(subscription2._id.toString())
+
+            // test populated fields
+            const firstSubscription = body.items[0]
+            expect(firstSubscription.subscriber?.name).toEqual(student.name)
+            expect(firstSubscription.program?.name).toEqual(program.name)
+            expect(firstSubscription.level?.name).toEqual(level.name)
+        })
+
+        it('should only return subscriptions found by query', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+            const program = await mongoTestHelper.createProgram(manager._id)
+            const program2 = await mongoTestHelper.createProgram(manager._id)
+            const level = await mongoTestHelper.createLevel(manager._id, program._id)
+            program.levels = [level._id]
+            await program.save()
+            const student = await mongoTestHelper.createStudent()
+            const subscription1 = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
+            await mongoTestHelper.createSubscription(program2._id, level._id, student._id)
+
+            const response = await request(app.getHttpServer())
+                .get(`/api/subscriptions/v2?programId=${program._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.OK)
+
+            expect(response.body).toBeTruthy()
+            const body = response.body as PaginatedSubscriptionDto
+            expect(body.items.length).toEqual(1)
+            const ids = body.items.map(item => item.id)
+            expect(ids).toContain(subscription1._id.toString())
+        })
+
+        it('should fail with 403 if called by a student', async () => {
+            const student = await mongoTestHelper.createStudent()
+            const token = jwtService.sign({ id: student._id, role: student.role })
+
+            await request(app.getHttpServer())
+                .get('/api/subscriptions')
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.FORBIDDEN)
+        })
+    })
+
     describe('GET api/subscriptions/:id', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
@@ -106,7 +173,7 @@ describe('SubscriptionsController (e2e)', () => {
             const level = await mongoTestHelper.createLevel(manager._id, program._id)
             program.levels = [level._id]
             await program.save()
-            const student = await mongoTestHelper.createStudent([])
+            const student = await mongoTestHelper.createStudent()
             const subscription = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
 
             const response = await request(app.getHttpServer())
@@ -140,7 +207,7 @@ describe('SubscriptionsController (e2e)', () => {
             const level = await mongoTestHelper.createLevel(manager._id, program._id)
             program.levels = [level._id]
             await program.save()
-            const student = await mongoTestHelper.createStudent([])
+            const student = await mongoTestHelper.createStudent()
             const subscription = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
 
             const body: UpdateSubscriptionDto = {
@@ -181,7 +248,7 @@ describe('SubscriptionsController (e2e)', () => {
             const level = await mongoTestHelper.createLevel(manager._id, program._id)
             program.levels = [level._id]
             await program.save()
-            const student = await mongoTestHelper.createStudent([])
+            const student = await mongoTestHelper.createStudent()
             const subscription = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
 
             await request(app.getHttpServer())

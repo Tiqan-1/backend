@@ -40,7 +40,7 @@ export class ProgramsService {
         return { id: created._id.toString() }
     }
 
-    async find(query: SearchProgramQueryDto, searchUserId: ObjectId): Promise<PaginatedProgramDto> {
+    async find(query: SearchProgramQueryDto, searchUserId?: ObjectId): Promise<PaginatedProgramDto> {
         const filter = SearchFilterBuilder.init()
             .withObjectId('_id', query.id)
             .withObjectId('createdBy', searchUserId)
@@ -63,6 +63,7 @@ export class ProgramsService {
         return PaginationHelper.wrapResponse(ProgramDto.fromDocuments(found), query.page, query.pageSize, total)
     }
 
+    /** @deprecated */
     async findAllForStudents(limit?: number, skip?: number): Promise<StudentProgramDto[]> {
         const now = new Date()
         const filter = { state: ProgramState.published, registrationStart: { $lt: now }, registrationEnd: { $gt: now } }
