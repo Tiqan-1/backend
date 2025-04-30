@@ -127,7 +127,9 @@ describe('SubscriptionsController (e2e)', () => {
             const firstSubscription = body.items[0]
             expect(firstSubscription.subscriber?.name).toEqual(student.name)
             expect(firstSubscription.program?.name).toEqual(program.name)
+            expect(firstSubscription.program?.createdBy.name).toEqual(manager.name)
             expect(firstSubscription.level?.name).toEqual(level.name)
+            expect(firstSubscription.level?.createdBy.name).toEqual(manager.name)
         })
 
         it('should only return subscriptions found by query', async () => {

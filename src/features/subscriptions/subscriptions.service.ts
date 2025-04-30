@@ -158,7 +158,9 @@ export class SubscriptionsService {
     ): void {
         const programId = program._id.toString()
         const levelId = level._id.toString()
-        const hasSameSubscription = currentSubscriptions?.some(sub => sub.program?.id === programId && sub.level?.id === levelId)
+        const hasSameSubscription = currentSubscriptions?.some(
+            sub => sub.program.id === programId && sub.level.id === levelId && sub.state !== SubscriptionState.deleted
+        )
         if (hasSameSubscription) {
             this.logger.error(`Student already subscribed to level ${levelId} in program ${programId}.`)
             throw new ConflictException('Student already have the same subscription.')
