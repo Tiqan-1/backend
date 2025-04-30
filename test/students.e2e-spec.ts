@@ -303,7 +303,7 @@ describe('StudentsController (e2e)', () => {
         })
     })
 
-    describe('POST /api/students/subscriptions/subscription', () => {
+    describe('POST /api/students/subscriptions', () => {
         it('should succeed', async () => {
             const student = await mongoTestHelper.createStudent()
             const token = jwtService.sign({ id: student._id, role: student.role })
@@ -321,7 +321,7 @@ describe('StudentsController (e2e)', () => {
             }
 
             const response = await request(app.getHttpServer())
-                .post('/api/students/subscriptions/subscription')
+                .post('/api/students/subscriptions')
                 .set('Authorization', `Bearer ${token}`)
                 .send(body)
                 .expect(HttpStatus.CREATED)
@@ -351,7 +351,7 @@ describe('StudentsController (e2e)', () => {
             }
 
             await request(app.getHttpServer())
-                .post('/api/students/subscriptions/subscription')
+                .post('/api/students/subscriptions')
                 .set('Authorization', `Bearer ${token}`)
                 .send(body)
                 .expect(HttpStatus.NOT_ACCEPTABLE)
@@ -373,7 +373,7 @@ describe('StudentsController (e2e)', () => {
             }
 
             await request(app.getHttpServer())
-                .post('/api/students/subscriptions/subscription')
+                .post('/api/students/subscriptions')
                 .set('Authorization', `Bearer ${token}`)
                 .send(body)
                 .expect(HttpStatus.NOT_ACCEPTABLE)
@@ -396,7 +396,7 @@ describe('StudentsController (e2e)', () => {
             }
 
             await request(app.getHttpServer())
-                .post('/api/students/subscriptions/subscription')
+                .post('/api/students/subscriptions')
                 .set('Authorization', `Bearer ${token}`)
                 .send(body)
                 .expect(HttpStatus.NOT_ACCEPTABLE)
@@ -418,7 +418,7 @@ describe('StudentsController (e2e)', () => {
             }
 
             await request(app.getHttpServer())
-                .post('/api/students/subscriptions/subscription')
+                .post('/api/students/subscriptions')
                 .set('Authorization', `Bearer ${token}`)
                 .send(body)
                 .expect(HttpStatus.NOT_FOUND)
@@ -440,7 +440,7 @@ describe('StudentsController (e2e)', () => {
             }
 
             await request(app.getHttpServer())
-                .post('/api/students/subscriptions/subscription')
+                .post('/api/students/subscriptions')
                 .set('Authorization', `Bearer ${token}`)
                 .send(body)
                 .expect(HttpStatus.CONFLICT)

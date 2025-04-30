@@ -80,7 +80,7 @@ export class StudentsController {
         description: 'Trying to subscribe to a program or a level that is not open for registration.',
     })
     @ApiResponse({ status: HttpStatus.CONFLICT, description: 'Student already have the same subscription.' })
-    @Post('subscriptions/subscription')
+    @Post('subscriptions')
     @HttpCode(HttpStatus.CREATED)
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
