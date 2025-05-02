@@ -255,63 +255,6 @@ describe('TasksController (e2e)', () => {
         })
     })
 
-    describe('Get /api/tasks/:id', () => {
-        it('should succeed when called by a manager', async () => {
-            const manager = await mongoTestHelper.createManager()
-            const lesson = await mongoTestHelper.createLesson(manager._id)
-            const program = await mongoTestHelper.createProgram(manager._id)
-            const level = await mongoTestHelper.createLevel(manager._id, program._id)
-            const task = await mongoTestHelper.createTask(manager._id, level._id, [lesson._id])
-            const token = jwtService.sign({ id: manager._id, role: manager.role })
-
-            const expected = {
-                id: task._id.toString(),
-                date: task.date.toISOString(),
-                levelId: level._id.toString(),
-                lessons: [
-                    {
-                        id: lesson._id.toString(),
-                        title: lesson.title,
-                        type: lesson.type,
-                        url: lesson.url,
-                    },
-                ],
-            }
-
-            const response = await request(app.getHttpServer())
-                .get(`/api/tasks/${task._id.toString()}`)
-                .set('Authorization', `Bearer ${token}`)
-                .expect(HttpStatus.OK)
-
-            expect(response.body).toEqual(expected)
-        })
-
-        it('should succeed when called by a student', async () => {
-            const student = await mongoTestHelper.createStudent()
-            const manager = await mongoTestHelper.createManager()
-            const lesson = await mongoTestHelper.createLesson(manager._id)
-            const program = await mongoTestHelper.createProgram(manager._id)
-            const level = await mongoTestHelper.createLevel(manager._id, program._id)
-            const task = await mongoTestHelper.createTask(manager._id, level._id, [lesson._id])
-            const token = jwtService.sign({ id: student._id, role: student.role })
-
-            await request(app.getHttpServer())
-                .get(`/api/tasks/${task._id.toString()}`)
-                .set('Authorization', `Bearer ${token}`)
-                .expect(HttpStatus.OK)
-        })
-
-        it('should fail with 404 when called with an id that does not exist', async () => {
-            const student = await mongoTestHelper.createStudent()
-            const token = jwtService.sign({ id: student._id, role: student.role })
-
-            await request(app.getHttpServer())
-                .get(`/api/tasks/${new ObjectId().toString()}`)
-                .set('Authorization', `Bearer ${token}`)
-                .expect(HttpStatus.NOT_FOUND)
-        })
-    })
-
     describe('Put /api/tasks/:id', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()

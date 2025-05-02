@@ -21,7 +21,7 @@ import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { RolesGuard } from '../authentication/guards/roles.guard'
 import { TokenUser } from '../authentication/types/token-user'
 import { PaginatedTaskDto } from './dto/paginated-task.dto'
-import { CreateTaskDto, SearchTasksQueryDto, TaskDto, UpdateTaskDto } from './dto/task.dto'
+import { CreateTaskDto, SearchTasksQueryDto, UpdateTaskDto } from './dto/task.dto'
 import { TasksService } from './tasks.service'
 
 @ApiBearerAuth()
@@ -54,17 +54,6 @@ export class TasksController {
     @ApiBearerAuth()
     find(@Query() query: SearchTasksQueryDto, @Request() request: { user: TokenUser }): Promise<PaginatedTaskDto> {
         return this.service.find(query, request.user.id)
-    }
-
-    @ApiOperation({ summary: 'Gets a task', description: 'Gets a task.', deprecated: true })
-    @ApiResponse({ status: HttpStatus.OK, type: TaskDto, description: 'Task successfully found.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @Get(':id')
-    @HttpCode(HttpStatus.OK)
-    @UseGuards(JwtAuthGuard)
-    get(@Param('id') id: string): Promise<TaskDto> {
-        return this.service.findById(id)
     }
 
     @ApiOperation({ summary: 'Updates a task', description: 'Updates a task.' })

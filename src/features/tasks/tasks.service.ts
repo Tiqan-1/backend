@@ -98,19 +98,6 @@ export class TasksService {
         }
     }
 
-    /** @deprecated */
-    async oldRemove(id: string): Promise<void> {
-        const deleted = await this.taskRepository.update(
-            { _id: new ObjectId(id) },
-            { state: TaskState.deleted, expireAt: oneMonth }
-        )
-        if (!deleted) {
-            this.logger.error(`Attempt to remove Task ${id} failed.`)
-            throw new NotFoundException('Task not found.')
-        }
-        this.logger.log(`Task ${id} removed.`)
-    }
-
     async remove(id: string): Promise<void> {
         const deleted = await this.taskRepository.update(
             { _id: new ObjectId(id) },
@@ -131,16 +118,5 @@ export class TasksService {
             }
         }
         this.logger.log(`Task ${id} removed.`)
-    }
-
-    /** @deprecated */
-    async findById(id: string): Promise<TaskDto> {
-        const taskId = new ObjectId(id)
-        const found = await this.taskRepository.findById(taskId)
-        if (!found || found.state === TaskState.deleted) {
-            this.logger.error(`Attempt to find Task ${id} failed.`)
-            throw new NotFoundException('Task not found.')
-        }
-        return TaskDto.fromDocument(found)
     }
 }

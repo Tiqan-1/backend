@@ -5,14 +5,11 @@ import { CreatedDto } from '../../shared/dto/created.dto'
 import { PaginationHelper } from '../../shared/helper/pagination-helper'
 import { SearchFilterBuilder } from '../../shared/helper/search-filter.builder'
 import { ObjectId } from '../../shared/repository/types'
-import { CreateTaskDto, TaskDto } from '../tasks/dto/task.dto'
-import { TaskDocument } from '../tasks/schemas/task.schema'
 import { TasksService } from '../tasks/tasks.service'
 import { CreateLevelDto, LevelDto, SearchLevelsQueryDto, UpdateLevelDto } from './dto/level.dto'
 import { PaginatedLevelDto } from './dto/paginated-level.dto'
 import { LevelState } from './enums/level-stats.enum'
 import { LevelsRepository } from './levels.repository'
-import { LevelDocument } from './schemas/level.schema'
 
 @Injectable()
 export class LevelsService {
@@ -97,49 +94,8 @@ export class LevelsService {
             }
         }
         for (const task of found.tasks) {
-            await this.tasksService.oldRemove(task._id.toString())
+            await this.tasksService.remove(task._id.toString())
         }
         this.logger.log(`Level ${id} removed.`)
-    }
-
-    /** @deprecated */
-    async createTask(levelId: string, createTaskDto: CreateTaskDto, createdBy: ObjectId): Promise<CreatedDto> {
-        const level = await this.loadLevel(levelId)
-        const task = await this.tasksService.create(createTaskDto, createdBy)
-        ;(level.tasks as ObjectId[]).push(new ObjectId(task.id))
-        await level.save()
-        this.logger.log(`Task ${task.id} created and added to level ${levelId}.`)
-        return task
-    }
-
-    /** @deprecated */
-    async getTasks(id: string): Promise<TaskDto[]> {
-        const level = await this.loadLevel(id)
-        await level.populate({ path: 'tasks', populate: { path: 'lessons', perDocumentLimit: 10 } })
-        return TaskDto.fromDocuments(level.tasks as TaskDocument[])
-    }
-
-    /** @deprecated */
-    async removeTask(levelId: string, taskId: string): Promise<void> {
-        const level = await this.loadLevel(levelId)
-        const taskIndex = level.tasks.findIndex(id => id._id.toString() === taskId)
-        if (taskIndex === -1) {
-            this.logger.error(`Attempt to remove task ${taskId} from ${levelId} failed.`)
-            throw new NotFoundException('Task not found.')
-        }
-        ;(level.tasks as ObjectId[]).splice(taskIndex, 1)
-        await this.tasksService.remove(taskId)
-        this.logger.log(`Task ${taskId} removed from level ${levelId}.`)
-        await level.save()
-    }
-
-    /** @deprecated */
-    private async loadLevel(id: string): Promise<LevelDocument> {
-        const level = await this.levelsRepository.findById(new ObjectId(id))
-        if (!level || level.state === LevelState.deleted) {
-            this.logger.log(`Attempt to load level ${id} failed.`, level)
-            throw new NotFoundException('Level not found')
-        }
-        return level
     }
 }

@@ -6,7 +6,6 @@ import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { RolesGuard } from '../authentication/guards/roles.guard'
 import { TokenUser } from '../authentication/types/token-user'
-import { CreateTaskDto, TaskDto } from '../tasks/dto/task.dto'
 import { CreateLevelDto, SearchLevelsQueryDto, UpdateLevelDto } from './dto/level.dto'
 import { PaginatedLevelDto } from './dto/paginated-level.dto'
 import { LevelsService } from './levels.service'
@@ -70,50 +69,5 @@ export class LevelsController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     remove(@Param('id') id: string): Promise<void> {
         return this.service.remove(id)
-    }
-
-    @ApiOperation({ summary: 'Creates a task', description: 'Creates a task and adds it to the level.', deprecated: true })
-    @ApiResponse({ status: HttpStatus.CREATED, type: CreatedDto, description: 'Task successfully created.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
-    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Level not found.' })
-    @Post(':id/tasks')
-    @HttpCode(HttpStatus.CREATED)
-    @Roles(Role.Manager)
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    createTask(
-        @Body() createTaskDto: CreateTaskDto,
-        @Param('id') levelId: string,
-        @Request() request: { user: TokenUser }
-    ): Promise<CreatedDto> {
-        return this.service.createTask(levelId, createTaskDto, request.user.id)
-    }
-
-    @ApiOperation({ summary: 'Gets tasks of the level', description: `Gets tasks of the level.`, deprecated: true })
-    @ApiResponse({ status: HttpStatus.OK, type: TaskDto, isArray: true, description: 'Got tasks successfully.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
-    @Get(':levelId/tasks')
-    @Roles(Role.Manager)
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @ApiBearerAuth()
-    getTasks(@Param('levelId') levelId: string): Promise<TaskDto[]> {
-        return this.service.getTasks(levelId)
-    }
-
-    @ApiOperation({ summary: 'Removes a task', description: 'Removes a task from the level.', deprecated: true })
-    @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Task successfully removed.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
-    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Level not found.' })
-    @Delete(':levelId/tasks/:taskId')
-    @HttpCode(HttpStatus.NO_CONTENT)
-    @Roles(Role.Manager)
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    removeTask(@Param('levelId') levelId: string, @Param('taskId') taskId: string): Promise<void> {
-        return this.service.removeTask(levelId, taskId)
     }
 }
