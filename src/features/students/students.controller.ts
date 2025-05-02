@@ -190,7 +190,7 @@ export class StudentsController {
     @ApiResponse({ status: HttpStatus.OK, type: PaginatedProgramDto, description: 'Got programs successfully.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @Get('v2/programs')
+    @Get('programs/v2')
     @HttpCode(HttpStatus.OK)
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()

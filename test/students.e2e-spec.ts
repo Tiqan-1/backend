@@ -648,7 +648,7 @@ describe('StudentsController (e2e)', () => {
         })
     })
 
-    describe('GET /api/students/v2/programs', () => {
+    describe('GET /api/students/programs/v2', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
             const lesson = await mongoTestHelper.createLesson(manager._id)
@@ -672,7 +672,7 @@ describe('StudentsController (e2e)', () => {
             await mongoTestHelper.createProgram(manager._id)
 
             const response = await request(app.getHttpServer())
-                .get('/api/students/v2/programs')
+                .get('/api/students/programs/v2')
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.OK)
 
@@ -709,7 +709,7 @@ describe('StudentsController (e2e)', () => {
             await mongoTestHelper.createProgram(manager._id)
 
             const response = await request(app.getHttpServer())
-                .get('/api/students/v2/programs')
+                .get('/api/students/programs/v2')
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.OK)
 
@@ -741,7 +741,7 @@ describe('StudentsController (e2e)', () => {
             await mongoTestHelper.createProgram(manager._id)
 
             const response = await request(app.getHttpServer())
-                .get('/api/students/v2/programs')
+                .get('/api/students/programs/v2')
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.OK)
 
@@ -777,7 +777,7 @@ describe('StudentsController (e2e)', () => {
             await mongoTestHelper.createProgram(manager._id)
 
             const response = await request(app.getHttpServer())
-                .get('/api/students/v2/programs?state=published')
+                .get('/api/students/programs/v2?state=published')
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.OK)
 
