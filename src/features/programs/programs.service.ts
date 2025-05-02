@@ -8,7 +8,14 @@ import { SearchFilterBuilder } from '../../shared/helper/search-filter.builder'
 import { ObjectId } from '../../shared/repository/types'
 import { LevelsService } from '../levels/levels.service'
 import { PaginatedProgramDto } from './dto/paginated-program.dto'
-import { CreateProgramDto, ProgramDto, SearchProgramQueryDto, StudentProgramDto, UpdateProgramDto } from './dto/program.dto'
+import {
+    CreateProgramDto,
+    ProgramDto,
+    SearchProgramQueryDto,
+    SearchStudentProgramQueryDto,
+    StudentProgramDto,
+    UpdateProgramDto,
+} from './dto/program.dto'
 import { ProgramState } from './enums/program-state.enum'
 import { ProgramsRepository } from './programs.repository'
 import { ProgramsThumbnailsRepository } from './programs.thumbnails.repository'
@@ -40,7 +47,10 @@ export class ProgramsService {
         return { id: created._id.toString() }
     }
 
-    async find(query: SearchProgramQueryDto, searchUserId?: ObjectId): Promise<PaginatedProgramDto> {
+    async find(
+        query: SearchProgramQueryDto | SearchStudentProgramQueryDto,
+        searchUserId?: ObjectId
+    ): Promise<PaginatedProgramDto> {
         const filter = SearchFilterBuilder.init()
             .withObjectId('_id', query.id)
             .withObjectId('createdBy', searchUserId)

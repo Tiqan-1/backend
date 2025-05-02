@@ -184,17 +184,17 @@ export class StudentsController {
         return this.service.getOpenPrograms(limit, skip)
     }
 
-    @ApiOperation({ summary: 'Gets open programs', description: 'Gets programs that are currently open for registration.' })
+    @ApiOperation({ summary: 'Gets programs', description: 'Gets programs that.' })
     @ApiQuery({ name: 'limit', type: String, required: false, description: 'Controls the number of returned elements' })
     @ApiQuery({ name: 'skip', type: String, required: false, description: 'Controls the number of elements to be skipped' })
     @ApiResponse({ status: HttpStatus.OK, type: PaginatedProgramDto, description: 'Got programs successfully.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @Get('open-programs/v2')
+    @Get('v2/programs')
     @HttpCode(HttpStatus.OK)
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
-    findOpenPrograms(@Query() query: SearchStudentProgramQueryDto): Promise<PaginatedProgramDto> {
-        return this.service.findOpenPrograms(query)
+    findPrograms(@Query() query: SearchStudentProgramQueryDto): Promise<PaginatedProgramDto> {
+        return this.service.findPrograms(query)
     }
 }

@@ -1,4 +1,4 @@
-import { ApiHideProperty, ApiProperty, IntersectionType, OmitType, PartialType } from '@nestjs/swagger'
+import { ApiProperty, IntersectionType, OmitType, PartialType } from '@nestjs/swagger'
 import { IsBase64, IsDateString, IsEnum, IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { SearchQueryDto } from '../../../shared/dto/search.query.dto'
 import { normalizeDate } from '../../../shared/helper/date.helper'
@@ -172,7 +172,11 @@ export class SearchProgramQueryDto extends IntersectionType(
 ) {}
 
 export class SearchStudentProgramQueryDto extends OmitType(SearchProgramQueryDto, ['state'] as const) {
-    @ApiHideProperty()
-    @IsEnum(ProgramState)
-    state = ProgramState.published
+    @ApiProperty({
+        type: String,
+        required: false,
+        enum: [ProgramState.published, ProgramState.suspended, ProgramState.cancelled],
+    })
+    @IsOptional()
+    state: unknown = { $in: [ProgramState.published, ProgramState.suspended, ProgramState.cancelled] }
 }

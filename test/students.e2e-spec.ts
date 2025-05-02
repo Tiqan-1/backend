@@ -648,7 +648,7 @@ describe('StudentsController (e2e)', () => {
         })
     })
 
-    describe('GET /api/students/open-programs/v2', () => {
+    describe('GET /api/students/v2/programs', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
             const lesson = await mongoTestHelper.createLesson(manager._id)
@@ -658,15 +658,6 @@ describe('StudentsController (e2e)', () => {
             level.tasks = [task._id]
             await level.save()
             program.levels = [level._id]
-            await program.save()
-
-            const now = new Date()
-            const yesterday = new Date(now)
-            yesterday.setDate(now.getDate() - 1)
-            const tomorrow = new Date(now)
-            tomorrow.setDate(now.getDate() + 1)
-            program.registrationStart = yesterday
-            program.registrationEnd = tomorrow
             program.state = ProgramState.published
             await program.save()
 
@@ -681,7 +672,7 @@ describe('StudentsController (e2e)', () => {
             await mongoTestHelper.createProgram(manager._id)
 
             const response = await request(app.getHttpServer())
-                .get('/api/students/open-programs/v2')
+                .get('/api/students/v2/programs')
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.OK)
 
@@ -694,6 +685,106 @@ describe('StudentsController (e2e)', () => {
             expect(programs[0].levels[0].tasks[0].date).toEqual(task.date.toISOString())
             expect(programs[0].levels[0].tasks[0].lessons[0].url).toEqual(lesson.url)
             expect(programs[0].thumbnail).toContain(`base64-`)
+        })
+
+        it('should not return unpublished programs', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const lesson = await mongoTestHelper.createLesson(manager._id)
+            const program = await mongoTestHelper.createProgram(manager._id)
+            const level = await mongoTestHelper.createLevel(manager._id, program._id)
+            const task = await mongoTestHelper.createTask(manager._id, level._id, [lesson._id])
+            level.tasks = [task._id]
+            await level.save()
+            program.levels = [level._id]
+            await program.save()
+
+            vitest
+                .spyOn(ProgramsThumbnailsRepository.prototype, 'findOne')
+                .mockImplementation(thumbnail => Promise.resolve(`base64-${thumbnail}`))
+
+            const student = await mongoTestHelper.createStudent()
+            const token = jwtService.sign({ id: student._id, role: student.role })
+
+            // unpublished program: should not be returned
+            await mongoTestHelper.createProgram(manager._id)
+
+            const response = await request(app.getHttpServer())
+                .get('/api/students/v2/programs')
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.OK)
+
+            expect(response.body).toBeDefined()
+            const body = response.body as PaginatedProgramDto
+            expect(body.items.length).toEqual(0)
+        })
+
+        it('should not return deleted programs', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const lesson = await mongoTestHelper.createLesson(manager._id)
+            const program = await mongoTestHelper.createProgram(manager._id)
+            const level = await mongoTestHelper.createLevel(manager._id, program._id)
+            const task = await mongoTestHelper.createTask(manager._id, level._id, [lesson._id])
+            level.tasks = [task._id]
+            await level.save()
+            program.levels = [level._id]
+            program.state = ProgramState.deleted
+            await program.save()
+
+            vitest
+                .spyOn(ProgramsThumbnailsRepository.prototype, 'findOne')
+                .mockImplementation(thumbnail => Promise.resolve(`base64-${thumbnail}`))
+
+            const student = await mongoTestHelper.createStudent()
+            const token = jwtService.sign({ id: student._id, role: student.role })
+
+            // unpublished program: should not be returned
+            await mongoTestHelper.createProgram(manager._id)
+
+            const response = await request(app.getHttpServer())
+                .get('/api/students/v2/programs')
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.OK)
+
+            expect(response.body).toBeDefined()
+            const body = response.body as PaginatedProgramDto
+            expect(body.items.length).toEqual(0)
+        })
+
+        it('should filter by state correctly', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const lesson = await mongoTestHelper.createLesson(manager._id)
+            const program = await mongoTestHelper.createProgram(manager._id)
+            const program2 = await mongoTestHelper.createProgram(manager._id)
+            const level = await mongoTestHelper.createLevel(manager._id, program._id)
+            const task = await mongoTestHelper.createTask(manager._id, level._id, [lesson._id])
+            level.tasks = [task._id]
+            await level.save()
+            program.levels = [level._id]
+            program.state = ProgramState.published
+            await program.save()
+            program2.levels = [level._id]
+            program2.state = ProgramState.cancelled
+            await program2.save()
+
+            vitest
+                .spyOn(ProgramsThumbnailsRepository.prototype, 'findOne')
+                .mockImplementation(thumbnail => Promise.resolve(`base64-${thumbnail}`))
+
+            const student = await mongoTestHelper.createStudent()
+            const token = jwtService.sign({ id: student._id, role: student.role })
+
+            // unpublished program: should not be returned
+            await mongoTestHelper.createProgram(manager._id)
+
+            const response = await request(app.getHttpServer())
+                .get('/api/students/v2/programs?state=published')
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.OK)
+
+            expect(response.body).toBeDefined()
+            const body = response.body as PaginatedProgramDto
+            expect(body.items.length).toEqual(1)
+            expect(body.items[0].id).toEqual(program._id.toString())
         })
     })
 })

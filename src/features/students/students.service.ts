@@ -109,7 +109,7 @@ export class StudentsService {
         return this.programsService.findAllForStudents(limit, skip)
     }
 
-    findOpenPrograms(query: SearchStudentProgramQueryDto): Promise<PaginatedProgramDto> {
+    findPrograms(query: SearchStudentProgramQueryDto): Promise<PaginatedProgramDto> {
         return this.programsService.find(query)
     }
 
