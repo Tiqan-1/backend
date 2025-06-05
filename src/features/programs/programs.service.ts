@@ -13,7 +13,6 @@ import {
     ProgramDto,
     SearchProgramQueryDto,
     SearchStudentProgramQueryDto,
-    StudentProgramDto,
     UpdateProgramDto,
 } from './dto/program.dto'
 import { ProgramState } from './enums/program-state.enum'
@@ -71,15 +70,6 @@ export class ProgramsService {
         ])
         await this.loadThumbnails(found)
         return PaginationHelper.wrapResponse(ProgramDto.fromDocuments(found), query.page, query.pageSize, total)
-    }
-
-    /** @deprecated */
-    async findAllForStudents(limit?: number, skip?: number): Promise<StudentProgramDto[]> {
-        const now = new Date()
-        const filter = { state: ProgramState.published, registrationStart: { $lt: now }, registrationEnd: { $gt: now } }
-        const foundPrograms = await this.programsRepository.find(filter, limit, skip)
-        await this.loadThumbnails(foundPrograms)
-        return StudentProgramDto.fromDocuments(foundPrograms)
     }
 
     async update(id: string, updateProgramDto: UpdateProgramDto, managerObjectId: ObjectId): Promise<void> {

@@ -1,7 +1,17 @@
-import { Injectable, InternalServerErrorException, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common'
+import {
+    ConflictException,
+    Injectable,
+    InternalServerErrorException,
+    Logger,
+    NotAcceptableException,
+    NotFoundException,
+    UnauthorizedException,
+} from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import * as bcrypt from 'bcryptjs'
 import { v4 as uuidv4 } from 'uuid'
+import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
+import { StudentStatus } from '../students/enums/student-status'
 import { TokensService } from '../tokens/tokens.service'
 import { UserDocument } from '../users/schemas/user.schema'
 import { UsersService } from '../users/users.service'
@@ -14,6 +24,7 @@ export class AuthenticationService {
 
     constructor(
         private readonly usersService: UsersService,
+        private readonly documentsService: SharedDocumentsService,
         private readonly jwtService: JwtService,
         private readonly tokensService: TokensService
     ) {}
@@ -41,36 +52,40 @@ export class AuthenticationService {
         return newTokens
     }
 
-    async validateStudent(email: string, password: string): Promise<UserDocument | undefined> {
-        const user = await this.usersService.findByEmail(email)
-        if (!user) {
+    async validateStudent(email: string, password: string): Promise<UserDocument> {
+        const student = await this.documentsService.getStudentByEmail(email)
+        if (!student) {
             this.logger.error(`Invalid attempt to login a student user with email: ${email}. User Not Found.`)
-            return undefined
+            throw new UnauthorizedException(`Invalid credentials.`)
         }
-        if (!bcrypt.compareSync(password, user.password)) {
+        if (!bcrypt.compareSync(password, student.password)) {
             this.logger.error(`Invalid attempt to login a student user with email: ${email}. Password mismatch.`)
-            return undefined
+            throw new UnauthorizedException(`Invalid credentials.`)
         }
-        if (user.role !== Role.Student) {
+        if (student.role !== Role.Student) {
             this.logger.error(`Invalid attempt to login a student user with email: ${email}. Invalid role.`)
-            return undefined
+            throw new ConflictException(`Invalid role.`)
         }
-        return user
+        if (student.status !== StudentStatus.active) {
+            this.logger.error(`Invalid attempt to login a student user with email: ${email}. Invalid status ${student.status}.`)
+            throw new NotAcceptableException(`Account not active.`)
+        }
+        return student
     }
 
-    async validateManager(email: string, password: string): Promise<UserDocument | undefined> {
+    async validateManager(email: string, password: string): Promise<UserDocument> {
         const user = await this.usersService.findByEmail(email)
         if (!user) {
             this.logger.error(`Invalid attempt to login a manager user with email: ${email}. User Not Found.`)
-            return undefined
+            throw new UnauthorizedException(`Invalid credentials.`)
         }
         if (!bcrypt.compareSync(password, user.password)) {
             this.logger.error(`Invalid attempt to login a manager user with email: ${email}. Password mismatch.`)
-            return undefined
+            throw new UnauthorizedException(`Invalid credentials.`)
         }
         if (user.role !== Role.Manager) {
             this.logger.error(`Invalid attempt to login a manager user with email: ${email}. Invalid role.`)
-            return undefined
+            throw new ConflictException(`Invalid role.`)
         }
         return user
     }

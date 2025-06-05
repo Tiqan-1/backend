@@ -27,7 +27,7 @@ import { StudentsService } from '../src/features/students/students.service'
 import { SubjectsRepository } from '../src/features/subjects/subjects.repository'
 import { SubjectsService } from '../src/features/subjects/subjects.service'
 import { PaginatedStudentSubscriptionDto } from '../src/features/subscriptions/dto/paginated-subscripition.dto'
-import { CreateSubscriptionDto, StudentSubscriptionDto } from '../src/features/subscriptions/dto/subscription.dto'
+import { CreateSubscriptionDto } from '../src/features/subscriptions/dto/subscription.dto'
 import { SubscriptionState } from '../src/features/subscriptions/enums/subscription-state.enum'
 import { SubscriptionDocument } from '../src/features/subscriptions/schemas/subscription.schema'
 import { SubscriptionsRepository } from '../src/features/subscriptions/subscriptions.repository'
@@ -447,47 +447,6 @@ describe('StudentsController (e2e)', () => {
         })
     })
 
-    describe('GET /api/students/subscriptions', () => {
-        it('should succeed', async () => {
-            const manager = await mongoTestHelper.createManager()
-            const lesson = await mongoTestHelper.createLesson(manager._id)
-            const program = await mongoTestHelper.createProgram(manager._id)
-            const level = await mongoTestHelper.createLevel(manager._id, program._id)
-            const task = await mongoTestHelper.createTask(manager._id, level._id, [lesson._id])
-            level.tasks = [task._id]
-            await level.save()
-            program.levels = [level._id]
-            await program.save()
-            const student = await mongoTestHelper.createStudent()
-            const subscription = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
-            student.subscriptions = [subscription._id]
-            await student.save()
-            const token = jwtService.sign({ id: student._id, role: student.role })
-
-            const response = await request(app.getHttpServer())
-                .get('/api/students/subscriptions')
-                .set('Authorization', `Bearer ${token}`)
-                .expect(HttpStatus.OK)
-
-            expect(response.body).toBeDefined()
-            const {
-                id,
-                level: levelDto,
-                program: programDto,
-                state,
-                subscriptionDate,
-            } = (response.body as StudentSubscriptionDto[])[0]
-            expect(id).toEqual(subscription._id.toString())
-            expect(programDto?.id).toEqual(program._id.toString())
-            expect(programDto?.levelIds).toEqual([level._id.toString()])
-            expect(levelDto?.id).toEqual(level._id.toString())
-            expect(levelDto?.tasks[0].id).toEqual(task._id.toString())
-            expect(levelDto?.tasks[0].lessons[0].id).toEqual(lesson._id.toString())
-            expect(state).toEqual(subscription.state)
-            expect(subscriptionDate).toEqual(subscription.subscriptionDate.toISOString())
-        })
-    })
-
     describe('GET /api/students/subscriptions/v2', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
@@ -597,54 +556,6 @@ describe('StudentsController (e2e)', () => {
 
             const { subscriptions } = (await mongoTestHelper.getStudentModel().findOne()) as StudentDocument
             expect(subscriptions).toEqual([])
-        })
-    })
-
-    describe('GET /api/students/open-programs', () => {
-        it('should succeed', async () => {
-            const manager = await mongoTestHelper.createManager()
-            const lesson = await mongoTestHelper.createLesson(manager._id)
-            const program = await mongoTestHelper.createProgram(manager._id)
-            const level = await mongoTestHelper.createLevel(manager._id, program._id)
-            const task = await mongoTestHelper.createTask(manager._id, level._id, [lesson._id])
-            level.tasks = [task._id]
-            await level.save()
-            program.levels = [level._id]
-            await program.save()
-
-            const now = new Date()
-            const yesterday = new Date(now)
-            yesterday.setDate(now.getDate() - 1)
-            const tomorrow = new Date(now)
-            tomorrow.setDate(now.getDate() + 1)
-            program.registrationStart = yesterday
-            program.registrationEnd = tomorrow
-            program.state = ProgramState.published
-            await program.save()
-
-            vitest
-                .spyOn(ProgramsThumbnailsRepository.prototype, 'findOne')
-                .mockImplementation(thumbnail => Promise.resolve(`base64-${thumbnail}`))
-
-            const student = await mongoTestHelper.createStudent()
-            const token = jwtService.sign({ id: student._id, role: student.role })
-
-            // unpublished program: should not be returned
-            await mongoTestHelper.createProgram(manager._id)
-
-            const response = await request(app.getHttpServer())
-                .get('/api/students/open-programs')
-                .set('Authorization', `Bearer ${token}`)
-                .expect(HttpStatus.OK)
-
-            expect(response.body).toBeDefined()
-            const programs = response.body as StudentProgramDto[]
-            expect(programs.length).toEqual(1)
-            expect(programs[0].id).toEqual(program._id.toString())
-            expect(programs[0].levels[0].name).toEqual(level.name)
-            expect(programs[0].levels[0].tasks[0].date).toEqual(task.date.toISOString())
-            expect(programs[0].levels[0].tasks[0].lessons[0].url).toEqual(lesson.url)
-            expect(programs[0].thumbnail).toContain(`base64-`)
         })
     })
 

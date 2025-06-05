@@ -8,7 +8,7 @@ import { AuthenticationService } from '../authentication/authentication.service'
 import { AuthenticationResponseDto } from '../authentication/dto/authentication-response.dto'
 import { Role } from '../authentication/enums/role.enum'
 import { PaginatedProgramDto } from '../programs/dto/paginated-program.dto'
-import { SearchStudentProgramQueryDto, StudentProgramDto } from '../programs/dto/program.dto'
+import { SearchStudentProgramQueryDto } from '../programs/dto/program.dto'
 import { ProgramsService } from '../programs/programs.service'
 import { PaginatedStudentSubscriptionDto } from '../subscriptions/dto/paginated-subscripition.dto'
 import { SearchSubscriptionsQueryDto } from '../subscriptions/dto/search-subscriptions-query.dto'
@@ -42,7 +42,7 @@ export class StudentsService {
             const createdStudent = await this.studentRepository.create({
                 ...student,
                 role: Role.Student,
-                status: StudentStatus.active,
+                status: StudentStatus.inactive,
             })
             return this.authenticationService.generateUserTokens(createdStudent)
         } catch (error) {
@@ -65,11 +65,6 @@ export class StudentsService {
         }
         await this.subscriptionsService.update(subscriptionId, { state: SubscriptionState.suspended })
         this.logger.log(`Student ${student.email} suspended subscription ${subscriptionId}.`)
-    }
-
-    async getSubscriptions(studentId: ObjectId, limit?: number, skip?: number): Promise<StudentSubscriptionDto[]> {
-        const student = await this.loadStudent(studentId)
-        return this.subscriptionsService.getManyForStudent(student.subscriptions as ObjectId[], limit, skip)
     }
 
     async findSubscriptions(query: SearchSubscriptionsQueryDto, studentId: ObjectId): Promise<PaginatedStudentSubscriptionDto> {
@@ -102,11 +97,6 @@ export class StudentsService {
         await student.save()
         await this.subscriptionsService.remove(subscriptionId)
         this.logger.log(`Student ${student.email} removed subscription ${subscriptionId}.`)
-    }
-
-    /** @deprecated */
-    getOpenPrograms(limit?: number, skip?: number): Promise<StudentProgramDto[]> {
-        return this.programsService.findAllForStudents(limit, skip)
     }
 
     findPrograms(query: SearchStudentProgramQueryDto): Promise<PaginatedProgramDto> {

@@ -2,7 +2,6 @@ import { ApiProperty, IntersectionType, OmitType, PartialType } from '@nestjs/sw
 import { IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { SearchQueryDto } from '../../../shared/dto/search.query.dto'
 import { arePopulated } from '../../../shared/helper/populated-type.helper'
-import { WrapperType } from '../../../shared/types/shared-types'
 import { LessonDto } from '../../lessons/dto/lesson.dto'
 import { SimpleManagerDto } from '../../managers/dto/manager.dto'
 import { ManagerDocument } from '../../managers/schemas/manager.schema'
@@ -19,7 +18,7 @@ export class SubjectDto {
 
     @ApiProperty({ type: () => SimpleManagerDto, required: true })
     @ValidateNested()
-    createdBy: WrapperType<SimpleManagerDto>
+    createdBy: SimpleManagerDto
 
     @ApiProperty({ type: String, required: false, example: 'الفقه على المذهب الشافعي' })
     @IsString()

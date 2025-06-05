@@ -1,8 +1,6 @@
 import { HttpStatus, INestApplication } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
-import { getModelToken } from '@nestjs/mongoose'
 import { Test, TestingModule } from '@nestjs/testing'
-import { Model } from 'mongoose'
 import request from 'supertest'
 import { App } from 'supertest/types'
 import { afterAll, afterEach, beforeAll, describe, it, vi } from 'vitest'
@@ -14,9 +12,11 @@ import { StudentsLocalStrategy } from '../src/features/authentication/strategies
 import { RefreshToken } from '../src/features/tokens/schemas/refresh-token.schema'
 import { TokensRepository } from '../src/features/tokens/tokens.repository'
 import { TokensService } from '../src/features/tokens/tokens.service'
-import { User, UserDocument } from '../src/features/users/schemas/user.schema'
+import { UserDocument } from '../src/features/users/schemas/user.schema'
 import { UsersRepository } from '../src/features/users/users.repository'
 import { UsersService } from '../src/features/users/users.service'
+import { SharedDocumentsService } from '../src/shared/database-services/shared-documents.service'
+import { ConfigServiceProvider, JwtMockModule } from '../src/shared/test/helper/jwt-authentication-test.helper'
 import { MongoTestHelper } from '../src/shared/test/helper/mongo-test.helper'
 
 const jwtService = {
@@ -26,42 +26,35 @@ const jwtService = {
 describe('AuthenticationController (e2e)', () => {
     let app: INestApplication<App>
     let mongoTestHelper: MongoTestHelper
-    let userModel: Model<User>
-    let refreshTokenModel: Model<RefreshToken>
 
     beforeAll(async () => {
         mongoTestHelper = await MongoTestHelper.instance()
-        userModel = mongoTestHelper.getUserModel()
-        refreshTokenModel = mongoTestHelper.getRefreshTokenModel()
 
-        const module: TestingModule = await Test.createTestingModule({
-            imports: [],
-            controllers: [AuthenticationController],
-            providers: [
-                AuthenticationService,
-                JwtService,
-                UsersService,
-                UsersRepository,
-                TokensService,
-                TokensRepository,
-                StudentsLocalStrategy,
-                ManagersLocalStrategy,
-                {
-                    provide: getModelToken(User.name),
-                    useValue: userModel,
-                },
-                {
-                    provide: getModelToken(RefreshToken.name),
-                    useValue: refreshTokenModel,
-                },
-            ],
-        })
-            .overrideProvider(JwtService)
-            .useValue(jwtService)
-            .compile()
+        try {
+            const module: TestingModule = await Test.createTestingModule({
+                imports: [JwtMockModule],
+                controllers: [AuthenticationController],
+                providers: [
+                    AuthenticationService,
+                    SharedDocumentsService,
+                    JwtService,
+                    UsersService,
+                    UsersRepository,
+                    TokensService,
+                    TokensRepository,
+                    StudentsLocalStrategy,
+                    ManagersLocalStrategy,
+                    { provide: JwtService, useValue: jwtService },
+                    ConfigServiceProvider,
+                    ...mongoTestHelper.providers,
+                ],
+            }).compile()
 
-        app = module.createNestApplication()
-        await app.init()
+            app = module.createNestApplication()
+            await app.init()
+        } catch (error) {
+            console.log(error)
+        }
     })
 
     afterAll(async () => {
@@ -94,11 +87,11 @@ describe('AuthenticationController (e2e)', () => {
         return request(app.getHttpServer()).post('/api/authentication/manager-login').send(body).expect(HttpStatus.OK)
     })
 
-    it('POST /api/authentication/manager-login with student, should return 401', async () => {
+    it('POST /api/authentication/manager-login with student, should return 409', async () => {
         const student = await mongoTestHelper.createStudent()
 
         const body = { email: student.email, password: 'testPassword' }
-        return request(app.getHttpServer()).post('/api/authentication/manager-login').send(body).expect(HttpStatus.UNAUTHORIZED)
+        return request(app.getHttpServer()).post('/api/authentication/manager-login').send(body).expect(HttpStatus.CONFLICT)
     })
 
     it('POST /api/authentication/logout with valid token, should return 200', async () => {
@@ -107,6 +100,7 @@ describe('AuthenticationController (e2e)', () => {
             user: { id: 'userId', name: 'test user' } as UserDocument,
             createdAt: new Date(),
         }
+        const refreshTokenModel = mongoTestHelper.getRefreshTokenModel()
         const model = new refreshTokenModel(token)
         await model.save()
 

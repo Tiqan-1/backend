@@ -2,9 +2,8 @@ import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
 import { JwtModuleOptions } from '@nestjs/jwt/dist/interfaces/jwt-module-options.interface'
-import { MongooseModule } from '@nestjs/mongoose'
 import { PassportModule } from '@nestjs/passport'
-import { RefreshToken, RefreshTokenSchema } from '../tokens/schemas/refresh-token.schema'
+import { SharedDocumentsModule } from '../../shared/database-services/shared-documents.module'
 import { TokensModule } from '../tokens/tokens.module'
 import { UsersModule } from '../users/users.module'
 import { AuthenticationController } from './authentication.controller'
@@ -25,7 +24,7 @@ async function getJwtModuleOptions(): Promise<JwtModuleOptions> {
 
 @Module({
     imports: [
-        MongooseModule.forFeature([{ name: RefreshToken.name, schema: RefreshTokenSchema }]),
+        SharedDocumentsModule,
         UsersModule,
         TokensModule,
         PassportModule,

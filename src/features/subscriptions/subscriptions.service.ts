@@ -99,38 +99,6 @@ export class SubscriptionsService {
         return PaginationHelper.wrapResponse(SubscriptionDto.fromDocuments(found), query.page, query.pageSize, total)
     }
 
-    async findAll(limit?: number, skip?: number): Promise<SubscriptionDto[]> {
-        const found = await this.repository.findAll(limit, skip)
-        for (const foundElement of found) {
-            await foundElement.populate([
-                {
-                    path: 'program',
-                    populate: [
-                        { path: 'levels', populate: { path: 'createdBy', select: 'name email' } },
-                        { path: 'createdBy', select: 'name email' },
-                    ],
-                },
-                {
-                    path: 'level',
-                    populate: [{ path: 'createdBy', select: 'name email' }],
-                },
-                {
-                    path: 'subscriber',
-                    select: 'name email',
-                },
-            ])
-        }
-        return SubscriptionDto.fromDocuments(found)
-    }
-
-    async findOne(id: string): Promise<SubscriptionDto> {
-        const found = await this.repository.findById(new ObjectId(id))
-        if (!found) {
-            throw new NotFoundException(`Subscription with id ${id} not found.`)
-        }
-        return SubscriptionDto.fromDocument(found)
-    }
-
     async update(id: string, updateObject: UpdateSubscriptionDto): Promise<void> {
         await this.repository.update({ _id: new ObjectId(id) }, updateObject)
     }

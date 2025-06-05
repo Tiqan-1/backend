@@ -58,6 +58,14 @@ export class SharedDocumentsService {
         return this.getDocument<StudentDocument>(id, this.studentModel)
     }
 
+    async getStudentByEmail(email: string): Promise<StudentDocument | undefined> {
+        const found = await this.studentModel.findOne({ email }).exec()
+        if (!found) {
+            return undefined
+        }
+        return found
+    }
+
     async getStudents(ids: string[]): Promise<StudentDocument[]> {
         return this.getDocuments<StudentDocument>(ids, this.studentModel)
     }

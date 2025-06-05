@@ -7,10 +7,10 @@ import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { TokenUser } from '../authentication/types/token-user'
 import { PaginatedProgramDto } from '../programs/dto/paginated-program.dto'
-import { SearchStudentProgramQueryDto, StudentProgramDto } from '../programs/dto/program.dto'
+import { SearchStudentProgramQueryDto } from '../programs/dto/program.dto'
 import { PaginatedStudentSubscriptionDto } from '../subscriptions/dto/paginated-subscripition.dto'
 import { SearchStudentSubscriptionsQueryDto } from '../subscriptions/dto/search-subscriptions-query.dto'
-import { CreateSubscriptionDto, StudentSubscriptionDto } from '../subscriptions/dto/subscription.dto'
+import { CreateSubscriptionDto } from '../subscriptions/dto/subscription.dto'
 import { SignUpStudentDto } from './dto/student.dto'
 import { StudentsService } from './students.service'
 
@@ -91,29 +91,6 @@ export class StudentsController {
         return this.service.subscribe(createSubscriptionDto, request.user.id)
     }
 
-    @ApiOperation({ summary: 'Gets subscriptions', description: 'Gets subscriptions of the student.', deprecated: true })
-    @ApiQuery({ name: 'limit', type: String, required: false, description: 'Controls the number of returned elements' })
-    @ApiQuery({ name: 'skip', type: String, required: false, description: 'Controls the number of elements to be skipped' })
-    @ApiResponse({
-        status: HttpStatus.OK,
-        type: StudentSubscriptionDto,
-        isArray: true,
-        description: 'Got subscriptions successfully.',
-    })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @Get('subscriptions')
-    @HttpCode(HttpStatus.OK)
-    @UseGuards(JwtAuthGuard)
-    @ApiBearerAuth()
-    getSubscriptions(
-        @Request() request: { user: TokenUser },
-        @Query('limit') limit?: number,
-        @Query('skip') skip?: number
-    ): Promise<StudentSubscriptionDto[]> {
-        return this.service.getSubscriptions(request.user.id, limit, skip)
-    }
-
     @ApiOperation({ summary: 'Finds subscriptions', description: 'Finds subscriptions of the student.' })
     @ApiQuery({ name: 'limit', type: String, required: false, description: 'Controls the number of returned elements' })
     @ApiQuery({ name: 'skip', type: String, required: false, description: 'Controls the number of elements to be skipped' })
@@ -159,29 +136,6 @@ export class StudentsController {
     @ApiBearerAuth()
     removeSubscription(@Param('id') subscriptionId: string, @Request() request: { user: TokenUser }): Promise<void> {
         return this.service.removeSubscription(subscriptionId, request.user.id)
-    }
-
-    @ApiOperation({
-        summary: 'Gets open programs',
-        description: 'Gets programs that are currently open for registration.',
-        deprecated: true,
-    })
-    @ApiQuery({ name: 'limit', type: String, required: false, description: 'Controls the number of returned elements' })
-    @ApiQuery({ name: 'skip', type: String, required: false, description: 'Controls the number of elements to be skipped' })
-    @ApiResponse({
-        status: HttpStatus.OK,
-        type: StudentProgramDto,
-        isArray: true,
-        description: 'Got programs successfully.',
-    })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @Get('open-programs')
-    @HttpCode(HttpStatus.OK)
-    @UseGuards(JwtAuthGuard)
-    @ApiBearerAuth()
-    getOpenPrograms(@Query('limit') limit?: number, @Query('skip') skip?: number): Promise<StudentProgramDto[]> {
-        return this.service.getOpenPrograms(limit, skip)
     }
 
     @ApiOperation({ summary: 'Gets programs', description: 'Gets programs that.' })
