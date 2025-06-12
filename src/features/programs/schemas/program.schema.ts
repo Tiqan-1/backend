@@ -4,6 +4,7 @@ import { ObjectId, Populated } from '../../../shared/repository/types'
 import { Level, LevelDocument } from '../../levels/schemas/level.schema'
 import { ManagerDocument } from '../../managers/schemas/manager.schema'
 import { ProgramState } from '../enums/program-state.enum'
+import { ProgramSubscriptionType } from '../enums/program-subscription-type.enum'
 
 export type ProgramDocument = HydratedDocument<Program>
 
@@ -23,6 +24,12 @@ export class Program {
 
     @Prop({ required: true, type: String, enum: ProgramState, default: ProgramState.created })
     state: ProgramState
+
+    @Prop({ required: true, type: String, enum: ProgramSubscriptionType, default: ProgramSubscriptionType.public })
+    subscriptionType: ProgramSubscriptionType
+
+    @Prop({ required: false, type: String })
+    subscriptionFormUrl?: string
 
     @Prop({ required: true, type: Date })
     start: Date

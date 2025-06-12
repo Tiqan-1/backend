@@ -1,6 +1,7 @@
 import { HttpStatus, INestApplication } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
+import { ObjectId } from 'src/shared/repository/types'
 import request from 'supertest'
 import { App } from 'supertest/types'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
@@ -114,6 +115,27 @@ describe('SubscriptionsController (e2e)', () => {
             expect(ids).toContain(subscription1._id.toString())
         })
 
+        it('should only return subscriptions of programs created by the current manager', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+            const manager2 = await mongoTestHelper.createManager('2')
+            const program = await mongoTestHelper.createProgram(manager2._id)
+            const level = await mongoTestHelper.createLevel(manager2._id, program._id)
+            program.levels = [level._id]
+            await program.save()
+            const student = await mongoTestHelper.createStudent()
+            await mongoTestHelper.createSubscription(program._id, level._id, student._id)
+
+            const response = await request(app.getHttpServer())
+                .get(`/api/subscriptions/v2?programId=${program._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.OK)
+
+            expect(response.body).toBeTruthy()
+            const body = response.body as PaginatedSubscriptionDto
+            expect(body.items.length).toEqual(0)
+        })
+
         it('should fail with 403 if called by a student', async () => {
             const student = await mongoTestHelper.createStudent()
             const token = jwtService.sign({ id: student._id, role: student.role })
@@ -192,6 +214,69 @@ describe('SubscriptionsController (e2e)', () => {
 
             await request(app.getHttpServer())
                 .delete(`/api/subscriptions/anyId`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.FORBIDDEN)
+        })
+    })
+
+    describe('PUT api/subscriptions/:id/approve', () => {
+        it('should succeed', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+            const program = await mongoTestHelper.createProgram(manager._id)
+            const level = await mongoTestHelper.createLevel(manager._id, program._id)
+            program.levels = [level._id]
+            await program.save()
+            const student = await mongoTestHelper.createStudent()
+            const subscription = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
+            subscription.state = SubscriptionState.pending
+            await subscription.save()
+
+            await request(app.getHttpServer())
+                .put(`/api/subscriptions/${subscription._id.toString()}/approve`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.NO_CONTENT)
+
+            const approved = (await mongoTestHelper.getSubscriptionModel().findOne()) as SubscriptionDocument
+            expect(approved.state).toEqual(SubscriptionState.active)
+        })
+
+        it('should fail with 406 if subscription not owned by callee', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const manager1 = await mongoTestHelper.createManager('1')
+            const token = jwtService.sign({ id: manager1._id, role: manager1.role })
+            const program = await mongoTestHelper.createProgram(manager._id)
+            const level = await mongoTestHelper.createLevel(manager._id, program._id)
+            program.levels = [level._id]
+            await program.save()
+            const student = await mongoTestHelper.createStudent()
+            const subscription = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
+            subscription.state = SubscriptionState.pending
+            await subscription.save()
+
+            await request(app.getHttpServer())
+                .put(`/api/subscriptions/${subscription._id.toString()}/approve`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.NOT_ACCEPTABLE)
+        })
+
+        it('should fail with 404 if called with a wrong subscriptionId', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+            const id = new ObjectId()
+
+            await request(app.getHttpServer())
+                .put(`/api/subscriptions/${id.toString()}/approve`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.NOT_FOUND)
+        })
+
+        it('should fail with 403 if called by a student', async () => {
+            const student = await mongoTestHelper.createStudent()
+            const token = jwtService.sign({ id: student._id, role: student.role })
+
+            await request(app.getHttpServer())
+                .put(`/api/subscriptions/anyId/approve`)
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.FORBIDDEN)
         })

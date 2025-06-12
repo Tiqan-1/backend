@@ -1,14 +1,14 @@
 import { ApiProperty, IntersectionType, OmitType, PartialType } from '@nestjs/swagger'
-import { IsBase64, IsDateString, IsEnum, IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
+import { IsBase64, IsDateString, IsEnum, IsMongoId, IsOptional, IsString, IsUrl, ValidateNested } from 'class-validator'
 import { SearchQueryDto } from '../../../shared/dto/search.query.dto'
 import { normalizeDate } from '../../../shared/helper/date.helper'
-import { areNotPopulated, arePopulated } from '../../../shared/helper/populated-type.helper'
-import { ObjectId, Populated } from '../../../shared/repository/types'
+import { arePopulated } from '../../../shared/helper/populated-type.helper'
+import { ObjectId } from '../../../shared/repository/types'
 import { LevelDto } from '../../levels/dto/level.dto'
-import { LevelDocument } from '../../levels/schemas/level.schema'
 import { SimpleManagerDto } from '../../managers/dto/manager.dto'
 import { ManagerDocument } from '../../managers/schemas/manager.schema'
 import { ProgramState } from '../enums/program-state.enum'
+import { ProgramSubscriptionType } from '../enums/program-subscription-type.enum'
 import { ProgramDocument } from '../schemas/program.schema'
 
 const now = normalizeDate(new Date())
@@ -39,6 +39,15 @@ export class ProgramDto {
     @IsEnum(ProgramState)
     state: ProgramState
 
+    @ApiProperty({ type: String, enum: ProgramSubscriptionType, required: false, default: ProgramSubscriptionType.public })
+    @IsEnum(ProgramSubscriptionType)
+    programSubscriptionType: ProgramSubscriptionType = ProgramSubscriptionType.public
+
+    @ApiProperty({ type: String, required: false, example: 'https://www.forms.google.com/test' })
+    @IsOptional()
+    @IsUrl()
+    subscriptionFormUrl?: string
+
     @ApiProperty({ type: Date, required: true, example: now })
     @IsDateString()
     start: Date
@@ -68,6 +77,8 @@ export class ProgramDto {
             id: document._id.toString(),
             name: document.name,
             state: document.state,
+            programSubscriptionType: document.subscriptionType,
+            subscriptionFormUrl: document.subscriptionFormUrl,
             thumbnail: document.thumbnail,
             description: document.description,
             start: document.start,
@@ -80,30 +91,7 @@ export class ProgramDto {
     }
 }
 
-export class StudentProgramDto extends OmitType(ProgramDto, ['state']) {
-    static fromDocuments(foundPrograms: ProgramDocument[] = []): StudentProgramDto[] {
-        return foundPrograms
-            .map(foundProgram => this.fromDocument(foundProgram))
-            .sort((a, b) => a.start.getTime() - b.start.getTime())
-    }
-
-    static fromDocument(document: ProgramDocument): StudentProgramDto {
-        return {
-            id: document._id.toString(),
-            name: document.name,
-            thumbnail: document.thumbnail,
-            description: document.description,
-            start: document.start,
-            end: document.end,
-            createdBy: SimpleManagerDto.fromDocument(document.createdBy as ManagerDocument),
-            registrationStart: document.start,
-            registrationEnd: document.end,
-            levels: LevelDto.fromDocuments(document.levels as Populated<LevelDocument[]>),
-        }
-    }
-}
-
-export class StudentProgramUnpopulatedDto extends OmitType(StudentProgramDto, ['levels'] as const) {
+export class StudentProgramUnpopulatedDto extends OmitType(ProgramDto, ['levels'] as const) {
     @ApiProperty({ type: String, required: false, isArray: true })
     @IsOptional()
     @ValidateNested({ each: true })
@@ -111,17 +99,11 @@ export class StudentProgramUnpopulatedDto extends OmitType(StudentProgramDto, ['
     levelIds?: string[]
 
     static fromDocument(document: ProgramDocument): StudentProgramUnpopulatedDto {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { levels, ...program } = ProgramDto.fromDocument(document)
         return {
-            id: document._id.toString(),
-            name: document.name,
-            thumbnail: document.thumbnail,
-            description: document.description,
-            start: document.start,
-            end: document.end,
-            createdBy: SimpleManagerDto.fromDocument(document.createdBy as ManagerDocument),
-            registrationStart: document.start,
-            registrationEnd: document.end,
-            levelIds: areNotPopulated(document.levels) ? document.levels.map(id => id.toString()) : [],
+            ...program,
+            levelIds: document.levels.map(level => level._id.toString()),
         }
     }
 }

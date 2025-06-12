@@ -12,8 +12,9 @@ import { LessonsService } from '../src/features/lessons/lessons.service'
 import { LevelsRepository } from '../src/features/levels/levels.repository'
 import { LevelsService } from '../src/features/levels/levels.service'
 import { PaginatedProgramDto } from '../src/features/programs/dto/paginated-program.dto'
-import { StudentProgramDto } from '../src/features/programs/dto/program.dto'
+import { ProgramDto } from '../src/features/programs/dto/program.dto'
 import { ProgramState } from '../src/features/programs/enums/program-state.enum'
+import { ProgramSubscriptionType } from '../src/features/programs/enums/program-subscription-type.enum'
 import { ProgramsRepository } from '../src/features/programs/programs.repository'
 import { ProgramsService } from '../src/features/programs/programs.service'
 import { ProgramsThumbnailsRepository } from '../src/features/programs/programs.thumbnails.repository'
@@ -304,7 +305,7 @@ describe('StudentsController (e2e)', () => {
     })
 
     describe('POST /api/students/subscriptions', () => {
-        it('should succeed', async () => {
+        it('should succeed when subscribing to a public program', async () => {
             const student = await mongoTestHelper.createStudent()
             const token = jwtService.sign({ id: student._id, role: student.role })
             const manager = await mongoTestHelper.createManager()
@@ -333,6 +334,38 @@ describe('StudentsController (e2e)', () => {
             expect(created).toBeTruthy()
             expect(id).toEqual(created._id.toString())
             expect(created.state).toEqual(SubscriptionState.active)
+        })
+
+        it('should succeed and be "pending" when subscribing to an approval-based program', async () => {
+            const student = await mongoTestHelper.createStudent()
+            const token = jwtService.sign({ id: student._id, role: student.role })
+            const manager = await mongoTestHelper.createManager()
+            const program = await mongoTestHelper.createProgram(manager._id)
+            const level = await mongoTestHelper.createLevel(manager._id, program._id)
+            program.levels = [level._id]
+            program.state = ProgramState.published
+            program.subscriptionType = ProgramSubscriptionType.approval
+            program.registrationStart = new Date()
+            await program.save()
+
+            const body: CreateSubscriptionDto = {
+                programId: program._id.toString(),
+                levelId: level._id.toString(),
+            }
+
+            const response = await request(app.getHttpServer())
+                .post('/api/students/subscriptions')
+                .set('Authorization', `Bearer ${token}`)
+                .send(body)
+                .expect(HttpStatus.CREATED)
+
+            expect(response.body).toBeDefined()
+            const { id } = response.body as CreatedDto
+
+            const created = (await mongoTestHelper.getSubscriptionModel().findOne()) as SubscriptionDocument
+            expect(created).toBeTruthy()
+            expect(id).toEqual(created._id.toString())
+            expect(created.state).toEqual(SubscriptionState.pending)
         })
 
         it('should fail with 406 if program is not published', async () => {
@@ -512,6 +545,34 @@ describe('StudentsController (e2e)', () => {
             const body = response.body as PaginatedStudentSubscriptionDto
             expect(body.items.length).toEqual(1)
         })
+
+        it('should not return subscriptions with "pending" state', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const lesson = await mongoTestHelper.createLesson(manager._id)
+            const program = await mongoTestHelper.createProgram(manager._id)
+            const level = await mongoTestHelper.createLevel(manager._id, program._id)
+            const task = await mongoTestHelper.createTask(manager._id, level._id, [lesson._id])
+            level.tasks = [task._id]
+            await level.save()
+            program.levels = [level._id]
+            await program.save()
+            const student = await mongoTestHelper.createStudent()
+            const subscription = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
+            subscription.state = SubscriptionState.pending
+            await subscription.save()
+            student.subscriptions = [subscription._id]
+            await student.save()
+            const token = jwtService.sign({ id: student._id, role: student.role })
+
+            const response = await request(app.getHttpServer())
+                .get('/api/students/subscriptions/v2')
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.OK)
+
+            expect(response.body).toBeDefined()
+            const body = response.body as PaginatedStudentSubscriptionDto
+            expect(body.items.length).toEqual(0)
+        })
     })
 
     describe('PUT /api/students/subscriptions/:id/suspend', () => {
@@ -590,7 +651,7 @@ describe('StudentsController (e2e)', () => {
             expect(response.body).toBeDefined()
             const body = response.body as PaginatedProgramDto
             expect(body.items.length).toEqual(1)
-            const programs = body.items as StudentProgramDto[]
+            const programs = body.items as ProgramDto[]
             expect(programs[0].id).toEqual(program._id.toString())
             expect(programs[0].levels[0].name).toEqual(level.name)
             expect(programs[0].levels[0].tasks[0].date).toEqual(task.date.toISOString())

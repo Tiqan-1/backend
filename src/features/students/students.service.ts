@@ -69,7 +69,8 @@ export class StudentsService {
 
     async findSubscriptions(query: SearchSubscriptionsQueryDto, studentId: ObjectId): Promise<PaginatedStudentSubscriptionDto> {
         query.subscriberId = studentId
-        const { found, total } = await this.subscriptionsService.findRaw(query)
+        const state = query.state && query.state !== SubscriptionState.pending ? query.state : { $ne: SubscriptionState.pending }
+        const { found, total } = await this.subscriptionsService.findRaw({ ...query, state })
         return PaginationHelper.wrapResponse(StudentSubscriptionDto.fromDocuments(found), query.page, query.pageSize, total)
     }
 

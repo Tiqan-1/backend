@@ -22,7 +22,7 @@ async function bootstrap(): Promise<void> {
 
     await app.register(multipart)
     app.enableCors({
-        origin: ['https://mubadarat.yaseen.dev', 'https://student.yaseen.dev/'],
+        origin: ['https://mubadarat.yaseen.dev', 'https://student.yaseen.dev'],
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
         credentials: true,
     })

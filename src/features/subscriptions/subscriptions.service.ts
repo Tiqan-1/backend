@@ -8,6 +8,7 @@ import { ObjectId } from '../../shared/repository/types'
 import { LevelState } from '../levels/enums/level-stats.enum'
 import { LevelDocument } from '../levels/schemas/level.schema'
 import { ProgramState } from '../programs/enums/program-state.enum'
+import { ProgramSubscriptionType } from '../programs/enums/program-subscription-type.enum'
 import { ProgramDocument } from '../programs/schemas/program.schema'
 import { StudentDocument } from '../students/schemas/student.schema'
 import { PaginatedSubscriptionDto } from './dto/paginated-subscripition.dto'
@@ -36,7 +37,10 @@ export class SubscriptionsService {
 
         this.validateSubscriptionForStudent(currentSubscriptions, program, level)
 
-        const created = await this.repository.create({ program: programId, level: levelId, subscriber: student._id })
+        const state =
+            program.subscriptionType === ProgramSubscriptionType.public ? SubscriptionState.active : SubscriptionState.pending
+
+        const created = await this.repository.create({ program: programId, level: levelId, subscriber: student._id, state })
         ;(student.subscriptions as ObjectId[]).push(created._id)
         await student.save()
         this.logger.log(`Student ${student.email} subscribed to program ${createSubscriptionDto.programId}
@@ -44,7 +48,7 @@ export class SubscriptionsService {
         return { id: created._id.toString() }
     }
 
-    async findRaw(query: SearchSubscriptionsQueryDto): Promise<FoundSubscriptions> {
+    async findRaw(query: Omit<SearchSubscriptionsQueryDto, 'state'> & { state?: unknown }): Promise<FoundSubscriptions> {
         const { programId, levelId, subscriberId } = query
         const queryBuilder = SearchFilterBuilder.init()
         let programLevels: ObjectId[] = []
@@ -81,7 +85,7 @@ export class SubscriptionsService {
         queryBuilder
             .withObjectId('_id', query.id)
             .withDate('subscriptionDate', query.subscriptionDate)
-            .withExactString('state', query.state)
+            .withParam('state', query.state)
             .withStringLike('notes', query.notes)
 
         const filter = queryBuilder.build()
@@ -94,9 +98,26 @@ export class SubscriptionsService {
         return { found, total }
     }
 
-    async find(query: SearchSubscriptionsQueryDto): Promise<PaginatedSubscriptionDto> {
+    async find(query: SearchSubscriptionsQueryDto, managerId: ObjectId): Promise<PaginatedSubscriptionDto> {
         const { found, total } = await this.findRaw(query)
-        return PaginationHelper.wrapResponse(SubscriptionDto.fromDocuments(found), query.page, query.pageSize, total)
+        const filtered = found.filter(sub => (sub.program as ProgramDocument).createdBy._id.equals(managerId))
+        return PaginationHelper.wrapResponse(SubscriptionDto.fromDocuments(filtered), query.page, query.pageSize, total)
+    }
+
+    async approve(id: ObjectId, managerId: ObjectId): Promise<void> {
+        const found = await this.repository.findById(id)
+        if (!found) {
+            throw new NotFoundException(`Subscription with id ${id.toString()} not found.`)
+        }
+        if (found.state !== SubscriptionState.pending) {
+            throw new ConflictException(`Subscription with id ${id.toString()} is not pending for approval.`)
+        }
+        const createdBy = (found.program as ProgramDocument).createdBy as ObjectId
+        if (!createdBy.equals(managerId)) {
+            throw new NotAcceptableException(`Current manager is not allowed to edit subscription ${id.toString()}.`)
+        }
+        found.state = SubscriptionState.active
+        await found.save()
     }
 
     async update(id: string, updateObject: UpdateSubscriptionDto): Promise<void> {

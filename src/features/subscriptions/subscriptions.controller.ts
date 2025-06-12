@@ -9,13 +9,16 @@ import {
     Param,
     Put,
     Query,
+    Request,
     UseGuards,
 } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger'
+import { ObjectId } from '../../shared/repository/types'
 import { Roles } from '../authentication/decorators/roles.decorator'
 import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { RolesGuard } from '../authentication/guards/roles.guard'
+import { TokenUser } from '../authentication/types/token-user'
 import { PaginatedSubscriptionDto } from './dto/paginated-subscripition.dto'
 import { SearchSubscriptionsQueryDto } from './dto/search-subscriptions-query.dto'
 import { UpdateSubscriptionDto } from './dto/subscription.dto'
@@ -36,8 +39,25 @@ export class SubscriptionsController {
     @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
     @HttpCode(HttpStatus.OK)
     @Get('v2')
-    find(@Query() query: SearchSubscriptionsQueryDto): Promise<PaginatedSubscriptionDto> {
-        return this.subscriptionsService.find(query)
+    find(@Query() query: SearchSubscriptionsQueryDto, @Request() req: { user: TokenUser }): Promise<PaginatedSubscriptionDto> {
+        return this.subscriptionsService.find(query, req.user.id)
+    }
+
+    @ApiOperation({ summary: 'Approves subscriptions.', description: 'Sets subscription to active state.' })
+    @ApiResponse({ status: HttpStatus.OK, type: PaginatedSubscriptionDto, description: 'Subscriptions approved successfully.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user.' })
+    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this endpoint.' })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Subscription not found.' })
+    @ApiResponse({
+        status: HttpStatus.CONFLICT,
+        description: 'Subscription not in pending state and therefore cannot be approved.',
+    })
+    @ApiResponse({ status: HttpStatus.NOT_ACCEPTABLE, description: 'Current user is not the owner of the subscription.' })
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @Put(':id/approve')
+    approve(@Param('id') id: ObjectId, @Request() req: { user: TokenUser }): Promise<void> {
+        return this.subscriptionsService.approve(id, req.user.id)
     }
 
     @ApiOperation({ summary: 'Updates a subscription', description: 'Updates a subscription.' })

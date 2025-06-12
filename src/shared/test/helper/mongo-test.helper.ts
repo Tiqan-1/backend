@@ -12,6 +12,7 @@ import { Level, LevelDocument, LevelSchema } from '../../../features/levels/sche
 import { SignUpManagerDto } from '../../../features/managers/dto/manager.dto'
 import { Manager, ManagerDocument, ManagerSchema } from '../../../features/managers/schemas/manager.schema'
 import { ProgramState } from '../../../features/programs/enums/program-state.enum'
+import { ProgramSubscriptionType } from '../../../features/programs/enums/program-subscription-type.enum'
 import { Program, ProgramDocument, ProgramSchema } from '../../../features/programs/schemas/program.schema'
 import { Gender } from '../../../features/students/enums/gender'
 import { StudentStatus } from '../../../features/students/enums/student-status'
@@ -240,6 +241,7 @@ export class MongoTestHelper {
             end: new Date(date.setFullYear(date.getFullYear() + 1)),
             description: 'program description',
             thumbnail: 'test-image.jpg',
+            subscriptionType: ProgramSubscriptionType.public,
             levels,
             createdBy,
         }
