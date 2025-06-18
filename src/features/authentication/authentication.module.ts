@@ -18,7 +18,7 @@ async function getJwtModuleOptions(): Promise<JwtModuleOptions> {
     await ConfigModule.envVariablesLoaded
     return {
         secret: process.env.JWT_SECRET as string,
-        signOptions: { expiresIn: '1d' },
+        //signOptions: { expiresIn: '1d' },
     }
 }
 
