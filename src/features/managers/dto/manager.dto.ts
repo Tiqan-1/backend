@@ -1,5 +1,5 @@
 import { ApiProperty, PickType } from '@nestjs/swagger'
-import { IsEmail, IsString, IsStrongPassword } from 'class-validator'
+import { IsEmail, IsString } from 'class-validator'
 import { ManagerDocument } from '../schemas/manager.schema'
 
 export class ManagerDto {
@@ -34,6 +34,6 @@ export class SimpleManagerDto extends PickType(ManagerDto, ['name', 'email']) {
 
 export class SignUpManagerDto extends PickType(ManagerDto, ['name', 'email']) {
     @ApiProperty({ type: String, example: 'P@ssw0rd', description: 'password of manager' })
-    @IsStrongPassword({ minLength: 6, minNumbers: 1, minSymbols: 1 })
+    @IsString()
     password: string
 }
