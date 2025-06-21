@@ -39,8 +39,8 @@ export class StudentsController {
     @HttpCode(HttpStatus.NO_CONTENT)
     @Delete()
     @UseGuards(JwtAuthGuard)
-    @Roles(Role.Student)
     @ApiBearerAuth()
+    @Roles(Role.Student)
     delete(@Request() request: { user: TokenUser }): Promise<void> {
         return this.service.remove(request.user.id)
     }
@@ -59,6 +59,7 @@ export class StudentsController {
     @HttpCode(HttpStatus.CREATED)
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
+    @Roles(Role.Student)
     createSubscription(
         @Body() createSubscriptionDto: CreateSubscriptionDto,
         @Request() request: { user: TokenUser }
@@ -84,6 +85,7 @@ export class StudentsController {
     @HttpCode(HttpStatus.CREATED)
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
+    @Roles(Role.Student)
     subscribe(
         @Body() createSubscriptionDto: CreateSubscriptionDto,
         @Request() request: { user: TokenUser }
@@ -101,6 +103,7 @@ export class StudentsController {
     @HttpCode(HttpStatus.OK)
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
+    @Roles(Role.Student)
     findSubscriptions(
         @Query() query: SearchStudentSubscriptionsQueryDto,
         @Request() request: { user: TokenUser }
@@ -118,6 +121,7 @@ export class StudentsController {
     @HttpCode(HttpStatus.NO_CONTENT)
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
+    @Roles(Role.Student)
     suspendSubscription(@Param('id') subscriptionId: string, @Request() request: { user: TokenUser }): Promise<void> {
         return this.service.suspendSubscription(subscriptionId, request.user.id)
     }
@@ -134,11 +138,12 @@ export class StudentsController {
     @HttpCode(HttpStatus.NO_CONTENT)
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
+    @Roles(Role.Student)
     removeSubscription(@Param('id') subscriptionId: string, @Request() request: { user: TokenUser }): Promise<void> {
         return this.service.removeSubscription(subscriptionId, request.user.id)
     }
 
-    @ApiOperation({ summary: 'Gets programs', description: 'Gets programs that.' })
+    @ApiOperation({ summary: 'Gets programs', description: 'Gets programs.' })
     @ApiQuery({ name: 'limit', type: String, required: false, description: 'Controls the number of returned elements' })
     @ApiQuery({ name: 'skip', type: String, required: false, description: 'Controls the number of elements to be skipped' })
     @ApiResponse({ status: HttpStatus.OK, type: PaginatedProgramDto, description: 'Got programs successfully.' })
@@ -148,6 +153,7 @@ export class StudentsController {
     @HttpCode(HttpStatus.OK)
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
+    @Roles(Role.Student)
     findPrograms(@Query() query: SearchStudentProgramQueryDto): Promise<PaginatedProgramDto> {
         return this.service.findPrograms(query)
     }
