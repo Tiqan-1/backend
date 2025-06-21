@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
 import { Lesson, LessonDocument } from '../../features/lessons/schemas/lesson.schema'
@@ -30,7 +30,7 @@ export class SharedDocumentsService {
         return (await this.dbVersion.findOne().exec()) ?? (await this.dbVersion.create({}))
     }
 
-    async getLesson(id: string): Promise<LessonDocument> {
+    async getLesson(id: string): Promise<LessonDocument | undefined> {
         return this.getDocument<LessonDocument>(id, this.lessonModel)
     }
 
@@ -38,7 +38,7 @@ export class SharedDocumentsService {
         return this.getDocuments<LessonDocument>(ids, this.lessonModel)
     }
 
-    async getSubject(id: string): Promise<SubjectDocument> {
+    async getSubject(id: string): Promise<SubjectDocument | undefined> {
         return this.getDocument<SubjectDocument>(id, this.subjectModel)
     }
 
@@ -46,7 +46,7 @@ export class SharedDocumentsService {
         return this.getDocuments<SubjectDocument>(ids, this.subjectModel)
     }
 
-    async getManager(id: string): Promise<ManagerDocument> {
+    async getManager(id: string): Promise<ManagerDocument | undefined> {
         return this.getDocument<ManagerDocument>(id, this.managerModel)
     }
 
@@ -54,7 +54,7 @@ export class SharedDocumentsService {
         return this.getDocuments<ManagerDocument>(ids, this.managerModel)
     }
 
-    async getStudent(id: string): Promise<StudentDocument> {
+    async getStudent(id: string): Promise<StudentDocument | undefined> {
         return this.getDocument<StudentDocument>(id, this.studentModel)
     }
 
@@ -70,7 +70,7 @@ export class SharedDocumentsService {
         return this.getDocuments<StudentDocument>(ids, this.studentModel)
     }
 
-    async getTask(id: string): Promise<TaskDocument> {
+    async getTask(id: string): Promise<TaskDocument | undefined> {
         return this.getDocument<TaskDocument>(id, this.taskModel)
     }
 
@@ -78,7 +78,7 @@ export class SharedDocumentsService {
         return this.getDocuments<TaskDocument>(ids, this.taskModel)
     }
 
-    async getLevel(id: string): Promise<LevelDocument> {
+    async getLevel(id: string): Promise<LevelDocument | undefined> {
         return this.getDocument<LevelDocument>(id, this.levelModel)
     }
 
@@ -86,7 +86,7 @@ export class SharedDocumentsService {
         return this.getDocuments<LevelDocument>(ids, this.levelModel)
     }
 
-    async getProgram(id: string): Promise<ProgramDocument> {
+    async getProgram(id: string): Promise<ProgramDocument | undefined> {
         return this.getDocument<ProgramDocument>(id, this.programModel)
     }
 
@@ -94,7 +94,7 @@ export class SharedDocumentsService {
         return this.getDocuments<ProgramDocument>(ids, this.programModel)
     }
 
-    async getSubscription(id: string): Promise<SubscriptionDocument> {
+    async getSubscription(id: string): Promise<SubscriptionDocument | undefined> {
         return this.getDocument<SubscriptionDocument>(id, this.subscriptionModel)
     }
 
@@ -102,10 +102,10 @@ export class SharedDocumentsService {
         return this.getDocuments<SubscriptionDocument>(ids, this.subscriptionModel)
     }
 
-    private async getDocument<T>(id: string, model: Model<T>): Promise<T> {
+    private async getDocument<T>(id: string, model: Model<T>): Promise<T | undefined> {
         const found = await model.findById(new ObjectId(id)).exec()
         if (!found) {
-            throw new NotFoundException(`Document with id ${id} not found in ${model.name}.`)
+            return undefined
         }
         return found
     }

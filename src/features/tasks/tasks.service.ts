@@ -25,6 +25,11 @@ export class TasksService {
 
     async create(task: CreateTaskDto, createdBy: ObjectId): Promise<CreatedDto> {
         const validatedLessons = task.lessonIds?.length ? await this.lessonsService.validateLessonIds(task.lessonIds) : undefined
+        const level = await this.documentsService.getLevel(task.levelId)
+        if (!level) {
+            this.logger.error(`Level ${task.levelId} not found.`)
+            throw new NotFoundException('Level not found.')
+        }
 
         const createObject: Partial<TaskDocument> = {
             createdBy,
@@ -36,7 +41,6 @@ export class TasksService {
 
         const created = await this.taskRepository.create(createObject)
 
-        const level = await this.documentsService.getLevel(task.levelId)
         ;(level.tasks as ObjectId[]).push(created._id)
         await level.save()
 

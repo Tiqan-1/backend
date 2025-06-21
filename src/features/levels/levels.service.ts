@@ -23,6 +23,10 @@ export class LevelsService {
 
     async create(dto: CreateLevelDto, createdBy: ObjectId): Promise<CreatedDto> {
         const program = await this.documentsService.getProgram(dto.programId)
+        if (!program) {
+            this.logger.error(`Program ${dto.programId} not found.`)
+            throw new NotFoundException('Program not found.')
+        }
         const created = await this.levelsRepository.create({ ...dto, createdBy, programId: program._id })
         ;(program.levels as ObjectId[]).push(created._id)
         await program.save()

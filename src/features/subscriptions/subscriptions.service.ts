@@ -38,7 +38,7 @@ export class SubscriptionsService {
         this.validateSubscriptionForStudent(currentSubscriptions, program, level)
 
         const state =
-            program.subscriptionType === ProgramSubscriptionType.public ? SubscriptionState.active : SubscriptionState.pending
+            program?.subscriptionType === ProgramSubscriptionType.public ? SubscriptionState.active : SubscriptionState.pending
 
         const created = await this.repository.create({ program: programId, level: levelId, subscriber: student._id, state })
         ;(student.subscriptions as ObjectId[]).push(created._id)
@@ -142,9 +142,13 @@ export class SubscriptionsService {
 
     validateSubscriptionForStudent(
         currentSubscriptions: StudentSubscriptionDto[],
-        program: ProgramDocument,
-        level: LevelDocument
+        program?: ProgramDocument,
+        level?: LevelDocument
     ): void {
+        if (!program || !level) {
+            this.logger.error(`Program or level not found.`)
+            throw new NotFoundException('Program or level not found.')
+        }
         const programId = program._id.toString()
         const levelId = level._id.toString()
         const hasSameSubscription = currentSubscriptions?.some(
@@ -153,11 +157,6 @@ export class SubscriptionsService {
         if (hasSameSubscription) {
             this.logger.error(`Student already subscribed to level ${levelId} in program ${programId}.`)
             throw new ConflictException('Student already have the same subscription.')
-        }
-
-        if (!program || !level) {
-            this.logger.error(`Program ${programId} or level ${levelId} not found.`)
-            throw new NotFoundException('Program or level not found.')
         }
         const programLevels = program.levels as ObjectId[]
         if (!programLevels.includes(level._id)) {

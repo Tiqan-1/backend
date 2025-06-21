@@ -20,6 +20,10 @@ export class LessonsService {
 
     async create(lesson: CreateLessonDto, createdBy: ObjectId): Promise<CreatedDto> {
         const subject = await this.documentsService.getSubject(lesson.subjectId)
+        if (!subject) {
+            this.logger.error(`Tried to create a lesson for subject ${lesson.subjectId} which does not exist.`)
+            throw new NotFoundException(`Subject not found`)
+        }
         const created = await this.repository.create({ ...lesson, createdBy, subjectId: subject._id })
         ;(subject.lessons as ObjectId[]).push(created._id)
         await subject.save()
@@ -45,10 +49,16 @@ export class LessonsService {
         }
         const subjectId = deleted.subjectId.toString()
         const subject = await this.documentsService.getSubject(subjectId)
+        if (!subject) {
+            this.logger.warn(`Lesson ${lessonId} removed successfully, but its subject was not found.`)
+            return
+        }
         const lessonIndex = subject.lessons.findIndex(id => id._id.toString() === lessonId)
         if (lessonIndex === -1) {
-            this.logger.error(`Attempt to remove lesson ${lessonId} from subject ${subjectId} failed.`)
-            throw new NotFoundException(`Lesson not found in the subjects lessons.`)
+            this.logger.warn(
+                `Lesson ${lessonId} removed successfully, but its subject didn't have this lesson in its lessons array.`
+            )
+            return
         }
         ;(subject.lessons as ObjectId[]).splice(lessonIndex, 1)
         await subject.save()
