@@ -1,5 +1,6 @@
 import { ApiProperty, IntersectionType, OmitType, PartialType } from '@nestjs/swagger'
-import { IsBase64, IsDateString, IsEnum, IsMongoId, IsOptional, IsString, IsUrl, ValidateNested } from 'class-validator'
+import { Type } from 'class-transformer'
+import { IsBase64, IsDate, IsEnum, IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { SearchQueryDto } from '../../../shared/dto/search.query.dto'
 import { normalizeDate } from '../../../shared/helper/date.helper'
 import { arePopulated } from '../../../shared/helper/populated-type.helper'
@@ -41,27 +42,31 @@ export class ProgramDto {
 
     @ApiProperty({ type: String, enum: ProgramSubscriptionType, required: false, default: ProgramSubscriptionType.public })
     @IsEnum(ProgramSubscriptionType)
-    programSubscriptionType: ProgramSubscriptionType = ProgramSubscriptionType.public
+    programSubscriptionType: ProgramSubscriptionType // = ProgramSubscriptionType.public
 
     @ApiProperty({ type: String, required: false, example: 'https://www.forms.google.com/test' })
     @IsOptional()
-    @IsUrl()
+    @IsString()
     subscriptionFormUrl?: string
 
     @ApiProperty({ type: Date, required: true, example: now })
-    @IsDateString()
+    @Type(() => Date)
+    @IsDate()
     start: Date
 
     @ApiProperty({ type: Date, required: true, example: now })
-    @IsDateString()
+    @Type(() => Date)
+    @IsDate()
     end: Date
 
     @ApiProperty({ type: Date, required: true, example: now })
-    @IsDateString()
+    @Type(() => Date)
+    @IsDate()
     registrationStart: Date
 
     @ApiProperty({ type: Date, required: true, example: now })
-    @IsDateString()
+    @Type(() => Date)
+    @IsDate()
     registrationEnd: Date
 
     @ApiProperty({ type: LevelDto, required: true, isArray: true })
