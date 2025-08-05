@@ -32,6 +32,10 @@
 $ npm install
 ```
 
+## Environment Setup
+1. Copy `.env.example` to `.env`
+2. Modify the values in `.env` according to your environment
+
 ## Compile and run the project
 
 ```bash

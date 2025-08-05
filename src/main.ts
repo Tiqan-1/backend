@@ -49,6 +49,6 @@ async function bootstrap(): Promise<void> {
 
     app.enableShutdownHooks()
 
-    await app.listen(process.env.PORT ?? 3000)
+    await app.listen(process.env.PORT ?? 3000, '0.0.0.0')
 }
 bootstrap().catch(err => console.log(err))

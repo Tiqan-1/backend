@@ -8,7 +8,7 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "nest start --env-file .env",
+    "start": "nest start --env-file .env.production",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
@@ -37,7 +37,6 @@
     "bcryptjs": "^3.0.2",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
-    "crypto": "^1.0.1",
     "mongoose": "^8.10.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
