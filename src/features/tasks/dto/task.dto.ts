@@ -1,5 +1,5 @@
 import { ApiProperty, IntersectionType, OmitType, PartialType } from '@nestjs/swagger'
-import { ArrayNotEmpty, IsDateString, IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
+import { ArrayNotEmpty, IsDate, IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { SearchQueryDto } from '../../../shared/dto/search.query.dto'
 import { LessonDto } from '../../lessons/dto/lesson.dto'
 import { LessonDocument } from '../../lessons/schemas/lesson.schema'
@@ -15,7 +15,7 @@ export class TaskDto {
     levelId: string
 
     @ApiProperty({ type: Date, required: true, example: new Date() })
-    @IsDateString()
+    @IsDate()
     date: Date
 
     @ApiProperty({ type: LessonDto, isArray: true, required: true })

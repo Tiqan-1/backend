@@ -1,5 +1,5 @@
 import { ApiProperty, IntersectionType, OmitType, PartialType } from '@nestjs/swagger'
-import { IsDateString, IsMongoId, IsString, ValidateNested } from 'class-validator'
+import { IsDate, IsMongoId, IsString, ValidateNested } from 'class-validator'
 import { SearchQueryDto } from 'src/shared/dto/search.query.dto'
 import { Populated } from '../../../shared/repository/types'
 import { SimpleManagerDto } from '../../managers/dto/manager.dto'
@@ -26,11 +26,11 @@ export class LevelDto {
     name: string
 
     @ApiProperty({ type: Date, required: true, example: new Date() })
-    @IsDateString()
+    @IsDate()
     start: Date
 
     @ApiProperty({ type: Date, required: true, example: new Date() })
-    @IsDateString()
+    @IsDate()
     end: Date
 
     @ApiProperty({ type: TaskDto, isArray: true, required: true })
