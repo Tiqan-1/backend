@@ -73,6 +73,7 @@ export class ProgramsController {
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
     @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
     @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.' })
+    @ApiResponse({ status: HttpStatus.CONFLICT, description: 'Published program has no levels.' })
     @Put(':id')
     @HttpCode(HttpStatus.NO_CONTENT)
     @Roles(Role.Manager)

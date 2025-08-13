@@ -17,6 +17,7 @@ import { LevelsService } from '../src/features/levels/levels.service'
 import { ManagerDocument } from '../src/features/managers/schemas/manager.schema'
 import { CreateProgramDto } from '../src/features/programs/dto/program.dto'
 import { ProgramState } from '../src/features/programs/enums/program-state.enum'
+import { ProgramSubscriptionType } from '../src/features/programs/enums/program-subscription-type.enum'
 import { ProgramsController } from '../src/features/programs/programs.controller'
 import { ProgramsRepository } from '../src/features/programs/programs.repository'
 import { ProgramsService } from '../src/features/programs/programs.service'
@@ -74,7 +75,7 @@ describe('ProgramsController (e2e)', () => {
     afterAll(async () => {
         await mongoTestHelper.tearDown()
         await app.close()
-        const folderPath = path.join(__dirname, '..', configService.get('UPLOAD_FOLDER') as string) // Replace with your folder path
+        const folderPath = path.join(__dirname, '..', configService.get('UPLOAD_FOLDER') as string)
 
         fs.rmSync(folderPath, { recursive: true, force: true })
     })
@@ -95,6 +96,7 @@ describe('ProgramsController (e2e)', () => {
                 end: new Date(),
                 registrationStart: new Date(),
                 registrationEnd: new Date(),
+                programSubscriptionType: ProgramSubscriptionType.public,
             }
 
             const response = await request(app.getHttpServer())
@@ -132,7 +134,8 @@ describe('ProgramsController (e2e)', () => {
         it('should succeed', async () => {
             const manager = await mongoTestHelper.createManager()
             const token = jwtService.sign({ id: manager._id, role: manager.role })
-            const program = await mongoTestHelper.createProgram(manager._id)
+            const level = await mongoTestHelper.createLevel(manager._id)
+            const program = await mongoTestHelper.createProgram(manager._id, [level._id])
             manager.programs = [program._id]
             await manager.save()
 
@@ -148,6 +151,24 @@ describe('ProgramsController (e2e)', () => {
 
             const found = (await mongoTestHelper.getProgramModel().findOne()) as ProgramDocument
             expect(found.state).toEqual(ProgramState.published)
+        })
+
+        it('should fail with 409 when trying to publish a program which has no levels', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+            const program = await mongoTestHelper.createProgram(manager._id)
+            manager.programs = [program._id]
+            await manager.save()
+
+            const updateBody = {
+                state: ProgramState.published,
+            }
+
+            await request(app.getHttpServer())
+                .put(`/api/programs/${program._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send(updateBody)
+                .expect(HttpStatus.CONFLICT)
         })
 
         it('should fail with 404 if called with a non-existent program id', async () => {

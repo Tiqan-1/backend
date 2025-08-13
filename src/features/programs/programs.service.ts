@@ -1,5 +1,5 @@
 import { MultipartFile } from '@fastify/multipart'
-import { Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common'
+import { ConflictException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common'
 import { oneMonth } from '../../shared/constants'
 import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
@@ -79,12 +79,20 @@ export class ProgramsService {
             this.logger.error(`Illegal state: Manager ${managerId} is logged in but not found in db.`)
             throw new InternalServerErrorException('Manager not found.')
         }
+
         const program = manager.programs.find(program => program._id.toString() === id)
         if (!program) {
             this.logger.error(`Attempt to update program ${id} by manager ${managerId} failed. Program not found`)
             throw new NotFoundException('Program not found.')
         }
-        const programId = new ObjectId(id)
+
+        const programId = program._id
+        const programDocument = await this.programsRepository.findById(programId)
+        if (updateProgramDto.state === ProgramState.published && !programDocument?.levels?.length) {
+            this.logger.error(`Attempt to publish program ${id} by manager ${managerId} failed. Program has no levels.`)
+            throw new ConflictException('Program has no levels.')
+        }
+
         const updateObject = UpdateProgramDto.toDocument(updateProgramDto)
         const updated = await this.programsRepository.update({ _id: programId }, updateObject)
         if (!updated) {
