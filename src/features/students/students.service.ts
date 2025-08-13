@@ -42,7 +42,7 @@ export class StudentsService {
             const createdStudent = await this.studentRepository.create({
                 ...student,
                 role: Role.Student,
-                status: StudentStatus.inactive,
+                status: StudentStatus.active,
             })
             return this.authenticationService.generateUserTokens(createdStudent)
         } catch (error) {
