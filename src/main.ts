@@ -1,14 +1,15 @@
 import multipart from '@fastify/multipart'
-import { ConsoleLogger, ValidationPipe } from '@nestjs/common'
+import { ConsoleLogger } from '@nestjs/common'
 import { LogLevel } from '@nestjs/common/services/logger.service'
 import { NestFactory } from '@nestjs/core'
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify'
 import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger'
+import { I18nValidationExceptionFilter, I18nValidationPipe } from 'nestjs-i18n'
 import * as process from 'node:process'
 import { AppModule } from './app.module'
 import { MigrationService } from './shared/database-services/migration.service'
-import { MongoDbExceptionFilter } from './shared/exceptions/mongo-db-exception.filter'
-import { SecurityExceptionFilter } from './shared/exceptions/security-exception.filter'
+import { MongoDbErrorFilter } from './shared/errors/mongo-db-error.filter'
+import { SecurityErrorFilter } from './shared/errors/security-error.filter'
 
 async function bootstrap(): Promise<void> {
     const logLevels: LogLevel[] =
@@ -26,16 +27,12 @@ async function bootstrap(): Promise<void> {
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
         credentials: true,
     })
-    app.useGlobalPipes(
-        new ValidationPipe({
-            transform: true,
-            whitelist: true,
-            transformOptions: {
-                enableImplicitConversion: true,
-            },
-        })
+    app.useGlobalPipes(new I18nValidationPipe())
+    app.useGlobalFilters(
+        new MongoDbErrorFilter(),
+        new SecurityErrorFilter(),
+        new I18nValidationExceptionFilter({ detailedErrors: false })
     )
-    app.useGlobalFilters(new MongoDbExceptionFilter(), new SecurityExceptionFilter())
 
     const config = new DocumentBuilder()
         .setTitle('Mubadarat')

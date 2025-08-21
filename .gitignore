@@ -128,3 +128,6 @@ dist
 
 # IntelliJ
 .idea/
+
+# db_data
+mongodb_data

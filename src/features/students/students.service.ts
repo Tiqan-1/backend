@@ -1,5 +1,7 @@
 import { ConflictException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common'
 import * as bcrypt from 'bcryptjs'
+import { addMinutes } from 'date-fns'
+import { I18nService } from 'nestjs-i18n'
 import { oneMonth } from '../../shared/constants'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { PaginationHelper } from '../../shared/helper/pagination-helper'
@@ -9,10 +11,11 @@ import { AuthenticationResponseDto } from '../authentication/dto/authentication-
 import { Role } from '../authentication/enums/role.enum'
 import { PaginatedProgramDto } from '../programs/dto/paginated-program.dto'
 import { SearchStudentProgramQueryDto } from '../programs/dto/program.dto'
+import { ProgramState } from '../programs/enums/program-state.enum'
 import { ProgramsService } from '../programs/programs.service'
 import { PaginatedStudentSubscriptionDto } from '../subscriptions/dto/paginated-subscripition.dto'
 import { SearchSubscriptionsQueryDto } from '../subscriptions/dto/search-subscriptions-query.dto'
-import { CreateSubscriptionDto, StudentSubscriptionDto } from '../subscriptions/dto/subscription.dto'
+import { CreateSubscriptionDto, CreateSubscriptionV2Dto, StudentSubscriptionDto } from '../subscriptions/dto/subscription.dto'
 import { SubscriptionState } from '../subscriptions/enums/subscription-state.enum'
 import { SubscriptionsService } from '../subscriptions/subscriptions.service'
 import { SignUpStudentDto } from './dto/student.dto'
@@ -28,7 +31,8 @@ export class StudentsService {
         private readonly studentRepository: StudentRepository,
         private readonly authenticationService: AuthenticationService,
         private readonly subscriptionsService: SubscriptionsService,
-        private readonly programsService: ProgramsService
+        private readonly programsService: ProgramsService,
+        private readonly i18n: I18nService
     ) {}
 
     async create(student: SignUpStudentDto): Promise<AuthenticationResponseDto> {
@@ -54,6 +58,11 @@ export class StudentsService {
     async subscribe(createSubscriptionDto: CreateSubscriptionDto, studentId: ObjectId): Promise<CreatedDto> {
         const student = await this.loadStudent(studentId)
         return await this.subscriptionsService.create(createSubscriptionDto, student)
+    }
+
+    async subscribeV2(createSubscriptionDto: CreateSubscriptionV2Dto, studentId: ObjectId): Promise<CreatedDto> {
+        const student = await this.loadStudent(studentId)
+        return await this.subscriptionsService.createV2(createSubscriptionDto, student)
     }
 
     async suspendSubscription(subscriptionId: string, studentId: ObjectId): Promise<void> {
@@ -101,6 +110,8 @@ export class StudentsService {
     }
 
     findPrograms(query: SearchStudentProgramQueryDto): Promise<PaginatedProgramDto> {
+        query.state = query.state ?? ProgramState.published
+        query.registrationEnd = addMinutes(Date.now(), 30)
         return this.programsService.find(query)
     }
 
@@ -108,7 +119,9 @@ export class StudentsService {
         const student = await this.studentRepository.findById(studentId)
         if (!student || student.status === StudentStatus.deleted) {
             this.logger.error(`Trying to load student ${studentId.toString()} from session but not found in the database.`)
-            throw new InternalServerErrorException('Student not found.')
+            throw new InternalServerErrorException(
+                this.i18n.t('student.subscriptions.createSubscription.errors.INTERNAL_SERVER_ERROR')
+            )
         }
         return student
     }

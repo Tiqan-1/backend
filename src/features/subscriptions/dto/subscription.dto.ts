@@ -1,5 +1,6 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { IsDate, IsEnum, IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
+import { i18nValidationMessage } from 'nestjs-i18n'
 import { LevelDto } from '../../levels/dto/level.dto'
 import { LevelDocument } from '../../levels/schemas/level.schema'
 import { ProgramDto, StudentProgramUnpopulatedDto } from '../../programs/dto/program.dto'
@@ -79,6 +80,12 @@ export class StudentSubscriptionDto extends OmitType(SubscriptionDto, ['program'
             notes: subscription.notes,
         }
     }
+}
+
+export class CreateSubscriptionV2Dto {
+    @ApiProperty({ type: String, required: true, example: 'programId' })
+    @IsMongoId({ message: i18nValidationMessage('validation.mongoId') })
+    programId: string
 }
 
 export class CreateSubscriptionDto {

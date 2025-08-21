@@ -1,6 +1,8 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, Query, Request, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger'
+import { BadRequestErrorDto } from '../../shared/dto/bad-request-error.dto'
 import { CreatedDto } from '../../shared/dto/created.dto'
+import { ErrorDto } from '../../shared/dto/error.dto'
 import { Roles } from '../authentication/decorators/roles.decorator'
 import { AuthenticationResponseDto } from '../authentication/dto/authentication-response.dto'
 import { Role } from '../authentication/enums/role.enum'
@@ -10,7 +12,7 @@ import { PaginatedProgramDto } from '../programs/dto/paginated-program.dto'
 import { SearchStudentProgramQueryDto } from '../programs/dto/program.dto'
 import { PaginatedStudentSubscriptionDto } from '../subscriptions/dto/paginated-subscripition.dto'
 import { SearchStudentSubscriptionsQueryDto } from '../subscriptions/dto/search-subscriptions-query.dto'
-import { CreateSubscriptionDto } from '../subscriptions/dto/subscription.dto'
+import { CreateSubscriptionDto, CreateSubscriptionV2Dto } from '../subscriptions/dto/subscription.dto'
 import { SignUpStudentDto } from './dto/student.dto'
 import { StudentsService } from './students.service'
 
@@ -93,6 +95,33 @@ export class StudentsController {
         return this.service.subscribe(createSubscriptionDto, request.user.id)
     }
 
+    @ApiOperation({
+        summary: 'Creates a subscription.',
+        description: 'Creates a subscription for the student in the specified program.',
+    })
+    @ApiResponse({ status: HttpStatus.CREATED, type: CreatedDto, description: 'The id of the created subscription.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.', type: BadRequestErrorDto })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Program not found.', type: ErrorDto })
+    @ApiResponse({
+        status: HttpStatus.NOT_ACCEPTABLE,
+        description: 'Trying to subscribe to a program that is not open for registration.',
+        type: ErrorDto,
+    })
+    @ApiResponse({ status: HttpStatus.CONFLICT, description: 'Student already have the same subscription.', type: ErrorDto })
+    @Post('subscriptions/v2/create')
+    @HttpCode(HttpStatus.CREATED)
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @Roles(Role.Student)
+    subscribeV2(
+        @Body() createSubscriptionDto: CreateSubscriptionV2Dto,
+        @Request() request: { user: TokenUser }
+    ): Promise<CreatedDto> {
+        return this.service.subscribeV2(createSubscriptionDto, request.user.id)
+    }
+
     @ApiOperation({ summary: 'Finds subscriptions', description: 'Finds subscriptions of the student.' })
     @ApiQuery({ name: 'limit', type: String, required: false, description: 'Controls the number of returned elements' })
     @ApiQuery({ name: 'skip', type: String, required: false, description: 'Controls the number of elements to be skipped' })
@@ -143,7 +172,7 @@ export class StudentsController {
         return this.service.removeSubscription(subscriptionId, request.user.id)
     }
 
-    @ApiOperation({ summary: 'Gets programs', description: 'Gets programs.' })
+    @ApiOperation({ summary: 'Gets programs', description: 'Gets programs.', deprecated: true })
     @ApiQuery({ name: 'limit', type: String, required: false, description: 'Controls the number of returned elements' })
     @ApiQuery({ name: 'skip', type: String, required: false, description: 'Controls the number of elements to be skipped' })
     @ApiResponse({ status: HttpStatus.OK, type: PaginatedProgramDto, description: 'Got programs successfully.' })
@@ -155,6 +184,30 @@ export class StudentsController {
     @ApiBearerAuth()
     @Roles(Role.Student)
     findPrograms(@Query() query: SearchStudentProgramQueryDto): Promise<PaginatedProgramDto> {
+        return this.service.findPrograms(query)
+    }
+
+    @ApiOperation({
+        summary: 'Gets programs',
+        description: `Returns programs for students.
+            <br />By default:<br />
+            <ul>
+                <li>Returns only programs that are open for registration (i.e., the registration period has not yet ended, and the program is published).
+                <li>If the student is subscribed to a program, the program is not returned.
+            </ul>
+            <br />The default behavior can be overridden by setting filters in the query parameters.`,
+    })
+    @ApiQuery({ name: 'limit', type: String, required: false, description: 'Controls the number of returned elements' })
+    @ApiQuery({ name: 'skip', type: String, required: false, description: 'Controls the number of elements to be skipped' })
+    @ApiResponse({ status: HttpStatus.OK, type: PaginatedProgramDto, description: 'Got programs successfully.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user', type: ErrorDto })
+    @Get('v3/programs')
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @Roles(Role.Student)
+    findProgramsV3(@Query() query: SearchStudentProgramQueryDto): Promise<PaginatedProgramDto> {
         return this.service.findPrograms(query)
     }
 }

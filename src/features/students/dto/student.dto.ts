@@ -18,7 +18,7 @@ export class StudentDto {
     name: string
 
     @ApiProperty({ type: String, example: 'user@email.com', description: 'email of student' })
-    @IsEmail()
+    @IsEmail({}, { message: 'البريد الإلكتروني المدخل غير صالح' })
     email: string
 
     @ApiProperty({ enum: Gender, example: Gender.male, description: 'gender of student' })
@@ -41,6 +41,9 @@ export class SimpleStudentDto extends OmitType(StudentDto, ['subscriptions', 'ge
 
 export class SignUpStudentDto extends OmitType(StudentDto, ['subscriptions']) {
     @ApiProperty({ type: String, example: 'P@ssw0rd', description: 'password of student' })
-    @IsStrongPassword({ minLength: 6, minNumbers: 1, minSymbols: 1 })
+    @IsStrongPassword(
+        { minLength: 6, minNumbers: 1, minSymbols: 1 },
+        { message: 'كلمة المرور بسيطة وغير آمنة. الرجاء اختيار كلمة مرور أقوى.' }
+    )
     password: string
 }

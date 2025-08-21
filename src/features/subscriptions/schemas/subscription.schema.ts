@@ -13,8 +13,9 @@ export class Subscription {
     @Prop({ required: true, type: ObjectId, ref: Program.name })
     program: ObjectId | Populated<ProgramDocument>
 
-    @Prop({ required: true, type: ObjectId, ref: Level.name })
-    level: ObjectId | Populated<LevelDocument>
+    /** @deprecated */
+    @Prop({ required: false, type: ObjectId, ref: Level.name })
+    level?: ObjectId | Populated<LevelDocument>
 
     @Prop({ required: true, type: ObjectId, ref: 'Student' })
     subscriber: ObjectId | Populated<StudentDocument>

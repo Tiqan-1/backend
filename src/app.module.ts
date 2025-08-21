@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { MongooseModule } from '@nestjs/mongoose'
 import { ServeStaticModule } from '@nestjs/serve-static'
+import { I18nModule } from 'nestjs-i18n'
 import { join } from 'node:path'
 import { AuthenticationModule } from './features/authentication/authentication.module'
 import { LessonsModule } from './features/lessons/lessons.module'
@@ -23,6 +24,13 @@ import { SharedDocumentsModule } from './shared/database-services/shared-documen
         }),
         ServeStaticModule.forRoot({
             rootPath: join(__dirname, '..', 'static'), // Adjust path to the folder where your HTML files are stored
+        }),
+        I18nModule.forRoot({
+            fallbackLanguage: 'ar',
+            loaderOptions: {
+                path: join(__dirname, '/i18n/'),
+                watch: true,
+            },
         }),
         MongooseModule.forRoot(process.env.MONGODB_URI as string),
         UsersModule,

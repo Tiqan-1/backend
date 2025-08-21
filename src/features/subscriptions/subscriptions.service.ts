@@ -1,19 +1,24 @@
 import { ConflictException, Injectable, Logger, NotAcceptableException, NotFoundException } from '@nestjs/common'
+import { I18nService } from 'nestjs-i18n'
 import { oneMonth } from '../../shared/constants'
 import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { PaginationHelper } from '../../shared/helper/pagination-helper'
 import { SearchFilterBuilder } from '../../shared/helper/search-filter.builder'
 import { ObjectId } from '../../shared/repository/types'
-import { LevelState } from '../levels/enums/level-stats.enum'
-import { LevelDocument } from '../levels/schemas/level.schema'
 import { ProgramState } from '../programs/enums/program-state.enum'
 import { ProgramSubscriptionType } from '../programs/enums/program-subscription-type.enum'
 import { ProgramDocument } from '../programs/schemas/program.schema'
 import { StudentDocument } from '../students/schemas/student.schema'
 import { PaginatedSubscriptionDto } from './dto/paginated-subscripition.dto'
 import { SearchSubscriptionsQueryDto } from './dto/search-subscriptions-query.dto'
-import { CreateSubscriptionDto, StudentSubscriptionDto, SubscriptionDto, UpdateSubscriptionDto } from './dto/subscription.dto'
+import {
+    CreateSubscriptionDto,
+    CreateSubscriptionV2Dto,
+    StudentSubscriptionDto,
+    SubscriptionDto,
+    UpdateSubscriptionDto,
+} from './dto/subscription.dto'
 import { SubscriptionState } from './enums/subscription-state.enum'
 import { SubscriptionDocument } from './schemas/subscription.schema'
 import { SubscriptionsRepository } from './subscriptions.repository'
@@ -26,16 +31,16 @@ export class SubscriptionsService {
 
     constructor(
         private readonly repository: SubscriptionsRepository,
-        private readonly sharedDocumentsService: SharedDocumentsService
+        private readonly sharedDocumentsService: SharedDocumentsService,
+        private readonly i18n: I18nService
     ) {}
 
     async create(createSubscriptionDto: CreateSubscriptionDto, student: StudentDocument): Promise<CreatedDto> {
         const { programId, levelId } = createSubscriptionDto
         const currentSubscriptions = await this.getManyForStudent(student.subscriptions as ObjectId[])
         const program = await this.sharedDocumentsService.getProgram(programId)
-        const level = await this.sharedDocumentsService.getLevel(levelId)
 
-        this.validateSubscriptionForStudent(currentSubscriptions, program, level)
+        this.validateSubscriptionForStudent(currentSubscriptions, program)
 
         const state =
             program?.subscriptionType === ProgramSubscriptionType.public ? SubscriptionState.active : SubscriptionState.pending
@@ -45,6 +50,25 @@ export class SubscriptionsService {
         await student.save()
         this.logger.log(`Student ${student.email} subscribed to program ${createSubscriptionDto.programId}
          in level ${createSubscriptionDto.levelId}. Subscription: ${created._id.toString()}.`)
+        return { id: created._id.toString() }
+    }
+
+    async createV2(createSubscriptionDto: CreateSubscriptionV2Dto, student: StudentDocument): Promise<CreatedDto> {
+        const { programId } = createSubscriptionDto
+        const currentSubscriptions = await this.getManyForStudent(student.subscriptions as ObjectId[])
+        const program = await this.sharedDocumentsService.getProgram(programId)
+
+        this.validateSubscriptionForStudent(currentSubscriptions, program)
+
+        const state =
+            program?.subscriptionType === ProgramSubscriptionType.public ? SubscriptionState.active : SubscriptionState.pending
+
+        const created = await this.repository.create({ program: programId, subscriber: student._id, state })
+        ;(student.subscriptions as ObjectId[]).push(created._id)
+        await student.save()
+        this.logger.log(
+            `Student ${student.email} subscribed to program ${createSubscriptionDto.programId}. Subscription: ${created._id.toString()}.`
+        )
         return { id: created._id.toString() }
     }
 
@@ -140,44 +164,27 @@ export class SubscriptionsService {
         return StudentSubscriptionDto.fromDocuments(subscriptions)
     }
 
-    validateSubscriptionForStudent(
-        currentSubscriptions: StudentSubscriptionDto[],
-        program?: ProgramDocument,
-        level?: LevelDocument
-    ): void {
-        if (!program || !level) {
-            this.logger.error(`Program or level not found.`)
-            throw new NotFoundException('Program or level not found.')
+    validateSubscriptionForStudent(currentSubscriptions: StudentSubscriptionDto[], program?: ProgramDocument): void {
+        if (!program) {
+            this.logger.error(`Program not found.`)
+            throw new NotFoundException(this.i18n.t('student.subscriptions.createSubscription.errors.NOT_FOUND'))
         }
         const programId = program._id.toString()
-        const levelId = level._id.toString()
-        const hasSameSubscription = currentSubscriptions?.some(
-            sub => sub.program.id === programId && sub.level.id === levelId && sub.state !== SubscriptionState.deleted
-        )
+        const hasSameSubscription = currentSubscriptions?.some(sub => sub.program.id === programId)
         if (hasSameSubscription) {
-            this.logger.error(`Student already subscribed to level ${levelId} in program ${programId}.`)
-            throw new ConflictException('Student already have the same subscription.')
-        }
-        const programLevels = program.levels as ObjectId[]
-        if (!programLevels.includes(level._id)) {
-            this.logger.error(`Level ${levelId} not found in program ${programId}.`)
-            throw new NotFoundException('Level not found in program.')
+            this.logger.error(`Student already subscribed to program ${programId}.`)
+            throw new ConflictException(this.i18n.t('student.subscriptions.createSubscription.errors.CONFLICT'))
         }
 
-        if (program.state !== ProgramState.published || level.state !== LevelState.active) {
-            this.logger.error(`Program or level state invalid for subscribing.`)
-            throw new NotAcceptableException('Program or level state invalid for subscribing.')
+        if (program.state !== ProgramState.published || program.levels?.length === 0) {
+            this.logger.error(`Program state invalid for subscribing.`)
+            throw new NotAcceptableException(this.i18n.t('student.subscriptions.createSubscription.errors.NOT_ACCEPTABLE'))
         }
 
         const now = Date.now()
         if (program.registrationStart.getTime() > now || program.registrationEnd.getTime() < now) {
             this.logger.error(`Program registration period is not active.`)
-            throw new NotAcceptableException('Program registration period is not active.')
-        }
-
-        if (level.start.getTime() > now || level.end.getTime() < now) {
-            this.logger.error(`Level registration period is not active.`)
-            throw new NotAcceptableException('Level registration period is not active.')
+            throw new NotAcceptableException(this.i18n.t('student.subscriptions.createSubscription.errors.NOT_ACCEPTABLE'))
         }
     }
 }
