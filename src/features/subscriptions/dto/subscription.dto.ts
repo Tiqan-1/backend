@@ -21,10 +21,11 @@ export class SubscriptionDto {
     @ValidateNested()
     program: ProgramDto
 
-    @ApiProperty({ type: LevelDto, required: false })
+    @ApiProperty({ type: LevelDto, required: false, deprecated: true })
     @IsOptional()
     @ValidateNested()
-    level: LevelDto
+    /** @deprecated */
+    level?: LevelDto
 
     @ApiProperty({ type: SimpleStudentDto, required: false })
     @IsOptional()
@@ -53,7 +54,7 @@ export class SubscriptionDto {
         return {
             id: subscription._id.toString(),
             program: ProgramDto.fromDocument(subscription.program as ProgramDocument),
-            level: LevelDto.fromDocument(subscription.level as LevelDocument),
+            level: subscription.level && LevelDto.fromDocument(subscription.level as LevelDocument),
             subscriptionDate: subscription.subscriptionDate,
             subscriber: SimpleStudentDto.fromDocument(subscription.subscriber as StudentDocument),
             state: subscription.state,
@@ -76,7 +77,7 @@ export class StudentSubscriptionDto extends OmitType(SubscriptionDto, ['program'
         return {
             id: subscription._id.toString(),
             program: StudentProgramUnpopulatedDto.fromDocument(subscription.program as ProgramDocument),
-            level: LevelDto.fromDocument(subscription.level as LevelDocument),
+            level: subscription.level && LevelDto.fromDocument(subscription.level as LevelDocument),
             subscriptionDate: subscription.subscriptionDate,
             state: subscription.state,
             notes: subscription.notes,
