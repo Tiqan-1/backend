@@ -116,7 +116,7 @@ export class StudentsService {
 
     findProgramsV3(query: SearchStudentProgramQueryDto): Promise<PaginatedProgramDto> {
         query.state = query.state ?? ProgramState.published
-        query.registrationEnd = addMinutes(Date.now(), 30)
+        query.registrationEnd = query.registrationEnd ?? addMinutes(Date.now(), 30)
         return this.programsService.find(query)
     }
 
