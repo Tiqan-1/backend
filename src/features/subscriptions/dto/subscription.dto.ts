@@ -1,4 +1,5 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
+import { Type } from 'class-transformer'
 import { IsDate, IsEnum, IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { i18nValidationMessage } from 'nestjs-i18n'
 import { LevelDto } from '../../levels/dto/level.dto'
@@ -31,6 +32,7 @@ export class SubscriptionDto {
     subscriber: SimpleStudentDto
 
     @ApiProperty({ type: Date, required: true, example: new Date() })
+    @Type(() => Date)
     @IsDate()
     subscriptionDate: Date
 

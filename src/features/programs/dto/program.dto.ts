@@ -161,14 +161,21 @@ export class SearchProgramQueryDto extends IntersectionType(
     SearchQueryDto
 ) {}
 
+enum SearchProgramState {
+    published = 'published',
+    suspended = 'suspended',
+    cancelled = 'cancelled',
+}
+
 export class SearchStudentProgramQueryDto extends OmitType(SearchProgramQueryDto, ['state'] as const) {
     @ApiProperty({
         type: String,
         required: false,
-        enum: [ProgramState.published, ProgramState.suspended, ProgramState.cancelled],
+        enum: SearchProgramState,
     })
     @IsOptional()
-    state: Record<string, ProgramState[]> | ProgramState = {
-        $in: [ProgramState.published, ProgramState.suspended, ProgramState.cancelled],
-    }
+    @IsEnum(SearchProgramState, {
+        message: i18nValidationMessage('validation.enum', { values: Object.values(SearchProgramState) }),
+    })
+    state: SearchProgramState
 }

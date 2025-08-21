@@ -1,4 +1,5 @@
 import { ApiProperty, IntersectionType, OmitType, PartialType } from '@nestjs/swagger'
+import { Type } from 'class-transformer'
 import { ArrayNotEmpty, IsDate, IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { SearchQueryDto } from '../../../shared/dto/search.query.dto'
 import { LessonDto } from '../../lessons/dto/lesson.dto'
@@ -15,6 +16,7 @@ export class TaskDto {
     levelId: string
 
     @ApiProperty({ type: Date, required: true, example: new Date() })
+    @Type(() => Date)
     @IsDate()
     date: Date
 
