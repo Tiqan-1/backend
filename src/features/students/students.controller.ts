@@ -208,6 +208,6 @@ export class StudentsController {
     @ApiBearerAuth()
     @Roles(Role.Student)
     findProgramsV3(@Query() query: SearchStudentProgramQueryDto): Promise<PaginatedProgramDto> {
-        return this.service.findPrograms(query)
+        return this.service.findProgramsV3(query)
     }
 }

@@ -168,11 +168,6 @@ export class SearchStudentProgramQueryDto extends OmitType(SearchProgramQueryDto
         enum: [ProgramState.published, ProgramState.suspended, ProgramState.cancelled],
     })
     @IsOptional()
-    @IsEnum(ProgramState, {
-        message: i18nValidationMessage('validation.enum', {
-            values: [ProgramState.published, ProgramState.suspended, ProgramState.cancelled],
-        }),
-    })
     state: Record<string, ProgramState[]> | ProgramState = {
         $in: [ProgramState.published, ProgramState.suspended, ProgramState.cancelled],
     }

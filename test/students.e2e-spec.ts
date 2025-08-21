@@ -265,7 +265,7 @@ describe('StudentsController (e2e)', () => {
                 .expect(HttpStatus.NOT_ACCEPTABLE)
         })
 
-        it('should fail with 404 if level is not of the given program', async () => {
+        it('should fail with 406 if program has no levels', async () => {
             const student = await mongoTestHelper.createStudent()
             const token = jwtService.sign({ id: student._id, role: student.role })
             const manager = await mongoTestHelper.createManager()
@@ -284,7 +284,7 @@ describe('StudentsController (e2e)', () => {
                 .post('/api/students/subscriptions/subscribe')
                 .set('Authorization', `Bearer ${token}`)
                 .send(body)
-                .expect(HttpStatus.NOT_FOUND)
+                .expect(HttpStatus.NOT_ACCEPTABLE)
         })
 
         it('should fail with 409 if student already subscribed to same level in the same program', async () => {
@@ -441,7 +441,7 @@ describe('StudentsController (e2e)', () => {
                 .expect(HttpStatus.NOT_ACCEPTABLE)
         })
 
-        it('should fail with 404 if level is not of the given program', async () => {
+        it('should fail with 406 if program has no levels', async () => {
             const student = await mongoTestHelper.createStudent()
             const token = jwtService.sign({ id: student._id, role: student.role })
             const manager = await mongoTestHelper.createManager()
@@ -460,7 +460,7 @@ describe('StudentsController (e2e)', () => {
                 .post('/api/students/subscriptions')
                 .set('Authorization', `Bearer ${token}`)
                 .send(body)
-                .expect(HttpStatus.NOT_FOUND)
+                .expect(HttpStatus.NOT_ACCEPTABLE)
         })
 
         it('should fail with 409 if student already subscribed to same level in the same program', async () => {
