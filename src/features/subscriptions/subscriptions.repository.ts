@@ -15,7 +15,19 @@ export class SubscriptionsRepository extends RepositoryMongoBase<SubscriptionDoc
     find(filter: Record<string, unknown>, limit = 20, skip = 0): Promise<SubscriptionDocument[]> {
         return this.model
             .find(filter)
-            .populate({ path: 'program', populate: { path: 'createdBy', select: '_id name email' } })
+            .populate({
+                path: 'program',
+                populate: [
+                    { path: 'createdBy', select: '_id name email' },
+                    {
+                        path: 'levels',
+                        populate: [
+                            { path: 'tasks', populate: { path: 'lessons' } },
+                            { path: 'createdBy', select: 'name email' },
+                        ],
+                    },
+                ],
+            })
             .populate({
                 path: 'level',
                 populate: [

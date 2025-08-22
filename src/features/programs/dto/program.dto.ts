@@ -99,23 +99,6 @@ export class ProgramDto {
     }
 }
 
-export class StudentProgramUnpopulatedDto extends OmitType(ProgramDto, ['levels'] as const) {
-    @ApiProperty({ type: String, required: false, isArray: true })
-    @IsOptional()
-    @ValidateNested({ each: true })
-    @IsMongoId({ each: true })
-    levelIds?: string[]
-
-    static fromDocument(document: ProgramDocument): StudentProgramUnpopulatedDto {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { levels, ...program } = ProgramDto.fromDocument(document)
-        return {
-            ...program,
-            levelIds: document.levels.map(level => level._id.toString()),
-        }
-    }
-}
-
 export class CreateProgramDto extends OmitType(ProgramDto, ['id', 'state', 'levels', 'createdBy', 'thumbnail'] as const) {
     @ApiProperty({ type: String, required: false, isArray: true })
     @IsOptional()
