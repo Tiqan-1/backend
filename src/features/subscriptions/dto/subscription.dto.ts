@@ -1,6 +1,7 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
 import { IsDate, IsEnum, IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
+import { isAfter, isBefore } from 'date-fns'
 import { i18nValidationMessage } from 'nestjs-i18n'
 import { LevelDto } from '../../levels/dto/level.dto'
 import { LevelDocument } from '../../levels/schemas/level.schema'
@@ -27,6 +28,11 @@ export class SubscriptionDto {
     /** @deprecated */
     level?: LevelDto
 
+    @ApiProperty({ type: LevelDto, required: false })
+    @IsOptional()
+    @ValidateNested()
+    currentLevel?: LevelDto
+
     @ApiProperty({ type: SimpleStudentDto, required: false })
     @IsOptional()
     @ValidateNested()
@@ -51,10 +57,14 @@ export class SubscriptionDto {
     }
 
     static fromDocument(subscription: SubscriptionDocument): SubscriptionDto {
+        const currentLevel = (subscription.program as ProgramDocument).levels.find(
+            (level: LevelDocument) => isBefore(level.start, Date.now()) && isAfter(level.end, Date.now())
+        )
         return {
             id: subscription._id.toString(),
             program: ProgramDto.fromDocument(subscription.program as ProgramDocument),
             level: subscription.level && LevelDto.fromDocument(subscription.level as LevelDocument),
+            currentLevel: currentLevel && LevelDto.fromDocument(currentLevel as LevelDocument),
             subscriptionDate: subscription.subscriptionDate,
             subscriber: SimpleStudentDto.fromDocument(subscription.subscriber as StudentDocument),
             state: subscription.state,
@@ -74,10 +84,14 @@ export class StudentSubscriptionDto extends OmitType(SubscriptionDto, ['subscrib
     }
 
     static fromDocument(subscription: SubscriptionDocument): StudentSubscriptionDto {
+        const currentLevel = (subscription.program as ProgramDocument).levels.find(
+            (level: LevelDocument) => isBefore(level.start, Date.now()) && isAfter(level.end, Date.now())
+        )
         return {
             id: subscription._id.toString(),
             program: ProgramDto.fromDocument(subscription.program as ProgramDocument),
             level: subscription.level && LevelDto.fromDocument(subscription.level as LevelDocument),
+            currentLevel: currentLevel && LevelDto.fromDocument(currentLevel as LevelDocument),
             subscriptionDate: subscription.subscriptionDate,
             state: subscription.state,
             notes: subscription.notes,

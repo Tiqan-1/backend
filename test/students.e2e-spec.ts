@@ -664,7 +664,7 @@ describe('StudentsController (e2e)', () => {
 
             expect(response.body).toBeDefined()
             const body = response.body as PaginatedStudentSubscriptionDto
-            const { id, level: levelDto, program: programDto, state, subscriptionDate } = body.items[0]
+            const { id, level: levelDto, program: programDto, state, subscriptionDate, currentLevel } = body.items[0]
             expect(id).toEqual(subscription._id.toString())
             expect(programDto?.id).toEqual(program._id.toString())
             expect(programDto?.levels[0].id).toEqual(level._id.toString())
@@ -673,6 +673,7 @@ describe('StudentsController (e2e)', () => {
             expect(levelDto?.id).toEqual(level._id.toString())
             expect(levelDto?.tasks[0].id).toEqual(task._id.toString())
             expect(levelDto?.tasks[0].lessons[0].id).toEqual(lesson._id.toString())
+            expect(currentLevel?.id).toEqual(level._id.toString())
             expect(state).toEqual(subscription.state)
             expect(subscriptionDate).toEqual(subscription.subscriptionDate.toISOString())
         })
