@@ -16,8 +16,8 @@ export class RepositoryMongoBase<T> extends RepositoryBase<T> {
         return this.model.find().limit(limit).skip(skip).exec()
     }
 
-    async findOne(filter: object): Promise<T | undefined> {
-        const foundElement = await this.model.findOne({ ...filter }).exec()
+    async findOne(filter: object, projection?: Record<string, unknown>): Promise<T | undefined> {
+        const foundElement = await this.model.findOne(filter, projection).exec()
         if (foundElement) {
             return foundElement
         }

@@ -30,6 +30,9 @@ export class Task {
 
     @Prop({ required: true, type: String, enum: TaskState, default: TaskState.active })
     state: TaskState
+
+    @Prop({ required: false, type: ObjectId, ref: 'Chat' })
+    chatRoomId?: ObjectId
 }
 
 export const TaskSchema = SchemaFactory.createForClass(Task)

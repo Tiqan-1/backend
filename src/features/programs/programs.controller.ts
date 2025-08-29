@@ -16,7 +16,6 @@ import {
     UseGuards,
 } from '@nestjs/common'
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse } from '@nestjs/swagger'
-import { FastifyRequest } from 'fastify'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { Roles } from '../authentication/decorators/roles.decorator'
 import { Role } from '../authentication/enums/role.enum'
@@ -27,7 +26,8 @@ import { PaginatedProgramDto } from './dto/paginated-program.dto'
 import { CreateProgramDto, SearchProgramQueryDto, UpdateProgramDto } from './dto/program.dto'
 import { ProgramState } from './enums/program-state.enum'
 import { ProgramsService } from './programs.service'
-import { ThumbnailValidator } from './validators/thumbnail.validator'
+
+// import { ThumbnailValidator } from './validators/thumbnail.validator'
 
 @ApiBearerAuth()
 @Controller('api/programs')
@@ -130,10 +130,10 @@ export class ProgramsController {
     @HttpCode(HttpStatus.NO_CONTENT)
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
-    async addThumbnail(@Param('id') id: string, @Req() req: FastifyRequest): Promise<void> {
-        const thumbnail = await req.file()
-        if (ThumbnailValidator.validate(thumbnail)) {
-            return this.programsService.updateThumbnail(id, thumbnail)
-        }
+    async addThumbnail(@Param('id') id: string, @Req() req: Request): Promise<void> {
+        //const thumbnail = await req.file()
+        //if (ThumbnailValidator.validate(thumbnail)) {
+        //    return this.programsService.updateThumbnail(id, thumbnail)
+        //}
     }
 }
