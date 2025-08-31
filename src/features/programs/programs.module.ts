@@ -10,6 +10,6 @@ import { ProgramsThumbnailsRepository } from './programs.thumbnails.repository'
     imports: [SharedDocumentsModule, LevelsModule],
     controllers: [ProgramsController],
     providers: [ProgramsService, ProgramsRepository, ProgramsThumbnailsRepository],
-    exports: [ProgramsService],
+    exports: [ProgramsService, ProgramsRepository],
 })
 export class ProgramsModule {}

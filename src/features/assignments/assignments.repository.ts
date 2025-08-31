@@ -1,0 +1,73 @@
+import { Injectable } from '@nestjs/common'
+import { InjectModel } from '@nestjs/mongoose'
+import { Model } from 'mongoose'
+import { RepositoryMongoBase } from '../../shared/repository/repository-mongo-base'
+import { ObjectId } from '../../shared/repository/types'
+import { Assignment, AssignmentDocument } from './schemas/assignment.model'
+
+@Injectable()
+export class AssignmentsRepository extends RepositoryMongoBase<AssignmentDocument> {
+    constructor(@InjectModel(Assignment.name) model: Model<AssignmentDocument>) {
+        super(model)
+    }
+
+    //
+    //
+    //
+    //
+    // === SEARCH ===
+    //
+    //
+    //
+    //
+    async find(filter: object, limit: number = 10, skip: number = 0): Promise<AssignmentDocument[]> {
+        return this.model
+            .find(filter)
+            .limit(limit)
+            .skip(skip)
+            .populate({ path: 'createdBy', select: 'name' })
+            .populate({ path: 'subjectId', select: 'name'})
+            .populate({ path: 'levelId', select: 'name' })
+            .exec()
+    }
+
+    //
+    //
+    //
+    //
+    // === FIND BY ID ===
+    //
+    //
+    //
+    //
+    async findById(id: ObjectId): Promise<AssignmentDocument | undefined> {
+        const found = await this.model
+            .findById(id)
+            .populate({ path: 'createdBy', select: 'name' })
+            .populate({ path: 'subjectId', select: 'name'})
+            .populate({ path: 'levelId', select: 'name' })
+            .exec()
+        if (found) {
+            return found
+        }
+        return undefined
+    }
+
+    //
+    //
+    //
+    //
+    // === PAGINATE ASSIGNMENTS ===
+    //
+    //
+    //
+    //
+    async findAll(limit = 10, skip = 0): Promise<AssignmentDocument[]> {
+        return this.model
+            .find()
+            .limit(limit)
+            .skip(skip)
+            .populate({ path: 'createdBy', select: 'name' })
+            .exec()
+    }
+}

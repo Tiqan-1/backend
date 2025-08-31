@@ -15,6 +15,8 @@ import { SubscriptionsModule } from './features/subscriptions/subscriptions.modu
 import { TasksModule } from './features/tasks/tasks.module'
 import { TokensModule } from './features/tokens/tokens.module'
 import { UsersModule } from './features/users/users.module'
+import { AssignmentsModule } from './features/assignments/assignments.module'
+import { AssignmentResponsesModule } from './features/assignment-responses/assignment-responses.module'
 import { SharedDocumentsModule } from './shared/database-services/shared-documents.module'
 
 @Module({
@@ -45,6 +47,8 @@ import { SharedDocumentsModule } from './shared/database-services/shared-documen
         LevelsModule,
         SharedDocumentsModule,
         SubscriptionsModule,
+        AssignmentResponsesModule,
+        AssignmentsModule,
     ],
     providers: [],
 })

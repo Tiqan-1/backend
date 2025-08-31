@@ -8,6 +8,6 @@ import { SubscriptionsService } from './subscriptions.service'
     imports: [SharedDocumentsModule],
     controllers: [SubscriptionsController],
     providers: [SubscriptionsService, SubscriptionsRepository],
-    exports: [SubscriptionsService],
+    exports: [SubscriptionsService, SubscriptionsRepository],
 })
 export class SubscriptionsModule {}
