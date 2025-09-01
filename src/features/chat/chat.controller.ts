@@ -2,6 +2,7 @@ import { Body, Controller, HttpCode, HttpStatus, Param, Post, Request, UseGuards
 import {
     ApiBadRequestResponse,
     ApiBearerAuth,
+    ApiBody,
     ApiInternalServerErrorResponse,
     ApiNoContentResponse,
     ApiNotFoundResponse,
@@ -17,6 +18,7 @@ import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { TokenUser } from '../authentication/types/token-user'
 import { ChatService } from './chat.service'
 import { ChatDto } from './dto/chat.dto'
+import { CreateMessageDto } from './dto/message.dto'
 
 @Controller('chat')
 @UseGuards(JwtAuthGuard)
@@ -41,6 +43,7 @@ export class ChatController {
     @ApiInternalServerErrorResponse({ description: 'An internal server error occurred.', type: ErrorDto })
     @ApiNotFoundResponse({ description: 'Chat room not found.', type: ErrorDto })
     @ApiBadRequestResponse({ description: 'Request validation failed.', type: BadRequestErrorDto })
+    @ApiBody({ required: true, type: CreateMessageDto })
     @HttpCode(HttpStatus.NO_CONTENT)
     @ApiParam({ name: 'chatRoomId', type: String, required: true })
     @Post(':chatRoomId/send-message')

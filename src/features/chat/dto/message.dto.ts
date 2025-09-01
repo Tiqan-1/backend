@@ -24,3 +24,9 @@ export class MessageDto {
     @Type(() => SimpleManagerDto)
     sender: SimpleManagerDto
 }
+
+export class CreateMessageDto {
+    @ApiProperty({ required: true, type: String, description: 'new message' })
+    @IsString()
+    message: string
+}
