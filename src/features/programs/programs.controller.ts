@@ -3,18 +3,23 @@ import {
     Body,
     Controller,
     Delete,
+    FileTypeValidator,
     Get,
     HttpCode,
     HttpStatus,
     Logger,
+    MaxFileSizeValidator,
     Param,
+    ParseFilePipe,
     Post,
     Put,
     Query,
-    Req,
     Request,
+    UploadedFile,
     UseGuards,
+    UseInterceptors,
 } from '@nestjs/common'
+import { FileInterceptor } from '@nestjs/platform-express'
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse } from '@nestjs/swagger'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { Roles } from '../authentication/decorators/roles.decorator'
@@ -128,12 +133,21 @@ export class ProgramsController {
     @ApiConsumes('multipart/form-data')
     @Post(':id/thumbnail')
     @HttpCode(HttpStatus.NO_CONTENT)
+    @UseInterceptors(FileInterceptor('thumbnail', { limits: { fileSize: 5 * 1024 * 1024, files: 1 } }))
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
-    async addThumbnail(@Param('id') id: string, @Req() req: Request): Promise<void> {
-        //const thumbnail = await req.file()
-        //if (ThumbnailValidator.validate(thumbnail)) {
-        //    return this.programsService.updateThumbnail(id, thumbnail)
-        //}
+    async addThumbnail(
+        @Param('id') id: string,
+        @UploadedFile(
+            new ParseFilePipe({
+                validators: [
+                    new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 5 }), // 5MB
+                    new FileTypeValidator({ fileType: 'image/png', skipMagicNumbersValidation: true }),
+                ],
+            })
+        )
+        thumbnail: Express.Multer.File
+    ): Promise<void> {
+        return this.programsService.updateThumbnail(id, thumbnail)
     }
 }

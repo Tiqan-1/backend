@@ -1,4 +1,3 @@
-import { MultipartFile } from '@fastify/multipart'
 import { ConflictException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common'
 import { oneMonth } from '../../shared/constants'
 import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
@@ -101,7 +100,7 @@ export class ProgramsService {
         }
     }
 
-    async updateThumbnail(id: string, uploaded: MultipartFile): Promise<void> {
+    async updateThumbnail(id: string, uploaded: Express.Multer.File): Promise<void> {
         const programId = new ObjectId(id)
         const found = await this.programsRepository.findById(programId)
         if (found?.thumbnail) {
