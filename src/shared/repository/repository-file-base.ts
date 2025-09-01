@@ -25,12 +25,13 @@ export abstract class RepositoryFileBase {
             fs.mkdirSync(this.uploadDir, { recursive: true })
         }
 
-        const uniqueFilename = `${uuidv4()}-${multipartFile.filename}`
+        const uniqueFilename = `${uuidv4()}-${multipartFile.originalname}`
         const filePath = path.join(this.uploadDir, uniqueFilename)
         try {
             await pump(multipartFile.stream, fs.createWriteStream(filePath))
             this.logger.log(`File ${filePath} created.`)
         } catch (error) {
+            this.logger.error(`Failed to save file ${filePath}`, error as Error)
             throw new Error(`Failed to save file`, error as Error)
         }
 
@@ -50,7 +51,11 @@ export abstract class RepositoryFileBase {
             return undefined
         }
         const filePath = path.join(this.uploadDir, fileName)
-        await fs.promises.rm(filePath)
-        this.logger.log(`File ${filePath} removed.`)
+        try {
+            await fs.promises.rm(filePath)
+            this.logger.log(`File ${filePath} removed.`)
+        } catch (error) {
+            this.logger.warn(`Failed to remove file ${filePath}`, error as Error)
+        }
     }
 }

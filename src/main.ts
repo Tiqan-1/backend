@@ -1,7 +1,6 @@
 import { ConsoleLogger } from '@nestjs/common'
 import { LogLevel } from '@nestjs/common/services/logger.service'
 import { NestFactory } from '@nestjs/core'
-import { NestFastifyApplication } from '@nestjs/platform-fastify'
 import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger'
 import 'multer'
 import { I18nValidationExceptionFilter, I18nValidationPipe } from 'nestjs-i18n'
@@ -14,7 +13,7 @@ import { SecurityErrorFilter } from './shared/errors/security-error.filter'
 async function bootstrap(): Promise<void> {
     const logLevels: LogLevel[] =
         process.env.NODE_ENV === 'production' ? ['log', 'error', 'warn'] : ['log', 'error', 'warn', 'debug', 'verbose']
-    const app = await NestFactory.create<NestFastifyApplication>(AppModule, {
+    const app = await NestFactory.create(AppModule, {
         logger: new ConsoleLogger({ logLevels, json: true, colors: process.env.NODE_ENV === 'development' }),
     })
 

@@ -21,6 +21,8 @@ import {
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse } from '@nestjs/swagger'
+import { diskStorage } from 'multer'
+import { v4 as uuidv4 } from 'uuid'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { Roles } from '../authentication/decorators/roles.decorator'
 import { Role } from '../authentication/enums/role.enum'
@@ -31,15 +33,17 @@ import { PaginatedProgramDto } from './dto/paginated-program.dto'
 import { CreateProgramDto, SearchProgramQueryDto, UpdateProgramDto } from './dto/program.dto'
 import { ProgramState } from './enums/program-state.enum'
 import { ProgramsService } from './programs.service'
-
-// import { ThumbnailValidator } from './validators/thumbnail.validator'
+import { ProgramsThumbnailsRepository } from './programs.thumbnails.repository'
 
 @ApiBearerAuth()
 @Controller('api/programs')
 export class ProgramsController {
     private readonly logger = new Logger(ProgramsController.name)
 
-    constructor(private readonly programsService: ProgramsService) {}
+    constructor(
+        private readonly programsService: ProgramsService,
+        private readonly thumbnailsRepository: ProgramsThumbnailsRepository
+    ) {}
 
     @ApiOperation({ summary: 'Creates a program', description: `Creates a program and adds it to the current manager.` })
     @ApiResponse({ status: HttpStatus.CREATED, type: CreatedDto, description: 'Program successfully created.' })
@@ -133,7 +137,15 @@ export class ProgramsController {
     @ApiConsumes('multipart/form-data')
     @Post(':id/thumbnail')
     @HttpCode(HttpStatus.NO_CONTENT)
-    @UseInterceptors(FileInterceptor('thumbnail', { limits: { fileSize: 5 * 1024 * 1024, files: 1 } }))
+    @UseInterceptors(
+        FileInterceptor('thumbnail', {
+            limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+            storage: diskStorage({
+                destination: './uploads/programs-thumbnails',
+                filename: (_, file, callback) => callback(null, `${uuidv4()}-${file.originalname}`),
+            }),
+        })
+    )
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
     async addThumbnail(
@@ -148,6 +160,9 @@ export class ProgramsController {
         )
         thumbnail: Express.Multer.File
     ): Promise<void> {
-        return this.programsService.updateThumbnail(id, thumbnail)
+        this.logger.log(`Adding thumbnail ${thumbnail.filename} for program ${id}`)
+        return this.programsService.updateThumbnail(id, thumbnail.filename).catch(async () => {
+            await this.thumbnailsRepository.remove(thumbnail.filename)
+        })
     }
 }

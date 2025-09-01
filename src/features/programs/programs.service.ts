@@ -100,16 +100,18 @@ export class ProgramsService {
         }
     }
 
-    async updateThumbnail(id: string, uploaded: Express.Multer.File): Promise<void> {
+    async updateThumbnail(id: string, filename: string): Promise<void> {
         const programId = new ObjectId(id)
         const found = await this.programsRepository.findById(programId)
-        if (found?.thumbnail) {
+        if (!found) {
+            throw new NotFoundException(`Program ${id} not found.`)
+        }
+        if (found.thumbnail) {
             await this.programsThumbnailsRepository.remove(found.thumbnail)
             this.logger.log(`Thumbnail ${found.thumbnail} removed.`)
         }
-        const thumbnail = await this.programsThumbnailsRepository.create(uploaded)
-        await this.programsRepository.update({ _id: id }, { thumbnail })
-        this.logger.log(`Thumbnail ${uploaded.filename} added to Program ${id}.`)
+        await this.programsRepository.update({ _id: id }, { thumbnail: filename })
+        this.logger.log(`Thumbnail ${filename} added to Program ${id}.`)
     }
 
     async remove(id: string, managerObjectId: ObjectId): Promise<void> {

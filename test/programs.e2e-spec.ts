@@ -1,8 +1,7 @@
-import multipart from '@fastify/multipart'
 import { HttpStatus } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { NestApplication } from '@nestjs/core'
 import { JwtService } from '@nestjs/jwt'
-import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify'
 import { Test, TestingModule } from '@nestjs/testing'
 import * as fs from 'node:fs'
 import path from 'path'
@@ -35,7 +34,7 @@ import {
 import { MongoTestHelper } from '../src/shared/test/helper/mongo-test.helper'
 
 describe('ProgramsController (e2e)', () => {
-    let app: NestFastifyApplication
+    let app: NestApplication
     let jwtService: JwtService
     let configService: ConfigService
     let mongoTestHelper: MongoTestHelper
@@ -66,10 +65,9 @@ describe('ProgramsController (e2e)', () => {
         configService = module.get(ConfigService)
         mockJwtStrategyValidation(module)
 
-        app = module.createNestApplication<NestFastifyApplication>(new FastifyAdapter({ logger: true }))
-        await app.init()
-        await app.register(multipart)
-        await app.getHttpAdapter().getInstance().ready()
+        app = module.createNestApplication<NestApplication>()
+        // await app.init()
+        // await app.getHttpAdapter().getInstance().ready()
     })
 
     afterAll(async () => {

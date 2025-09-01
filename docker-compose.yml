@@ -14,7 +14,7 @@ services:
     networks:
       - app-network
     volumes:
-      - ./uploads:/uploads
+      - ./uploads:/app/uploads
     restart: unless-stopped
     command: npm run start:prod
 
