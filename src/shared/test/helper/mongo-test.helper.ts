@@ -4,6 +4,8 @@ import * as bcrypt from 'bcryptjs'
 import { MongoMemoryServer } from 'mongodb-memory-server'
 import { connect, Connection, Model } from 'mongoose'
 import { Role } from '../../../features/authentication/enums/role.enum'
+import { Chat, ChatSchema } from '../../../features/chat/schemas/chat.schema'
+import { Message, MessageSchema } from '../../../features/chat/schemas/message.schema'
 import { LessonState } from '../../../features/lessons/enums/lesson-state.enum'
 import { LessonType } from '../../../features/lessons/enums/lesson-type.enum'
 import { Lesson, LessonDocument, LessonSchema } from '../../../features/lessons/schemas/lesson.schema'
@@ -43,6 +45,8 @@ export class MongoTestHelper {
     private subjectModel: Model<Subject>
     private lessonModel: Model<Lesson>
     private taskModel: Model<Task>
+    private chatModel: Model<Chat>
+    private messageModel: Model<Message>
     private programModel: Model<Program>
     private levelModel: Model<Level>
     private subscriptionModel: Model<Subscription>
@@ -58,6 +62,8 @@ export class MongoTestHelper {
             { provide: getModelToken(DbVersion.name), useValue: this.getDbVersionModel() },
             { provide: getModelToken(Lesson.name), useValue: this.getLessonModel() },
             { provide: getModelToken(Task.name), useValue: this.getTaskModel() },
+            { provide: getModelToken(Chat.name), useValue: this.getChatModel() },
+            { provide: getModelToken(Message.name), useValue: this.getMessageModel() },
             { provide: getModelToken(Level.name), useValue: this.getLevelModel() },
             { provide: getModelToken(Program.name), useValue: this.getProgramModel() },
             { provide: getModelToken(Manager.name), useValue: this.getManagerModel() },
@@ -125,6 +131,20 @@ export class MongoTestHelper {
             this.taskModel = this.mongoConnection.model(Task.name, TaskSchema)
         }
         return this.taskModel
+    }
+
+    getChatModel(): Model<Chat> {
+        if (!this.chatModel) {
+            this.chatModel = this.mongoConnection.model(Chat.name, ChatSchema)
+        }
+        return this.chatModel
+    }
+
+    getMessageModel(): Model<Message> {
+        if (!this.messageModel) {
+            this.messageModel = this.mongoConnection.model(Message.name, MessageSchema)
+        }
+        return this.messageModel
     }
 
     getProgramModel(): Model<Program> {
