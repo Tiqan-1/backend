@@ -1,14 +1,19 @@
-import { HttpStatus } from '@nestjs/common'
+import { HttpStatus, INestApplication } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { NestApplication } from '@nestjs/core'
 import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
+import { I18nService } from 'nestjs-i18n'
+import { PusherService } from 'nestjs-pusher'
 import * as fs from 'node:fs'
 import path from 'path'
 import { ObjectId } from 'src/shared/repository/types'
 import request from 'supertest'
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { App } from 'supertest/types'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
+import { ChatRepository } from '../src/features/chat/chat.repository'
+import { ChatService } from '../src/features/chat/chat.service'
+import { MessageRepository } from '../src/features/chat/message.repository'
 import { LessonsRepository } from '../src/features/lessons/lessons.repository'
 import { LessonsService } from '../src/features/lessons/lessons.service'
 import { LevelsRepository } from '../src/features/levels/levels.repository'
@@ -34,7 +39,7 @@ import {
 import { MongoTestHelper } from '../src/shared/test/helper/mongo-test.helper'
 
 describe('ProgramsController (e2e)', () => {
-    let app: NestApplication
+    let app: INestApplication<App>
     let jwtService: JwtService
     let configService: ConfigService
     let mongoTestHelper: MongoTestHelper
@@ -50,6 +55,11 @@ describe('ProgramsController (e2e)', () => {
                 ProgramsThumbnailsRepository,
                 LevelsService,
                 LevelsRepository,
+                ChatService,
+                ChatRepository,
+                MessageRepository,
+                { provide: I18nService, useValue: { t: vi.fn() } },
+                { provide: PusherService, useValue: { trigger: vi.fn() } },
                 TasksService,
                 TasksRepository,
                 LessonsService,
@@ -65,8 +75,8 @@ describe('ProgramsController (e2e)', () => {
         configService = module.get(ConfigService)
         mockJwtStrategyValidation(module)
 
-        app = module.createNestApplication<NestApplication>()
-        // await app.init()
+        app = module.createNestApplication()
+        await app.init()
         // await app.getHttpAdapter().getInstance().ready()
     })
 

@@ -1,6 +1,6 @@
+name: mubadarah-prod
 services:
   api:
-    container_name: mubadarah-api
     user: '1000:1000'
     build:
       context: .
@@ -19,7 +19,6 @@ services:
     command: npm run start:prod
 
   mongodb:
-    container_name: mubadarah-mongodb
     user: '1000:1000'
     image: mongo:latest
     ports:
