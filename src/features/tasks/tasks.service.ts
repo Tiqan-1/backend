@@ -88,13 +88,14 @@ export class TasksService {
         return PaginationHelper.wrapResponse(TaskDto.fromDocuments(found), query.page, query.pageSize, total)
     }
 
-    async update(id: string, task: UpdateTaskDto): Promise<void> {
+    async update(id: string, task: UpdateTaskDto, updatedBy: ObjectId): Promise<void> {
         const taskId = new ObjectId(id)
         const validatedLessons = task.lessonIds?.length ? await this.lessonsService.validateLessonIds(task.lessonIds) : undefined
 
         const updateObject: Partial<TaskDocument> = {
             ...(task.date && { date: normalizeDate(new Date(task.date)) }),
             ...(task.note && { note: task.note }),
+            chatRoomId: task.hasChatRoom ? await this.chatService.createChatRoom(updatedBy) : undefined,
             ...(validatedLessons && { lessons: validatedLessons }),
         }
 

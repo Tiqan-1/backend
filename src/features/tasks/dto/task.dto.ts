@@ -29,12 +29,18 @@ export class TaskDto {
     @IsOptional()
     note?: string
 
+    @ApiProperty({ type: String, required: false, description: 'The chat room id for the task' })
+    @IsString()
+    @IsOptional()
+    chatRoomId?: string
+
     constructor(document: TaskDocument) {
         this.id = document._id.toString()
         this.levelId = document.levelId.toString()
         this.date = new Date(document.date)
         this.note = document.note
         this.lessons = document.lessons.map(lesson => LessonDto.fromDocument(lesson as LessonDocument))
+        this.chatRoomId = document.chatRoomId?.toString()
     }
 
     static fromDocument(document: TaskDocument): TaskDto {
@@ -60,4 +66,7 @@ export class CreateTaskDto extends OmitType(TaskDto, ['id', 'lessons'] as const)
 
 export class UpdateTaskDto extends PartialType(OmitType(CreateTaskDto, ['levelId'] as const)) {}
 
-export class SearchTasksQueryDto extends IntersectionType(PartialType(OmitType(TaskDto, ['lessons'] as const)), SearchQueryDto) {}
+export class SearchTasksQueryDto extends IntersectionType(
+    PartialType(OmitType(TaskDto, ['lessons', 'chatRoomId'] as const)),
+    SearchQueryDto
+) {}
