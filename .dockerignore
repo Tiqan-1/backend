@@ -7,3 +7,6 @@ dist
 .dockerignore
 Dockerfile
 mongodb_data
+mongodb_data-dev
+uploads
+uploads-dev

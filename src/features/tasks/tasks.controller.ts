@@ -67,11 +67,11 @@ export class TasksController {
     @HttpCode(HttpStatus.NO_CONTENT)
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
-    update(@Body() task: UpdateTaskDto, @Param('id') id: string): Promise<void> {
+    update(@Body() task: UpdateTaskDto, @Param('id') id: string, @Request() request: { user: TokenUser }): Promise<void> {
         if (Object.keys(task).length === 0) {
             throw new BadRequestException('Task not found.')
         }
-        return this.service.update(id, task)
+        return this.service.update(id, task, request.user.id)
     }
 
     @ApiOperation({ summary: 'Deletes a task', description: 'Deletes a task.' })

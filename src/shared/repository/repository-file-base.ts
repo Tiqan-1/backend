@@ -1,4 +1,3 @@
-import { MultipartFile } from '@fastify/multipart'
 import { Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import * as fs from 'node:fs'
@@ -20,18 +19,19 @@ export abstract class RepositoryFileBase {
         this.uploadDir = path.join(this.configService.get('UPLOAD_FOLDER') as string, this.folderName)
     }
 
-    async create(multipartFile: MultipartFile): Promise<string> {
+    async create(multipartFile: Express.Multer.File): Promise<string> {
         // Save the uploaded file to the server's file system
         if (!fs.existsSync(this.uploadDir)) {
             fs.mkdirSync(this.uploadDir, { recursive: true })
         }
 
-        const uniqueFilename = `${uuidv4()}-${multipartFile.filename}`
+        const uniqueFilename = `${uuidv4()}-${multipartFile.originalname}`
         const filePath = path.join(this.uploadDir, uniqueFilename)
         try {
-            await pump(multipartFile.file, fs.createWriteStream(filePath))
+            await pump(multipartFile.stream, fs.createWriteStream(filePath))
             this.logger.log(`File ${filePath} created.`)
         } catch (error) {
+            this.logger.error(`Failed to save file ${filePath}`, error as Error)
             throw new Error(`Failed to save file`, error as Error)
         }
 
@@ -51,7 +51,11 @@ export abstract class RepositoryFileBase {
             return undefined
         }
         const filePath = path.join(this.uploadDir, fileName)
-        await fs.promises.rm(filePath)
-        this.logger.log(`File ${filePath} removed.`)
+        try {
+            await fs.promises.rm(filePath)
+            this.logger.log(`File ${filePath} removed.`)
+        } catch (error) {
+            this.logger.warn(`Failed to remove file ${filePath}`, error as Error)
+        }
     }
 }

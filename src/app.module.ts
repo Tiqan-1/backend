@@ -1,10 +1,13 @@
 import { Module } from '@nestjs/common'
-import { ConfigModule } from '@nestjs/config'
+import { ConfigModule, ConfigService } from '@nestjs/config'
 import { MongooseModule } from '@nestjs/mongoose'
 import { ServeStaticModule } from '@nestjs/serve-static'
 import { I18nModule } from 'nestjs-i18n'
+import { PusherModule } from 'nestjs-pusher'
 import { join } from 'node:path'
+import * as process from 'node:process'
 import { AuthenticationModule } from './features/authentication/authentication.module'
+import { ChatModule } from './features/chat/chat.module'
 import { LessonsModule } from './features/lessons/lessons.module'
 import { LevelsModule } from './features/levels/levels.module'
 import { ManagersModule } from './features/managers/managers.module'
@@ -35,6 +38,18 @@ import { SharedDocumentsModule } from './shared/database-services/shared-documen
             },
         }),
         MongooseModule.forRoot(process.env.MONGODB_URI as string),
+        PusherModule.forRootAsync({
+            inject: [ConfigService],
+            useFactory: (configService: ConfigService) => ({
+                options: {
+                    key: configService.get('PUSHER_APP_KEY') as string,
+                    appId: configService.get('PUSHER_APP_ID') as string,
+                    secret: configService.get('PUSHER_APP_SECRET') as string,
+                    cluster: configService.get('PUSHER_APP_CLUSTER') as string,
+                },
+                isGlobal: true,
+            }),
+        }),
         UsersModule,
         AuthenticationModule,
         TokensModule,
@@ -47,6 +62,7 @@ import { SharedDocumentsModule } from './shared/database-services/shared-documen
         LevelsModule,
         SharedDocumentsModule,
         SubscriptionsModule,
+        ChatModule,
         AssignmentResponsesModule,
         AssignmentsModule,
     ],

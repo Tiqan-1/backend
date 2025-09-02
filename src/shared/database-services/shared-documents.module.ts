@@ -12,6 +12,8 @@ import { User, UserSchema } from '../../features/users/schemas/user.schema'
 import { MigrationService } from './migration.service'
 import { DbVersion, DbVersionSchema } from './schema/db-version.schema'
 import { SharedDocumentsService } from './shared-documents.service'
+import { Chat, ChatSchema } from '../../features/chat/schemas/chat.schema'
+import { Message, MessageSchema } from '../../features/chat/schemas/message.schema'
 
 @Module({
     imports: [
@@ -19,6 +21,8 @@ import { SharedDocumentsService } from './shared-documents.service'
         MongooseModule.forFeature([{ name: Lesson.name, schema: LessonSchema }]),
         MongooseModule.forFeature([{ name: Subject.name, schema: SubjectSchema }]),
         MongooseModule.forFeature([{ name: Task.name, schema: TaskSchema }]),
+        MongooseModule.forFeature([{ name: Chat.name, schema: ChatSchema }]),
+        MongooseModule.forFeature([{ name: Message.name, schema: MessageSchema }]),
         MongooseModule.forFeature([{ name: Level.name, schema: LevelSchema }]),
         MongooseModule.forFeature([{ name: Program.name, schema: ProgramSchema }]),
         MongooseModule.forFeature([{ name: Subscription.name, schema: SubscriptionSchema }]),

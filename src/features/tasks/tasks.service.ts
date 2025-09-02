@@ -6,6 +6,7 @@ import { normalizeDate } from '../../shared/helper/date.helper'
 import { PaginationHelper } from '../../shared/helper/pagination-helper'
 import { SearchFilterBuilder } from '../../shared/helper/search-filter.builder'
 import { ObjectId } from '../../shared/repository/types'
+import { ChatService } from '../chat/chat.service'
 import { LessonsService } from '../lessons/lessons.service'
 import { PaginatedTaskDto } from './dto/paginated-task.dto'
 import { CreateTaskDto, SearchTasksQueryDto, TaskDto, UpdateTaskDto } from './dto/task.dto'
@@ -20,7 +21,8 @@ export class TasksService {
     constructor(
         private readonly taskRepository: TasksRepository,
         private readonly lessonsService: LessonsService,
-        private readonly documentsService: SharedDocumentsService
+        private readonly documentsService: SharedDocumentsService,
+        private readonly chatService: ChatService
     ) {}
 
     async create(task: CreateTaskDto, createdBy: ObjectId): Promise<CreatedDto> {
@@ -35,6 +37,7 @@ export class TasksService {
             createdBy,
             levelId: new ObjectId(task.levelId),
             date: normalizeDate(new Date(task.date)),
+            chatRoomId: task.hasChatRoom ? await this.chatService.createChatRoom(createdBy) : undefined,
             ...(task.note && { note: task.note }),
             ...(validatedLessons && { lessons: validatedLessons }),
         }
@@ -85,13 +88,14 @@ export class TasksService {
         return PaginationHelper.wrapResponse(TaskDto.fromDocuments(found), query.page, query.pageSize, total)
     }
 
-    async update(id: string, task: UpdateTaskDto): Promise<void> {
+    async update(id: string, task: UpdateTaskDto, updatedBy: ObjectId): Promise<void> {
         const taskId = new ObjectId(id)
         const validatedLessons = task.lessonIds?.length ? await this.lessonsService.validateLessonIds(task.lessonIds) : undefined
 
         const updateObject: Partial<TaskDocument> = {
             ...(task.date && { date: normalizeDate(new Date(task.date)) }),
             ...(task.note && { note: task.note }),
+            chatRoomId: task.hasChatRoom ? await this.chatService.createChatRoom(updatedBy) : undefined,
             ...(validatedLessons && { lessons: validatedLessons }),
         }
 

@@ -1,5 +1,7 @@
+name: mubadarah-prod
 services:
   api:
+    user: '1000:1000'
     build:
       context: .
       dockerfile: Dockerfile
@@ -11,10 +13,13 @@ services:
       - mongodb
     networks:
       - app-network
+    volumes:
+      - ./uploads:/app/uploads
     restart: unless-stopped
     command: npm run start:prod
 
   mongodb:
+    user: '1000:1000'
     image: mongo:latest
     ports:
       - "27017:27017"

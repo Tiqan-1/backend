@@ -1,38 +1,36 @@
+name: mubadarah-dev
 services:
   api:
-    container_name: mubadarah-api-dev
+    user: '1000:1000'
     build:
       context: .
       dockerfile: Dockerfile.dev
     ports:
-      - "3001:3000"
+      - "5000:3000"
     env_file:
       - .env
     depends_on:
       - mongodb
     networks:
-      - app-network
+      - dev-network
     restart: unless-stopped
     volumes:
       - .:/app
       - /app/node_modules
+      - ./uploads-dev:/app/uploads
     command: npm run start:debug
 
   mongodb:
-    container_name: mubadarah-mongodb-dev
     user: '1000:1000'
     image: mongo:latest
     ports:
-      - "27017:27017"
+      - "27018:27017"
     volumes:
-      - ./mongodb_data:/data/db
+      - ./mongodb_data-dev:/data/db
     networks:
-      - app-network
+      - dev-network
     restart: unless-stopped
 
 networks:
-  app-network:
+  dev-network:
     driver: bridge
-
-volumes:
-  mongodb_data:

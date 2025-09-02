@@ -9,6 +9,7 @@ import { Student, StudentDocument } from '../../features/students/schemas/studen
 import { Subject, SubjectDocument } from '../../features/subjects/schemas/subject.schema'
 import { Subscription, SubscriptionDocument } from '../../features/subscriptions/schemas/subscription.schema'
 import { Task, TaskDocument } from '../../features/tasks/schemas/task.schema'
+import { User, UserDocument } from '../../features/users/schemas/user.schema'
 import { ObjectId } from '../repository/types'
 import { DbVersion, DbVersionDocument } from './schema/db-version.schema'
 
@@ -20,6 +21,7 @@ export class SharedDocumentsService {
         @InjectModel(Subject.name) private subjectModel: Model<SubjectDocument>,
         @InjectModel(Manager.name) private managerModel: Model<ManagerDocument>,
         @InjectModel(Student.name) private studentModel: Model<StudentDocument>,
+        @InjectModel(User.name) private userModel: Model<UserDocument>,
         @InjectModel(Task.name) private taskModel: Model<TaskDocument>,
         @InjectModel(Level.name) private levelModel: Model<LevelDocument>,
         @InjectModel(Program.name) private programModel: Model<ProgramDocument>,
@@ -68,6 +70,10 @@ export class SharedDocumentsService {
 
     async getStudents(ids: string[]): Promise<StudentDocument[]> {
         return this.getDocuments<StudentDocument>(ids, this.studentModel)
+    }
+
+    getUser(id: string): Promise<UserDocument | undefined> {
+        return this.getDocument<UserDocument>(id, this.userModel)
     }
 
     async getTask(id: string): Promise<TaskDocument | undefined> {

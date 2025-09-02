@@ -3,20 +3,27 @@ import {
     Body,
     Controller,
     Delete,
+    FileTypeValidator,
     Get,
     HttpCode,
     HttpStatus,
     Logger,
+    MaxFileSizeValidator,
     Param,
+    ParseFilePipe,
     Post,
     Put,
     Query,
-    Req,
     Request,
+    UploadedFile,
     UseGuards,
+    UseInterceptors,
 } from '@nestjs/common'
+import { FileInterceptor } from '@nestjs/platform-express'
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse } from '@nestjs/swagger'
-import { FastifyRequest } from 'fastify'
+import { Express } from 'express'
+import { diskStorage } from 'multer'
+import { v4 as uuidv4 } from 'uuid'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { Roles } from '../authentication/decorators/roles.decorator'
 import { Role } from '../authentication/enums/role.enum'
@@ -27,14 +34,17 @@ import { PaginatedProgramDto } from './dto/paginated-program.dto'
 import { CreateProgramDto, SearchProgramQueryDto, UpdateProgramDto } from './dto/program.dto'
 import { ProgramState } from './enums/program-state.enum'
 import { ProgramsService } from './programs.service'
-import { ThumbnailValidator } from './validators/thumbnail.validator'
+import { ProgramsThumbnailsRepository } from './programs.thumbnails.repository'
 
 @ApiBearerAuth()
 @Controller('api/programs')
 export class ProgramsController {
     private readonly logger = new Logger(ProgramsController.name)
 
-    constructor(private readonly programsService: ProgramsService) {}
+    constructor(
+        private readonly programsService: ProgramsService,
+        private readonly thumbnailsRepository: ProgramsThumbnailsRepository
+    ) {}
 
     @ApiOperation({ summary: 'Creates a program', description: `Creates a program and adds it to the current manager.` })
     @ApiResponse({ status: HttpStatus.CREATED, type: CreatedDto, description: 'Program successfully created.' })
@@ -128,12 +138,32 @@ export class ProgramsController {
     @ApiConsumes('multipart/form-data')
     @Post(':id/thumbnail')
     @HttpCode(HttpStatus.NO_CONTENT)
+    @UseInterceptors(
+        FileInterceptor('thumbnail', {
+            limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+            storage: diskStorage({
+                destination: './uploads/programs-thumbnails',
+                filename: (_, file, callback) => callback(null, `${uuidv4()}-${file.originalname}`),
+            }),
+        })
+    )
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
-    async addThumbnail(@Param('id') id: string, @Req() req: FastifyRequest): Promise<void> {
-        const thumbnail = await req.file()
-        if (ThumbnailValidator.validate(thumbnail)) {
-            return this.programsService.updateThumbnail(id, thumbnail)
-        }
+    async addThumbnail(
+        @Param('id') id: string,
+        @UploadedFile(
+            new ParseFilePipe({
+                validators: [
+                    new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 5 }), // 5MB
+                    new FileTypeValidator({ fileType: 'image.*', skipMagicNumbersValidation: true }),
+                ],
+            })
+        )
+        thumbnail: Express.Multer.File
+    ): Promise<void> {
+        this.logger.log(`Adding thumbnail ${thumbnail.filename} for program ${id}`)
+        return this.programsService.updateThumbnail(id, thumbnail.filename).catch(async () => {
+            await this.thumbnailsRepository.remove(thumbnail.filename)
+        })
     }
 }

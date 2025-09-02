@@ -1,10 +1,15 @@
 import { HttpStatus, INestApplication } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
+import { I18nService } from 'nestjs-i18n'
+import { PusherService } from 'nestjs-pusher'
 import request from 'supertest'
 import { App } from 'supertest/types'
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
+import { ChatRepository } from '../src/features/chat/chat.repository'
+import { ChatService } from '../src/features/chat/chat.service'
+import { MessageRepository } from '../src/features/chat/message.repository'
 import { LessonsRepository } from '../src/features/lessons/lessons.repository'
 import { LessonsService } from '../src/features/lessons/lessons.service'
 import { LevelDocument } from '../src/features/levels/schemas/level.schema'
@@ -38,6 +43,11 @@ describe('TasksController (e2e)', () => {
             imports: [JwtMockModule],
             controllers: [TasksController],
             providers: [
+                ChatService,
+                ChatRepository,
+                MessageRepository,
+                { provide: I18nService, useValue: { t: vi.fn() } },
+                { provide: PusherService, useValue: { trigger: vi.fn() } },
                 TasksService,
                 TasksRepository,
                 LessonsService,

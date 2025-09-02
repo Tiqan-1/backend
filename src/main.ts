@@ -1,9 +1,8 @@
-import multipart from '@fastify/multipart'
 import { ConsoleLogger } from '@nestjs/common'
 import { LogLevel } from '@nestjs/common/services/logger.service'
 import { NestFactory } from '@nestjs/core'
-import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify'
 import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger'
+import 'multer'
 import { I18nValidationExceptionFilter, I18nValidationPipe } from 'nestjs-i18n'
 import * as process from 'node:process'
 import { AppModule } from './app.module'
@@ -14,14 +13,14 @@ import { SecurityErrorFilter } from './shared/errors/security-error.filter'
 async function bootstrap(): Promise<void> {
     const logLevels: LogLevel[] =
         process.env.NODE_ENV === 'production' ? ['log', 'error', 'warn'] : ['log', 'error', 'warn', 'debug', 'verbose']
-    const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter(), {
+    const app = await NestFactory.create(AppModule, {
         logger: new ConsoleLogger({ logLevels, json: true, colors: process.env.NODE_ENV === 'development' }),
     })
 
     const migrationService = app.get(MigrationService)
     await migrationService.migrate()
 
-    await app.register(multipart)
+    //await app.register(multipart)
     app.enableCors({
         origin: ['https://mubadarat.yaseen.dev', 'https://student.yaseen.dev'],
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
