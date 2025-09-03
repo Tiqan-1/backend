@@ -1,6 +1,5 @@
 import { ConflictException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common'
 import * as bcrypt from 'bcryptjs'
-import { addMinutes } from 'date-fns'
 import { I18nService } from 'nestjs-i18n'
 import { oneMonth } from '../../shared/constants'
 import { CreatedDto } from '../../shared/dto/created.dto'
@@ -116,8 +115,14 @@ export class StudentsService {
 
     findProgramsV3(query: SearchStudentProgramQueryDto): Promise<PaginatedProgramDto> {
         query.state = query.state ?? ProgramState.published
-        query.registrationEnd = query.registrationEnd ?? addMinutes(Date.now(), 30)
-        return this.programsService.find(query)
+        const extraFilers = new Map<string, unknown>()
+        if (!query.registrationStart) {
+            extraFilers.set('registrationStart', { $lte: new Date() })
+        }
+        if (!query.registrationEnd) {
+            extraFilers.set('registrationEnd', { $gt: new Date() })
+        }
+        return this.programsService.find(query, undefined, extraFilers)
     }
 
     private async loadStudent(studentId: ObjectId): Promise<StudentDocument> {

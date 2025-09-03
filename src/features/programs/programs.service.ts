@@ -47,18 +47,20 @@ export class ProgramsService {
 
     async find(
         query: SearchProgramQueryDto | SearchStudentProgramQueryDto,
-        searchUserId?: ObjectId
+        searchUserId?: ObjectId,
+        extraFilers?: Map<string, unknown>
     ): Promise<PaginatedProgramDto> {
         const filter = SearchFilterBuilder.init()
             .withObjectId('_id', query.id)
             .withObjectId('createdBy', searchUserId)
-            .withParam('state', query.state)
+            .withParam('state', query.state ?? { $ne: ProgramState.deleted })
+            .withParams(extraFilers)
             .withStringLike('name', query.name)
             .withStringLike('description', query.description)
-            .withDateAfter('start', query.start)
-            .withDateBefore('end', query.end)
-            .withDateAfter('registrationStart', query.registrationStart)
-            .withDateBefore('registrationEnd', query.registrationEnd)
+            .withDate('start', query.start)
+            .withDate('end', query.end)
+            .withDate('registrationStart', query.registrationStart)
+            .withDate('registrationEnd', query.registrationEnd)
             .build()
 
         const skip = PaginationHelper.calculateSkip(query.page, query.pageSize)
@@ -153,7 +155,11 @@ export class ProgramsService {
 
     async loadThumbnails(foundPrograms: ProgramDocument[]): Promise<void> {
         for (const program of foundPrograms) {
-            await this.loadThumbnail(program)
+            try {
+                await this.loadThumbnail(program)
+            } catch (error) {
+                this.logger.error(`Attempt to load thumbnail for program ${program._id.toString()} failed.`, error)
+            }
         }
     }
 
