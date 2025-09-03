@@ -25,8 +25,18 @@ export class MessageDto {
     sender: SimpleManagerDto
 }
 
-export class CreateMessageDto {
+export class MessageRequestDto {
     @ApiProperty({ required: true, type: String, description: 'new message' })
     @IsString()
     message: string
+
+    @ApiProperty({
+        required: true,
+        type: String,
+        description: `the socket acquired from pusher after binding connected event.<br>
+        Example: pusher.connection.bind("connected", () => socketId = pusher.connection.socket_id)<br>
+        see: <a href="https://pusher.com/docs/channels/server_api/excluding-event-recipients/#solution">here</a>`,
+    })
+    @IsString()
+    socketId: string
 }

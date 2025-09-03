@@ -19,6 +19,7 @@ import {
     UseGuards,
     UseInterceptors,
 } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse } from '@nestjs/swagger'
 import { Express } from 'express'
@@ -42,6 +43,7 @@ export class ProgramsController {
     private readonly logger = new Logger(ProgramsController.name)
 
     constructor(
+        private readonly configService: ConfigService,
         private readonly programsService: ProgramsService,
         private readonly thumbnailsRepository: ProgramsThumbnailsRepository
     ) {}
@@ -142,7 +144,7 @@ export class ProgramsController {
         FileInterceptor('thumbnail', {
             limits: { fileSize: 5 * 1024 * 1024, files: 1 },
             storage: diskStorage({
-                destination: './uploads/programs-thumbnails',
+                destination: `./${process.env.UPLOAD_FOLDER ?? 'upload-test'}/programs-thumbnails`,
                 filename: (_, file, callback) => callback(null, `${uuidv4()}-${file.originalname}`),
             }),
         })
@@ -161,7 +163,6 @@ export class ProgramsController {
         )
         thumbnail: Express.Multer.File
     ): Promise<void> {
-        this.logger.log(`Adding thumbnail ${thumbnail.filename} for program ${id}`)
         return this.programsService.updateThumbnail(id, thumbnail.filename).catch(async () => {
             await this.thumbnailsRepository.remove(thumbnail.filename)
         })

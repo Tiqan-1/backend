@@ -5,6 +5,7 @@ import { SharedDocumentsService } from '../../shared/database-services/shared-do
 import { ObjectId } from '../../shared/repository/types'
 import { ChatRepository } from './chat.repository'
 import { ChatDto } from './dto/chat.dto'
+import { MessageRequestDto } from './dto/message.dto'
 import { MessageRepository } from './message.repository'
 
 @Injectable()
@@ -41,7 +42,7 @@ export class ChatService {
         }
     }
 
-    async sendMessage(userId: ObjectId, chatRoomId: ObjectId, message: string): Promise<void> {
+    async sendMessage(userId: ObjectId, chatRoomId: ObjectId, { message, socketId }: MessageRequestDto): Promise<void> {
         const chatRoom = await this.chatRepository.findOne(chatRoomId)
         if (!chatRoom) {
             throw new NotFoundException(this.i18n.t('chat.errors.NOT_FOUND'))
@@ -56,7 +57,7 @@ export class ChatService {
             chatRoomId.toString(),
             'message',
             { message, sender: { email: user?.email, name: user?.name } },
-            userId.toString()
+            socketId
         )
     }
 }
