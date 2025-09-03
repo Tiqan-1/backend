@@ -144,7 +144,7 @@ export class ProgramsController {
         FileInterceptor('thumbnail', {
             limits: { fileSize: 5 * 1024 * 1024, files: 1 },
             storage: diskStorage({
-                destination: `./${process.env.UPLOAD_FOLDER ?? 'upload-test'}/programs-thumbnails`,
+                destination: `./${process.env.UPLOAD_FOLDER ?? 'uploads-test'}/programs-thumbnails`,
                 filename: (_, file, callback) => callback(null, `${uuidv4()}-${file.originalname}`),
             }),
         })
