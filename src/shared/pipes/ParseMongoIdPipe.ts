@@ -8,7 +8,7 @@ export class ParseMongoIdPipe implements PipeTransform {
 
     transform(value: string): ObjectId {
         if (ObjectId.isValid(value)) {
-            new ObjectId(value)
+            return new ObjectId(value)
         }
         throw new BadRequestException(this.i18n.t('validation.mongoId'))
     }
