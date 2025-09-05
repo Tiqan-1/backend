@@ -116,10 +116,8 @@ export class StudentsService {
     findProgramsV3(query: SearchStudentProgramQueryDto): Promise<PaginatedProgramDto> {
         query.state = query.state ?? ProgramState.published
         const extraFilers = new Map<string, unknown>()
-        if (!query.registrationStart) {
+        if (query.openForRegistration) {
             extraFilers.set('registrationStart', { $lte: new Date() })
-        }
-        if (!query.registrationEnd) {
             extraFilers.set('registrationEnd', { $gt: new Date() })
         }
         return this.programsService.find(query, undefined, extraFilers)

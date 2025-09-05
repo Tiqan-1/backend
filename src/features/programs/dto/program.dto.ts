@@ -1,6 +1,6 @@
 import { ApiProperty, IntersectionType, OmitType, PartialType } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
-import { IsBase64, IsDate, IsEnum, IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
+import { IsBase64, IsBoolean, IsDate, IsEnum, IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { i18nValidationMessage } from 'nestjs-i18n'
 import { SearchQueryDto } from '../../../shared/dto/search.query.dto'
 import { normalizeDate } from '../../../shared/helper/date.helper'
@@ -151,14 +151,15 @@ enum SearchProgramState {
 }
 
 export class SearchStudentProgramQueryDto extends OmitType(SearchProgramQueryDto, ['state'] as const) {
-    @ApiProperty({
-        type: String,
-        required: false,
-        enum: SearchProgramState,
-    })
+    @ApiProperty({ type: String, required: false, enum: SearchProgramState })
     @IsOptional()
     @IsEnum(SearchProgramState, {
         message: i18nValidationMessage('validation.enum', { values: Object.values(SearchProgramState) }),
     })
     state: SearchProgramState
+
+    @ApiProperty({ type: Boolean, required: false, default: false })
+    @IsOptional()
+    @IsBoolean()
+    openForRegistration?: boolean
 }
