@@ -47,14 +47,14 @@ export class ProgramsService {
 
     async find(
         query: SearchProgramQueryDto | SearchStudentProgramQueryDto,
-        searchUserId?: ObjectId,
-        extraFilers?: Map<string, unknown>
+        createdBy?: ObjectId,
+        extraFilters?: Map<string, unknown>
     ): Promise<PaginatedProgramDto> {
         const filter = SearchFilterBuilder.init()
             .withObjectId('_id', query.id)
-            .withObjectId('createdBy', searchUserId)
+            .withObjectId('createdBy', createdBy)
             .withParam('state', query.state ?? { $ne: ProgramState.deleted })
-            .withParams(extraFilers)
+            .withParams(extraFilters)
             .withStringLike('name', query.name)
             .withStringLike('description', query.description)
             .withDate('start', query.start)

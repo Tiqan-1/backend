@@ -1,6 +1,6 @@
 import { ApiProperty, IntersectionType, OmitType, PartialType } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
-import { IsBase64, IsBoolean, IsDate, IsEnum, IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
+import { IsBase64, IsBooleanString, IsDate, IsEnum, IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { i18nValidationMessage } from 'nestjs-i18n'
 import { SearchQueryDto } from '../../../shared/dto/search.query.dto'
 import { normalizeDate } from '../../../shared/helper/date.helper'
@@ -12,6 +12,7 @@ import { ManagerDocument } from '../../managers/schemas/manager.schema'
 import { ProgramState } from '../enums/program-state.enum'
 import { ProgramSubscriptionType } from '../enums/program-subscription-type.enum'
 import { ProgramDocument } from '../schemas/program.schema'
+import { ProgramWithSubscription } from '../types'
 
 const now = normalizeDate(new Date())
 
@@ -99,6 +100,35 @@ export class ProgramDto {
     }
 }
 
+export class ProgramWithSubscriptionDto extends ProgramDto {
+    @ApiProperty({ type: String, required: false })
+    @IsOptional()
+    subscriptionId?: string
+
+    static fromDocuments(foundPrograms: ProgramWithSubscription[] = []): ProgramDto[] {
+        return foundPrograms.map(document => this.fromDocument(document)).sort((a, b) => a.start.getTime() - b.start.getTime())
+    }
+
+    static fromDocument(document: ProgramWithSubscription): ProgramWithSubscriptionDto {
+        return {
+            id: document._id.toString(),
+            name: document.name,
+            state: document.state,
+            programSubscriptionType: document.subscriptionType,
+            subscriptionFormUrl: document.subscriptionFormUrl,
+            thumbnail: document.thumbnail,
+            description: document.description,
+            start: document.start,
+            end: document.end,
+            createdBy: SimpleManagerDto.fromDocument(document.createdBy as ManagerDocument),
+            registrationStart: document.registrationStart,
+            registrationEnd: document.registrationEnd,
+            levels: arePopulated(document.levels) ? LevelDto.fromDocuments(document.levels) : [],
+            subscriptionId: document.subscriptionId,
+        }
+    }
+}
+
 export class CreateProgramDto extends OmitType(ProgramDto, ['id', 'state', 'levels', 'createdBy', 'thumbnail'] as const) {
     @ApiProperty({ type: String, required: false, isArray: true })
     @IsOptional()
@@ -158,8 +188,8 @@ export class SearchStudentProgramQueryDto extends OmitType(SearchProgramQueryDto
     })
     state: SearchProgramState
 
-    @ApiProperty({ type: Boolean, required: false, default: false })
+    @ApiProperty({ type: Boolean, required: false })
     @IsOptional()
-    @IsBoolean()
-    openForRegistration?: boolean
+    @IsBooleanString()
+    openForRegistration?: 'true' | 'false' = 'false'
 }

@@ -6,7 +6,7 @@ import { SearchQueryDto } from '../../../shared/dto/search.query.dto'
 import { SubscriptionDto } from './subscription.dto'
 
 export class SearchSubscriptionsQueryDto extends IntersectionType(
-    PartialType(OmitType(SubscriptionDto, ['program', 'level', 'subscriber'] as const)),
+    PartialType(OmitType(SubscriptionDto, ['program', 'level', 'subscriber', 'currentLevel'] as const)),
     SearchQueryDto
 ) {
     @ApiProperty({ type: String, required: false })

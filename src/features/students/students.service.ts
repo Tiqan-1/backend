@@ -8,7 +8,7 @@ import { ObjectId } from '../../shared/repository/types'
 import { AuthenticationService } from '../authentication/authentication.service'
 import { AuthenticationResponseDto } from '../authentication/dto/authentication-response.dto'
 import { Role } from '../authentication/enums/role.enum'
-import { PaginatedProgramDto } from '../programs/dto/paginated-program.dto'
+import { PaginatedProgramDto, PaginatedProgramWithSubscriptionDto } from '../programs/dto/paginated-program.dto'
 import { SearchStudentProgramQueryDto } from '../programs/dto/program.dto'
 import { ProgramState } from '../programs/enums/program-state.enum'
 import { ProgramsService } from '../programs/programs.service'
@@ -113,14 +113,29 @@ export class StudentsService {
         return this.programsService.find(query)
     }
 
-    findProgramsV3(query: SearchStudentProgramQueryDto): Promise<PaginatedProgramDto> {
+    async findProgramsV3(query: SearchStudentProgramQueryDto, studentId: ObjectId): Promise<PaginatedProgramWithSubscriptionDto> {
         query.state = query.state ?? ProgramState.published
-        const extraFilers = new Map<string, unknown>()
-        if (query.openForRegistration) {
-            extraFilers.set('registrationStart', { $lte: new Date() })
-            extraFilers.set('registrationEnd', { $gt: new Date() })
+        const extraFilters = new Map<string, unknown>()
+        if (query.openForRegistration === 'true') {
+            extraFilters.set('registrationStart', { $lte: new Date() })
+            extraFilters.set('registrationEnd', { $gt: new Date() })
         }
-        return this.programsService.find(query, undefined, extraFilers)
+        const programs: PaginatedProgramWithSubscriptionDto = await this.programsService.find(query, undefined, extraFilters)
+        const programIds = programs.items.map(program => program.id)
+        const subscriptions = await this.subscriptionsService.findWithProgramIdsAndSubscriber(
+            programIds,
+            studentId,
+            SubscriptionState.active
+        )
+
+        for (const program of programs.items) {
+            const subscription = subscriptions.find(sub => sub.program._id.equals(program.id))
+            if (subscription) {
+                program.subscriptionId = subscription._id.toString()
+            }
+        }
+
+        return programs
     }
 
     private async loadStudent(studentId: ObjectId): Promise<StudentDocument> {

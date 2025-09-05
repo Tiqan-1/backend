@@ -63,7 +63,7 @@ export class SubscriptionsService {
         const state =
             program?.subscriptionType === ProgramSubscriptionType.public ? SubscriptionState.active : SubscriptionState.pending
 
-        const created = await this.repository.create({ program: programId, subscriber: student._id, state })
+        const created = await this.repository.create({ program: program?._id, subscriber: student._id, state })
         ;(student.subscriptions as ObjectId[]).push(created._id)
         await student.save()
         this.logger.log(
@@ -142,6 +142,20 @@ export class SubscriptionsService {
         }
         found.state = SubscriptionState.active
         await found.save()
+    }
+
+    findWithProgramIdsAndSubscriber(
+        programIds: ObjectId[] | string[],
+        subscriberId: ObjectId,
+        state: SubscriptionState
+    ): Promise<SubscriptionDocument[]> {
+        const query = SearchFilterBuilder.init()
+            .withObjectIds('program', programIds)
+            .withObjectId('subscriber', subscriberId)
+            .withParam('state', state)
+            .build()
+
+        return this.repository.findRaw(query)
     }
 
     async update(id: string, updateObject: UpdateSubscriptionDto): Promise<void> {

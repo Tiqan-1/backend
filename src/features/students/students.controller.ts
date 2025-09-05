@@ -8,7 +8,7 @@ import { AuthenticationResponseDto } from '../authentication/dto/authentication-
 import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { TokenUser } from '../authentication/types/token-user'
-import { PaginatedProgramDto } from '../programs/dto/paginated-program.dto'
+import { PaginatedProgramDto, PaginatedProgramWithSubscriptionDto } from '../programs/dto/paginated-program.dto'
 import { SearchStudentProgramQueryDto } from '../programs/dto/program.dto'
 import { PaginatedStudentSubscriptionDto } from '../subscriptions/dto/paginated-subscripition.dto'
 import { SearchStudentSubscriptionsQueryDto } from '../subscriptions/dto/search-subscriptions-query.dto'
@@ -192,14 +192,13 @@ export class StudentsController {
         description: `Returns programs for students.
             <br />By default:<br />
             <ul>
-                <li>Returns only programs that are open for registration (i.e., the registration period has not yet ended, and the program is published).
-                <li>If the student is subscribed to a program, the program is not returned.
+                <li>Returns all published programs.
             </ul>
             <br />The default behavior can be overridden by setting filters in the query parameters.`,
     })
     @ApiQuery({ name: 'limit', type: String, required: false, description: 'Controls the number of returned elements' })
     @ApiQuery({ name: 'skip', type: String, required: false, description: 'Controls the number of elements to be skipped' })
-    @ApiResponse({ status: HttpStatus.OK, type: PaginatedProgramDto, description: 'Got programs successfully.' })
+    @ApiResponse({ status: HttpStatus.OK, type: PaginatedProgramWithSubscriptionDto, description: 'Got programs successfully.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user', type: ErrorDto })
     @Get('v3/programs')
@@ -207,7 +206,10 @@ export class StudentsController {
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
     @Roles(Role.Student)
-    findProgramsV3(@Query() query: SearchStudentProgramQueryDto): Promise<PaginatedProgramDto> {
-        return this.service.findProgramsV3(query)
+    findProgramsV3(
+        @Query() query: SearchStudentProgramQueryDto,
+        @Request() request: { user: TokenUser }
+    ): Promise<PaginatedProgramWithSubscriptionDto> {
+        return this.service.findProgramsV3(query, request.user.id)
     }
 }

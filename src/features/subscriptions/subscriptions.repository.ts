@@ -12,6 +12,10 @@ export class SubscriptionsRepository extends RepositoryMongoBase<SubscriptionDoc
         super(model)
     }
 
+    findRaw(filter: Record<string, unknown>): Promise<SubscriptionDocument[]> {
+        return this.model.find(filter).exec()
+    }
+
     find(filter: Record<string, unknown>, limit = 20, skip = 0): Promise<SubscriptionDocument[]> {
         return this.model
             .find(filter)
