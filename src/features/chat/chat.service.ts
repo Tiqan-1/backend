@@ -66,4 +66,9 @@ export class ChatService {
             socketId
         )
     }
+
+    async removeChatRoom(chatRoomId: ObjectId): Promise<void> {
+        this.logger.log(`Removing chat room ${chatRoomId.toString()}`)
+        await this.chatRepository.remove({ _id: chatRoomId })
+    }
 }

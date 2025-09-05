@@ -88,9 +88,14 @@ export class TasksService {
         return PaginationHelper.wrapResponse(TaskDto.fromDocuments(found), query.page, query.pageSize, total)
     }
 
-    async update(id: string, task: UpdateTaskDto, updatedBy: ObjectId): Promise<void> {
-        const taskId = new ObjectId(id)
+    async update(taskId: ObjectId, task: UpdateTaskDto, updatedBy: ObjectId): Promise<void> {
         const validatedLessons = task.lessonIds?.length ? await this.lessonsService.validateLessonIds(task.lessonIds) : undefined
+
+        const taskFound = await this.taskRepository.findOne({ _id: taskId })
+
+        if (task.hasChatRoom === false && taskFound?.chatRoomId) {
+            await this.chatService.removeChatRoom(taskFound.chatRoomId)
+        }
 
         const updateObject: Partial<TaskDocument> = {
             ...(task.date && { date: normalizeDate(new Date(task.date)) }),
@@ -101,7 +106,7 @@ export class TasksService {
 
         const updated = await this.taskRepository.update({ _id: taskId, state: { $ne: TaskState.deleted } }, updateObject)
         if (!updated) {
-            this.logger.error(`Attempt to update Task ${id} failed.`)
+            this.logger.error(`Attempt to update Task ${taskId.toString()} failed.`)
             throw new NotFoundException('Task not found.')
         }
     }

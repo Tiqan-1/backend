@@ -15,6 +15,8 @@ import {
 } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger'
 import { CreatedDto } from '../../shared/dto/created.dto'
+import { ParseMongoIdPipe } from '../../shared/pipes/ParseMongoIdPipe'
+import { ObjectId } from '../../shared/repository/types'
 import { Roles } from '../authentication/decorators/roles.decorator'
 import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
@@ -67,7 +69,11 @@ export class TasksController {
     @HttpCode(HttpStatus.NO_CONTENT)
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
-    update(@Body() task: UpdateTaskDto, @Param('id') id: string, @Request() request: { user: TokenUser }): Promise<void> {
+    update(
+        @Body() task: UpdateTaskDto,
+        @Param('id', ParseMongoIdPipe) id: ObjectId,
+        @Request() request: { user: TokenUser }
+    ): Promise<void> {
         if (Object.keys(task).length === 0) {
             throw new BadRequestException('Task not found.')
         }
