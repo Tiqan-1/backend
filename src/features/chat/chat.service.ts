@@ -35,11 +35,11 @@ export class ChatService {
         return {
             id: chatRoom._id.toString(),
             createdAt: chatRoom.createdAt,
-            createdBy: { name: chatRoom.createdBy.name, email: chatRoom.createdBy.email },
+            createdBy: { name: chatRoom.createdBy.name, email: chatRoom.createdBy.name },
             messages: chatRoom.messages.map(message => ({
                 id: message._id.toString(),
                 createdAt: message.createdAt,
-                sender: { name: message.sender.name, email: message.sender.email },
+                sender: { name: message.sender.name, email: message.sender.name },
                 text: message.text,
                 updatedAt: message.updatedAt,
             })),
