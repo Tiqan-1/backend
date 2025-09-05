@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { I18nService } from 'nestjs-i18n'
 import { PusherService } from 'nestjs-pusher'
 import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
@@ -10,6 +10,8 @@ import { MessageRepository } from './message.repository'
 
 @Injectable()
 export class ChatService {
+    private readonly logger = new Logger(ChatService.name)
+
     constructor(
         private readonly chatRepository: ChatRepository,
         private readonly messageRepository: MessageRepository,
@@ -24,18 +26,20 @@ export class ChatService {
     }
 
     async joinChatRoom(chatRoomId: ObjectId): Promise<ChatDto> {
+        this.logger.log(`Joining chat room ${chatRoomId.toString()}`)
         const chatRoom = await this.chatRepository.findOne(chatRoomId)
         if (!chatRoom) {
             throw new NotFoundException(this.i18n.t('chat.errors.NOT_FOUND'))
         }
+        console.debug('chatRoom: ', JSON.stringify(chatRoom.messages))
         return {
             id: chatRoom._id.toString(),
             createdAt: chatRoom.createdAt,
-            createdBy: chatRoom.createdBy,
+            createdBy: { name: chatRoom.createdBy.name, email: chatRoom.createdBy.email },
             messages: chatRoom.messages.map(message => ({
                 id: message._id.toString(),
                 createdAt: message.createdAt,
-                sender: message.sender,
+                sender: { name: message.sender.name, email: message.sender.email },
                 text: message.text,
                 updatedAt: message.updatedAt,
             })),
@@ -43,13 +47,15 @@ export class ChatService {
     }
 
     async sendMessage(userId: ObjectId, chatRoomId: ObjectId, { message, socketId }: MessageRequestDto): Promise<void> {
-        const chatRoom = await this.chatRepository.findOne(chatRoomId)
+        this.logger.debug(
+            `Sending message to chat room ${chatRoomId.toString()} from user ${userId.toString()}: ${message}, socketId: ${socketId}`
+        )
+        const chatRoom = await this.chatRepository.findOneRaw(chatRoomId)
         if (!chatRoom) {
             throw new NotFoundException(this.i18n.t('chat.errors.NOT_FOUND'))
         }
         const messageId = await this.messageRepository.create({ sender: userId, text: message, chatRoomId: chatRoomId })
-        chatRoom.messages.push(messageId)
-        await chatRoom.save()
+        await chatRoom.updateOne({ messages: [...chatRoom.messages.map(message => message._id), messageId._id] })
 
         const user = await this.documentsService.getUser(userId.toString())
 

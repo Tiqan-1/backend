@@ -19,7 +19,7 @@ import { ChatService } from './chat.service'
 import { ChatDto } from './dto/chat.dto'
 import { MessageRequestDto } from './dto/message.dto'
 
-@Controller('chat')
+@Controller('api/chat')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class ChatController {
