@@ -34,6 +34,10 @@ export class TaskDto {
     @IsOptional()
     chatRoomId?: string
 
+    @ApiProperty({ type: Boolean, required: false, description: 'Whether the task has a chat room', default: false })
+    @IsOptional()
+    hasChatRoom?: boolean
+
     constructor(document: TaskDocument) {
         this.id = document._id.toString()
         this.levelId = document.levelId.toString()
@@ -41,6 +45,7 @@ export class TaskDto {
         this.note = document.note
         this.lessons = document.lessons.map(lesson => LessonDto.fromDocument(lesson as LessonDocument))
         this.chatRoomId = document.chatRoomId?.toString()
+        this.hasChatRoom = !!document.chatRoomId
     }
 
     static fromDocument(document: TaskDocument): TaskDto {
@@ -58,10 +63,6 @@ export class CreateTaskDto extends OmitType(TaskDto, ['id', 'lessons'] as const)
     @IsMongoId({ each: true })
     @ArrayNotEmpty()
     lessonIds?: string[]
-
-    @ApiProperty({ type: Boolean, required: false, description: 'Whether the task has a chat room', default: false })
-    @IsOptional()
-    hasChatRoom?: boolean
 }
 
 export class UpdateTaskDto extends PartialType(OmitType(CreateTaskDto, ['levelId'] as const)) {}
