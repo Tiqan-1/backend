@@ -1,6 +1,7 @@
 import { ApiProperty, IntersectionType, OmitType, PartialType } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
 import { IsDate, IsMongoId, IsString, ValidateNested } from 'class-validator'
+import { i18nValidationMessage } from 'nestjs-i18n'
 import { SearchQueryDto } from 'src/shared/dto/search.query.dto'
 import { Populated } from '../../../shared/repository/types'
 import { SimpleManagerDto } from '../../managers/dto/manager.dto'
@@ -11,11 +12,11 @@ import { LevelDocument } from '../schemas/level.schema'
 
 export class LevelDto {
     @ApiProperty({ type: String, required: true, example: 'levelId' })
-    @IsMongoId()
+    @IsMongoId({ message: i18nValidationMessage('validation.mongoId', { property: 'id' }) })
     id: string
 
     @ApiProperty({ type: String, required: true, example: 'programId' })
-    @IsMongoId()
+    @IsMongoId({ message: i18nValidationMessage('validation.mongoId', { property: 'programId' }) })
     programId: string
 
     @ApiProperty({ type: SimpleManagerDto, required: true })
@@ -23,17 +24,17 @@ export class LevelDto {
     createdBy: SimpleManagerDto
 
     @ApiProperty({ type: String, required: true, example: 'المستوى الأول' })
-    @IsString()
+    @IsString({ message: i18nValidationMessage('validation.string', { property: 'name' }) })
     name: string
 
     @ApiProperty({ type: Date, required: true, example: new Date() })
     @Type(() => Date)
-    @IsDate()
+    @IsDate({ message: i18nValidationMessage('validation.date', { property: 'start' }) })
     start: Date
 
     @ApiProperty({ type: Date, required: true, example: new Date() })
     @Type(() => Date)
-    @IsDate()
+    @IsDate({ message: i18nValidationMessage('validation.date', { property: 'end' }) })
     end: Date
 
     @ApiProperty({ type: TaskDto, isArray: true, required: true })

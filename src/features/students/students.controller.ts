@@ -11,7 +11,7 @@ import { TokenUser } from '../authentication/types/token-user'
 import { PaginatedProgramDto, PaginatedProgramWithSubscriptionDto } from '../programs/dto/paginated-program.dto'
 import { SearchStudentProgramQueryDto } from '../programs/dto/program.dto'
 import { PaginatedStudentSubscriptionDto } from '../subscriptions/dto/paginated-subscripition.dto'
-import { SearchStudentSubscriptionsQueryDto } from '../subscriptions/dto/search-subscriptions-query.dto'
+import { SearchSubscriptionsQueryDto } from '../subscriptions/dto/search-subscriptions-query.dto'
 import { CreateSubscriptionDto, CreateSubscriptionV2Dto } from '../subscriptions/dto/subscription.dto'
 import { SignUpStudentDto } from './dto/student.dto'
 import { StudentsService } from './students.service'
@@ -134,7 +134,7 @@ export class StudentsController {
     @ApiBearerAuth()
     @Roles(Role.Student)
     findSubscriptions(
-        @Query() query: SearchStudentSubscriptionsQueryDto,
+        @Query() query: SearchSubscriptionsQueryDto,
         @Request() request: { user: TokenUser }
     ): Promise<PaginatedStudentSubscriptionDto> {
         return this.service.findSubscriptions(query, request.user.id)

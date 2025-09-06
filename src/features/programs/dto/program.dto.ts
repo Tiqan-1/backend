@@ -18,15 +18,15 @@ const now = normalizeDate(new Date())
 
 export class ProgramDto {
     @ApiProperty({ type: String, required: true, example: 'programId' })
-    @IsMongoId({ message: i18nValidationMessage('validation.mongoId') })
+    @IsMongoId({ message: i18nValidationMessage('validation.mongoId', { property: 'id' }) })
     id: string
 
     @ApiProperty({ type: String, required: true, example: 'مبادرة التأسيس' })
-    @IsString({ message: i18nValidationMessage('validation.string') })
+    @IsString({ message: i18nValidationMessage('validation.string', { property: 'name' }) })
     name: string
 
     @ApiProperty({ type: String, required: true, example: 'برنامج تفاعلي يهدف إلى تأسيس الطالب في العلوم الشرعية' })
-    @IsString({ message: i18nValidationMessage('validation.string') })
+    @IsString({ message: i18nValidationMessage('validation.string', { property: 'description' }) })
     description: string
 
     @ApiProperty({ type: String, required: false, description: 'صورة للبرنامج بصيغة base64' })
@@ -39,38 +39,43 @@ export class ProgramDto {
     createdBy: SimpleManagerDto
 
     @ApiProperty({ type: String, enum: ProgramState, required: true })
-    @IsEnum(ProgramState, { message: i18nValidationMessage('validation.enum', { values: Object.values(ProgramState) }) })
+    @IsEnum(ProgramState, {
+        message: i18nValidationMessage('validation.enum', { property: 'state', values: Object.values(ProgramState) }),
+    })
     state: ProgramState
 
     @ApiProperty({ type: String, enum: ProgramSubscriptionType, required: false, default: ProgramSubscriptionType.public })
     @IsEnum(ProgramSubscriptionType, {
-        message: i18nValidationMessage('validation.enum', { values: Object.values(ProgramSubscriptionType) }),
+        message: i18nValidationMessage('validation.enum', {
+            property: 'programSubscriptionType',
+            values: Object.values(ProgramSubscriptionType),
+        }),
     })
-    programSubscriptionType: ProgramSubscriptionType // = ProgramSubscriptionType.public
+    programSubscriptionType: ProgramSubscriptionType
 
     @ApiProperty({ type: String, required: false, example: 'https://www.forms.google.com/test' })
     @IsOptional()
-    @IsString({ message: i18nValidationMessage('validation.string') })
+    @IsString({ message: i18nValidationMessage('validation.string', { property: 'subscriptionFormUrl' }) })
     subscriptionFormUrl?: string
 
     @ApiProperty({ type: Date, required: true, example: now })
     @Type(() => Date)
-    @IsDate({ message: i18nValidationMessage('validation.date') })
+    @IsDate({ message: i18nValidationMessage('validation.date', { property: 'start' }) })
     start: Date
 
     @ApiProperty({ type: Date, required: true, example: now })
     @Type(() => Date)
-    @IsDate({ message: i18nValidationMessage('validation.date') })
+    @IsDate({ message: i18nValidationMessage('validation.date', { property: 'end' }) })
     end: Date
 
     @ApiProperty({ type: Date, required: true, example: now })
     @Type(() => Date)
-    @IsDate({ message: i18nValidationMessage('validation.date') })
+    @IsDate({ message: i18nValidationMessage('validation.date', { property: 'registrationStart' }) })
     registrationStart: Date
 
     @ApiProperty({ type: Date, required: true, example: now })
     @Type(() => Date)
-    @IsDate({ message: i18nValidationMessage('validation.date') })
+    @IsDate({ message: i18nValidationMessage('validation.date', { property: 'registrationEnd' }) })
     registrationEnd: Date
 
     @ApiProperty({ type: LevelDto, required: true, isArray: true })
@@ -103,6 +108,7 @@ export class ProgramDto {
 export class ProgramWithSubscriptionDto extends ProgramDto {
     @ApiProperty({ type: String, required: false })
     @IsOptional()
+    @IsString({ message: i18nValidationMessage('validation.string', { property: 'subscriptionId' }) })
     subscriptionId?: string
 
     static fromDocuments(foundPrograms: ProgramWithSubscription[] = []): ProgramDto[] {
@@ -133,7 +139,7 @@ export class CreateProgramDto extends OmitType(ProgramDto, ['id', 'state', 'leve
     @ApiProperty({ type: String, required: false, isArray: true })
     @IsOptional()
     @ValidateNested({ each: true })
-    @IsMongoId({ each: true })
+    @IsMongoId({ each: true, message: i18nValidationMessage('validation.mongoId', { property: 'levelIds' }) })
     levelIds?: string[]
 
     static toDocument(dto: CreateProgramDto, createdBy: ObjectId): object {
@@ -152,7 +158,9 @@ export class CreateProgramDto extends OmitType(ProgramDto, ['id', 'state', 'leve
 export class UpdateProgramDto extends PartialType(CreateProgramDto) {
     @ApiProperty({ type: String, enum: ProgramState, required: false })
     @IsOptional()
-    @IsEnum(ProgramState)
+    @IsEnum(ProgramState, {
+        message: i18nValidationMessage('validation.enum', { values: Object.values(ProgramState), property: 'state' }),
+    })
     state?: ProgramState
 
     static toDocument(dto: UpdateProgramDto): object {
@@ -184,7 +192,7 @@ export class SearchStudentProgramQueryDto extends OmitType(SearchProgramQueryDto
     @ApiProperty({ type: String, required: false, enum: SearchProgramState })
     @IsOptional()
     @IsEnum(SearchProgramState, {
-        message: i18nValidationMessage('validation.enum', { values: Object.values(SearchProgramState) }),
+        message: i18nValidationMessage('validation.enum', { values: Object.values(SearchProgramState), property: 'state' }),
     })
     state: SearchProgramState
 

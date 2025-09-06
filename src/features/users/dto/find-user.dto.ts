@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { IsEmail, IsString } from 'class-validator'
+import { i18nValidationMessage } from 'nestjs-i18n'
 import { UserDocument } from '../schemas/user.schema'
 
 export class FindUserDto {
@@ -9,10 +10,10 @@ export class FindUserDto {
     }
 
     @ApiProperty({ type: String, example: 'John Doe', description: 'full name of user' })
-    @IsString()
+    @IsString({ message: i18nValidationMessage('validation.string', { property: 'name' }) })
     name: string
 
     @ApiProperty({ type: String, example: 'user@email.com', description: 'email of user' })
-    @IsEmail()
+    @IsEmail({}, { message: i18nValidationMessage('validation.email', { property: 'email' }) })
     email: string
 }

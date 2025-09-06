@@ -14,7 +14,7 @@ import { SubscriptionDocument } from '../schemas/subscription.schema'
 
 export class SubscriptionDto {
     @ApiProperty({ type: String, required: true, example: 'subscription' })
-    @IsMongoId()
+    @IsMongoId({ message: i18nValidationMessage('validation.mongoId', { property: 'id' }) })
     id: string
 
     @ApiProperty({ type: ProgramDto, required: false })
@@ -40,15 +40,17 @@ export class SubscriptionDto {
 
     @ApiProperty({ type: Date, required: true, example: new Date() })
     @Type(() => Date)
-    @IsDate()
+    @IsDate({ message: i18nValidationMessage('validation.date', { property: 'subscriptionDate' }) })
     subscriptionDate: Date
 
     @ApiProperty({ type: String, required: true, enum: SubscriptionState })
-    @IsEnum(SubscriptionState)
+    @IsEnum(SubscriptionState, {
+        message: i18nValidationMessage('validation.enum', { property: 'state', values: SubscriptionState }),
+    })
     state: SubscriptionState
 
     @ApiProperty({ type: String, required: false })
-    @IsString()
+    @IsString({ message: i18nValidationMessage('validation.string', { property: 'notes' }) })
     @IsOptional()
     notes?: string
 
@@ -101,28 +103,30 @@ export class StudentSubscriptionDto extends OmitType(SubscriptionDto, ['subscrib
 
 export class CreateSubscriptionV2Dto {
     @ApiProperty({ type: String, required: true, example: 'programId' })
-    @IsMongoId({ message: i18nValidationMessage('validation.mongoId') })
+    @IsMongoId({ message: i18nValidationMessage('validation.mongoId', { property: 'programId' }) })
     programId: string
 }
 
 export class CreateSubscriptionDto {
     @ApiProperty({ type: String, required: true, example: 'programId' })
-    @IsMongoId()
+    @IsMongoId({ message: i18nValidationMessage('validation.mongoId', { property: 'programId' }) })
     programId: string
 
     @ApiProperty({ type: String, required: true, example: 'levelId' })
-    @IsMongoId()
+    @IsMongoId({ message: i18nValidationMessage('validation.mongoId', { property: 'levelId' }) })
     levelId: string
 }
 
 export class UpdateSubscriptionDto {
     @ApiProperty({ type: String, required: false, enum: SubscriptionState, example: 'subjectId' })
     @IsOptional()
-    @IsEnum(SubscriptionState)
+    @IsEnum(SubscriptionState, {
+        message: i18nValidationMessage('validation.enum', { property: 'state', values: SubscriptionState }),
+    })
     state?: SubscriptionState
 
     @ApiProperty({ type: String, required: false })
-    @IsString()
+    @IsString({ message: i18nValidationMessage('validation.string', { property: 'notes' }) })
     @IsOptional()
     notes?: string
 }

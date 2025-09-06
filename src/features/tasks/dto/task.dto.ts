@@ -1,6 +1,7 @@
 import { ApiProperty, IntersectionType, OmitType, PartialType } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
-import { ArrayNotEmpty, IsDate, IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
+import { IsDate, IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
+import { i18nValidationMessage } from 'nestjs-i18n'
 import { SearchQueryDto } from '../../../shared/dto/search.query.dto'
 import { LessonDto } from '../../lessons/dto/lesson.dto'
 import { LessonDocument } from '../../lessons/schemas/lesson.schema'
@@ -8,16 +9,16 @@ import { TaskDocument } from '../schemas/task.schema'
 
 export class TaskDto {
     @ApiProperty({ type: String, required: true, example: 'taskId' })
-    @IsMongoId()
+    @IsMongoId({ message: i18nValidationMessage('validation.string', { property: 'id' }) })
     id: string
 
     @ApiProperty({ type: String, required: true })
-    @IsMongoId()
+    @IsMongoId({ message: i18nValidationMessage('validation.string', { property: 'levelId' }) })
     levelId: string
 
     @ApiProperty({ type: Date, required: true, example: new Date() })
     @Type(() => Date)
-    @IsDate()
+    @IsDate({ message: i18nValidationMessage('validation.date', { property: 'date' }) })
     date: Date
 
     @ApiProperty({ type: LessonDto, isArray: true, required: true })
@@ -25,12 +26,12 @@ export class TaskDto {
     lessons: LessonDto[]
 
     @ApiProperty({ type: String, required: false, example: 'حتى الدقيقة 30:00' })
-    @IsString()
+    @IsString({ message: i18nValidationMessage('validation.string', { property: 'note' }) })
     @IsOptional()
     note?: string
 
     @ApiProperty({ type: String, required: false, description: 'The chat room id for the task' })
-    @IsString()
+    @IsString({ message: i18nValidationMessage('validation.string', { property: 'chatRoomId' }) })
     @IsOptional()
     chatRoomId?: string
 
@@ -60,8 +61,7 @@ export class TaskDto {
 export class CreateTaskDto extends OmitType(TaskDto, ['id', 'lessons'] as const) {
     @ApiProperty({ type: String, isArray: true, required: false })
     @IsOptional()
-    @IsMongoId({ each: true })
-    @ArrayNotEmpty()
+    @IsMongoId({ each: true, message: i18nValidationMessage('validation.mongoId', { property: 'lessonIds' }) })
     lessonIds?: string[]
 }
 

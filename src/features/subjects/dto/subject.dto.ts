@@ -1,5 +1,6 @@
 import { ApiProperty, IntersectionType, OmitType, PartialType } from '@nestjs/swagger'
 import { IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
+import { i18nValidationMessage } from 'nestjs-i18n'
 import { SearchQueryDto } from '../../../shared/dto/search.query.dto'
 import { arePopulated } from '../../../shared/helper/populated-type.helper'
 import { LessonDto } from '../../lessons/dto/lesson.dto'
@@ -9,11 +10,11 @@ import { SubjectDocument } from '../schemas/subject.schema'
 
 export class SubjectDto {
     @ApiProperty({ type: String, required: true, example: 'subjectId' })
-    @IsMongoId()
+    @IsMongoId({ message: i18nValidationMessage('validation.mongoId', { property: 'id' }) })
     id: string
 
     @ApiProperty({ type: String, required: true, example: 'الفقه' })
-    @IsString()
+    @IsString({ message: i18nValidationMessage('validation.string', { property: 'name' }) })
     name: string
 
     @ApiProperty({ type: () => SimpleManagerDto, required: true })
@@ -21,7 +22,7 @@ export class SubjectDto {
     createdBy: SimpleManagerDto
 
     @ApiProperty({ type: String, required: false, example: 'الفقه على المذهب الشافعي' })
-    @IsString()
+    @IsString({ message: i18nValidationMessage('validation.string', { property: 'description' }) })
     @IsOptional()
     description?: string
 
