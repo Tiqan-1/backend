@@ -2,6 +2,7 @@ import { HttpStatus, INestApplication } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtModule, JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
+import { I18nService } from 'nestjs-i18n'
 import request from 'supertest'
 import { App } from 'supertest/types'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
@@ -16,7 +17,7 @@ import { LessonsRepository } from '../src/features/lessons/lessons.repository'
 import { LessonsService } from '../src/features/lessons/lessons.service'
 import { LessonDocument } from '../src/features/lessons/schemas/lesson.schema'
 import { SubjectDocument } from '../src/features/subjects/schemas/subject.schema'
-import { SharedDocumentsService } from '../src/shared/./database-services/shared-documents.service'
+import { SharedDocumentsService } from '../src/shared/database-services/shared-documents.service'
 import { CreatedDto } from '../src/shared/dto/created.dto'
 import { MongoTestHelper } from '../src/shared/test/helper/mongo-test.helper'
 
@@ -38,6 +39,7 @@ describe('LessonsController (e2e)', () => {
             ],
             controllers: [LessonsController],
             providers: [
+                { provide: I18nService, useValue: { t: vi.fn() } },
                 LessonsService,
                 LessonsRepository,
                 JwtService,
