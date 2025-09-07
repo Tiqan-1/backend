@@ -131,14 +131,14 @@ export class SubscriptionsService {
     async approve(id: ObjectId, managerId: ObjectId): Promise<void> {
         const found = await this.repository.findById(id)
         if (!found) {
-            throw new NotFoundException(`Subscription with id ${id.toString()} not found.`)
+            throw new NotFoundException(this.i18n.t('subscriptions.errors.subscriptionNotFound'))
         }
         if (found.state !== SubscriptionState.pending) {
-            throw new ConflictException(`Subscription with id ${id.toString()} is not pending for approval.`)
+            throw new ConflictException(this.i18n.t('subscriptions.errors.subscriptionNotPending'))
         }
         const createdBy = (found.program as ProgramDocument).createdBy as ObjectId
         if (!createdBy.equals(managerId)) {
-            throw new NotAcceptableException(`Current manager is not allowed to edit subscription ${id.toString()}.`)
+            throw new NotAcceptableException(this.i18n.t('subscriptions.errors.subscriptionNotOwnedByManager'))
         }
         found.state = SubscriptionState.active
         await found.save()
@@ -168,7 +168,7 @@ export class SubscriptionsService {
             { state: SubscriptionState.deleted, expireAt: oneMonth }
         )
         if (!found) {
-            throw new NotFoundException(`Subscription with id ${id} not found.`)
+            throw new NotFoundException(this.i18n.t('subscriptions.errors.subscriptionNotFound'))
         }
         this.logger.log(`subscription with id ${id} was marked as deleted and will be removed in 30 days.`)
     }
@@ -181,24 +181,24 @@ export class SubscriptionsService {
     validateSubscriptionForStudent(currentSubscriptions: StudentSubscriptionDto[], program?: ProgramDocument): void {
         if (!program) {
             this.logger.error(`Program not found.`)
-            throw new NotFoundException(this.i18n.t('student.subscriptions.createSubscription.errors.NOT_FOUND'))
+            throw new NotFoundException(this.i18n.t(this.i18n.t('students.errors.programNotFound')))
         }
         const programId = program._id.toString()
         const hasSameSubscription = currentSubscriptions?.some(sub => sub.program.id === programId)
         if (hasSameSubscription) {
             this.logger.error(`Student already subscribed to program ${programId}.`)
-            throw new ConflictException(this.i18n.t('student.subscriptions.createSubscription.errors.CONFLICT'))
+            throw new ConflictException(this.i18n.t('students.errors.alreadyExists'))
         }
 
         if (program.state !== ProgramState.published || program.levels?.length === 0) {
             this.logger.error(`Program state invalid for subscribing.`)
-            throw new NotAcceptableException(this.i18n.t('student.subscriptions.createSubscription.errors.NOT_ACCEPTABLE'))
+            throw new NotAcceptableException(this.i18n.t('students.errors.programNotPublished'))
         }
 
         const now = Date.now()
         if (program.registrationStart.getTime() > now || program.registrationEnd.getTime() < now) {
             this.logger.error(`Program registration period is not active.`)
-            throw new NotAcceptableException(this.i18n.t('student.subscriptions.createSubscription.errors.NOT_ACCEPTABLE'))
+            throw new NotAcceptableException(this.i18n.t('students.errors.programNotPublished'))
         }
     }
 }

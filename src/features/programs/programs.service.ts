@@ -1,4 +1,5 @@
 import { ConflictException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common'
+import { I18nService } from 'nestjs-i18n'
 import { oneMonth } from '../../shared/constants'
 import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
@@ -27,7 +28,8 @@ export class ProgramsService {
         private readonly programsRepository: ProgramsRepository,
         private readonly programsThumbnailsRepository: ProgramsThumbnailsRepository,
         private readonly levelsService: LevelsService,
-        private readonly documentsService: SharedDocumentsService
+        private readonly documentsService: SharedDocumentsService,
+        private readonly i18n: I18nService
     ) {}
 
     async create(createProgramDto: CreateProgramDto, createdBy: ObjectId): Promise<CreatedDto> {
@@ -78,27 +80,27 @@ export class ProgramsService {
         const manager = await this.documentsService.getManager(managerId)
         if (!manager) {
             this.logger.error(`Illegal state: Manager ${managerId} is logged in but not found in db.`)
-            throw new InternalServerErrorException('Manager not found.')
+            throw new InternalServerErrorException(this.i18n.t('programs.errors.managerNotFound'))
         }
 
         const program = manager.programs.find(program => program._id.toString() === id)
         if (!program) {
             this.logger.error(`Attempt to update program ${id} by manager ${managerId} failed. Program not found`)
-            throw new NotFoundException('Program not found.')
+            throw new NotFoundException(this.i18n.t('programs.errors.notFound'))
         }
 
         const programId = program._id
         const programDocument = await this.programsRepository.findById(programId)
         if (updateProgramDto.state === ProgramState.published && !programDocument?.levels?.length) {
             this.logger.error(`Attempt to publish program ${id} by manager ${managerId} failed. Program has no levels.`)
-            throw new ConflictException('Program has no levels.')
+            throw new ConflictException(this.i18n.t('programs.errors.noLevels'))
         }
 
         const updateObject = UpdateProgramDto.toDocument(updateProgramDto)
         const updated = await this.programsRepository.update({ _id: programId }, updateObject)
         if (!updated) {
             this.logger.error(`Attempt to update program ${id} failed.`)
-            throw new NotFoundException('Program not found.')
+            throw new NotFoundException(this.i18n.t('programs.errors.notFound'))
         }
     }
 
@@ -106,7 +108,7 @@ export class ProgramsService {
         const programId = new ObjectId(id)
         const found = await this.programsRepository.findById(programId)
         if (!found) {
-            throw new NotFoundException(`Program ${id} not found.`)
+            throw new NotFoundException(this.i18n.t('programs.errors.notFoundById', { args: { id } }))
         }
         if (found.thumbnail) {
             await this.programsThumbnailsRepository.remove(found.thumbnail)
@@ -121,12 +123,12 @@ export class ProgramsService {
         const manager = await this.documentsService.getManager(managerId)
         if (!manager) {
             this.logger.error(`Illegal state: Manager ${managerId} is logged in but not found in db.`)
-            throw new InternalServerErrorException('Manager not found.')
+            throw new InternalServerErrorException(this.i18n.t('programs.errors.managerNotFound'))
         }
         const programIndex = manager.programs.findIndex(program => program._id.toString() === id)
         if (programIndex === -1) {
             this.logger.error(`Attempt to remove program ${id} from manager ${managerId} failed.`)
-            throw new NotFoundException('Program not found in the managers programs.')
+            throw new NotFoundException(this.i18n.t('programs.errors.notFoundInManagerPrograms'))
         }
         ;(manager.programs as ObjectId[]).splice(programIndex, 1)
         await manager.save()
@@ -136,7 +138,7 @@ export class ProgramsService {
         )
         if (!found) {
             this.logger.error(`Attempt to remove program ${id} failed.`)
-            throw new NotFoundException('Program not found.')
+            throw new NotFoundException(this.i18n.t('programs.errors.notFound'))
         }
         if (found.thumbnail) {
             await this.programsThumbnailsRepository.remove(found.thumbnail)

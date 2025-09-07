@@ -1,0 +1,7 @@
+{
+  "errors": {
+    "subjectNotFound": "المادة غير موجودة",
+    "managerNotFound": "الإداري غير موجود",
+    "subjectNotOwnedByManager": "لا يمكن تعديل مواد غير مخصصة لهذا الحساب"
+  }
+}

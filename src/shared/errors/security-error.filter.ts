@@ -8,6 +8,7 @@ import {
     UnauthorizedException,
 } from '@nestjs/common'
 import { Request as ExpressRequest, Response } from 'express'
+import { I18nService } from 'nestjs-i18n'
 import { TokenUser } from '../../features/authentication/types/token-user'
 
 type Request = ExpressRequest & { user: TokenUser }
@@ -15,6 +16,7 @@ type Request = ExpressRequest & { user: TokenUser }
 @Catch(UnauthorizedException, ForbiddenException)
 export class SecurityErrorFilter implements ExceptionFilter {
     private readonly logger = new Logger(SecurityErrorFilter.name)
+    constructor(private readonly i18n: I18nService) {}
 
     catch(error: UnauthorizedException | ForbiddenException, host: ArgumentsHost): void {
         const ctx = host.switchToHttp()
@@ -26,7 +28,7 @@ export class SecurityErrorFilter implements ExceptionFilter {
             response
                 .status(HttpStatus.UNAUTHORIZED)
                 .contentType('application/json')
-                .json({ message: 'Unauthorized', error: 'Unauthorized', statusCode: HttpStatus.UNAUTHORIZED })
+                .json({ message: this.i18n.t('errors.unauthorized'), error: 'Unauthorized', statusCode: HttpStatus.UNAUTHORIZED })
             return
         }
         if (error.name === ForbiddenException.name) {
@@ -34,7 +36,7 @@ export class SecurityErrorFilter implements ExceptionFilter {
             response
                 .status(HttpStatus.FORBIDDEN)
                 .contentType('application/json')
-                .json({ message: 'Forbidden', error: 'Forbidden', statusCode: HttpStatus.FORBIDDEN })
+                .json({ message: this.i18n.t('errors.forbidden'), error: 'Forbidden', statusCode: HttpStatus.FORBIDDEN })
             return
         }
         throw error

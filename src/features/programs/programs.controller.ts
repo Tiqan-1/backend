@@ -19,11 +19,11 @@ import {
     UseGuards,
     UseInterceptors,
 } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse } from '@nestjs/swagger'
 import { Express } from 'express'
 import { diskStorage } from 'multer'
+import { I18nService } from 'nestjs-i18n'
 import { v4 as uuidv4 } from 'uuid'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { Roles } from '../authentication/decorators/roles.decorator'
@@ -43,7 +43,7 @@ export class ProgramsController {
     private readonly logger = new Logger(ProgramsController.name)
 
     constructor(
-        private readonly configService: ConfigService,
+        private readonly i18n: I18nService,
         private readonly programsService: ProgramsService,
         private readonly thumbnailsRepository: ProgramsThumbnailsRepository
     ) {}
@@ -97,7 +97,7 @@ export class ProgramsController {
     ): Promise<void> {
         if (updateProgramDto.state === ProgramState.deleted) {
             this.logger.error(`Attempt to update state of program to deleted.`)
-            throw new BadRequestException('Cannot update state to deleted, use the right endpoint to delete the program.')
+            throw new BadRequestException(this.i18n.t('programs.errors.cannotUpdateStateToDeleted'))
         }
         return this.programsService.update(id, updateProgramDto, request.user.id)
     }

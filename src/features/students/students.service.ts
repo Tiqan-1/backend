@@ -38,7 +38,7 @@ export class StudentsService {
         const duplicate = await this.studentRepository.findOne({ email: student.email })
         if (duplicate) {
             this.logger.error(`Manager signup attempt with duplicate email detected: ${duplicate.email}`)
-            throw new ConflictException('A user with the same email already exists.')
+            throw new ConflictException(this.i18n.t('students.errors.duplicateEmail'))
         }
         try {
             student.password = bcrypt.hashSync(student.password, 10)
@@ -50,7 +50,7 @@ export class StudentsService {
             return this.authenticationService.generateUserTokens(createdStudent)
         } catch (error) {
             this.logger.error('Error while creating user', error)
-            throw new InternalServerErrorException('General Error while creating student.')
+            throw new InternalServerErrorException(this.i18n.t('students.errors.generalCreateError'))
         }
     }
 
@@ -69,7 +69,7 @@ export class StudentsService {
         const student = await this.loadStudent(studentId)
         const hasSubscription = (student.subscriptions as ObjectId[]).includes(subscriptionObjectId)
         if (!hasSubscription) {
-            throw new NotFoundException('Student does not have subscription with the given id.')
+            throw new NotFoundException(this.i18n.t('students.errors.subscriptionNotOwned'))
         }
         await this.subscriptionsService.update(subscriptionId, { state: SubscriptionState.suspended })
         this.logger.log(`Student ${student.email} suspended subscription ${subscriptionId}.`)
@@ -85,7 +85,7 @@ export class StudentsService {
     async remove(id: ObjectId): Promise<void> {
         const student = await this.studentRepository.findById(id)
         if (!student) {
-            throw new InternalServerErrorException('Student not found.')
+            throw new InternalServerErrorException(this.i18n.t('students.errors.notFound'))
         }
         await student.updateOne({ status: StudentStatus.deleted, expireAt: oneMonth })
         this.logger.log(`student with id ${id.toString()} was marked as deleted and will be removed in 30 days.`)
@@ -100,7 +100,7 @@ export class StudentsService {
         const student = await this.loadStudent(studentId)
         const indexOfSubscription = student.subscriptions.findIndex(id => id._id.toString() === subscriptionId)
         if (indexOfSubscription === -1) {
-            throw new NotFoundException('Student does not have subscription with the given id.')
+            throw new NotFoundException(this.i18n.t('students.errors.subscriptionNotOwned'))
         }
         ;(student.subscriptions as ObjectId[]).splice(indexOfSubscription, 1)
         await student.save()
@@ -142,9 +142,7 @@ export class StudentsService {
         const student = await this.studentRepository.findById(studentId)
         if (!student || student.status === StudentStatus.deleted) {
             this.logger.error(`Trying to load student ${studentId.toString()} from session but not found in the database.`)
-            throw new InternalServerErrorException(
-                this.i18n.t('student.subscriptions.createSubscription.errors.INTERNAL_SERVER_ERROR')
-            )
+            throw new InternalServerErrorException(this.i18n.t('students.errors.unknown'))
         }
         return student
     }

@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { I18nService } from 'nestjs-i18n'
 import { oneMonth } from '../../shared/constants'
 import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
@@ -22,7 +23,8 @@ export class TasksService {
         private readonly taskRepository: TasksRepository,
         private readonly lessonsService: LessonsService,
         private readonly documentsService: SharedDocumentsService,
-        private readonly chatService: ChatService
+        private readonly chatService: ChatService,
+        private readonly i18n: I18nService
     ) {}
 
     async create(task: CreateTaskDto, createdBy: ObjectId): Promise<CreatedDto> {
@@ -30,7 +32,7 @@ export class TasksService {
         const level = await this.documentsService.getLevel(task.levelId)
         if (!level) {
             this.logger.error(`Level ${task.levelId} not found.`)
-            throw new NotFoundException('Level not found.')
+            throw new NotFoundException(this.i18n.t('tasks.errors.levelNotFound'))
         }
 
         const createObject: Partial<TaskDocument> = {
@@ -107,7 +109,7 @@ export class TasksService {
         const updated = await this.taskRepository.update({ _id: taskId, state: { $ne: TaskState.deleted } }, updateObject)
         if (!updated) {
             this.logger.error(`Attempt to update Task ${taskId.toString()} failed.`)
-            throw new NotFoundException('Task not found.')
+            throw new NotFoundException(this.i18n.t('tasks.errors.taskNotFound'))
         }
     }
 
@@ -118,7 +120,7 @@ export class TasksService {
         )
         if (!deleted) {
             this.logger.error(`Attempt to remove Task ${id} failed.`)
-            throw new NotFoundException('Task not found.')
+            throw new NotFoundException(this.i18n.t('tasks.errors.taskNotFound'))
         }
         const level = await this.documentsService.getLevel(deleted.levelId.toString())
         if (level) {

@@ -1,18 +1,4 @@
-import {
-    BadRequestException,
-    Body,
-    Controller,
-    Delete,
-    Get,
-    HttpCode,
-    HttpStatus,
-    Param,
-    Post,
-    Put,
-    Query,
-    Request,
-    UseGuards,
-} from '@nestjs/common'
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, Query, Request, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { ParseMongoIdPipe } from '../../shared/pipes/ParseMongoIdPipe'
@@ -74,9 +60,6 @@ export class TasksController {
         @Param('id', ParseMongoIdPipe) id: ObjectId,
         @Request() request: { user: TokenUser }
     ): Promise<void> {
-        if (Object.keys(task).length === 0) {
-            throw new BadRequestException('Task not found.')
-        }
         return this.service.update(id, task, request.user.id)
     }
 

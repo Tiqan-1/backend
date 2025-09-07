@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "levelNotFound": "المستوى غير موجود",
+    "taskNotFound": "المهمة غير موجودة"
+  }
+}

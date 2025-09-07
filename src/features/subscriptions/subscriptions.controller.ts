@@ -13,6 +13,7 @@ import {
     UseGuards,
 } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger'
+import { I18nService } from 'nestjs-i18n'
 import { ObjectId } from '../../shared/repository/types'
 import { Roles } from '../authentication/decorators/roles.decorator'
 import { Role } from '../authentication/enums/role.enum'
@@ -30,7 +31,10 @@ import { SubscriptionsService } from './subscriptions.service'
 @ApiBearerAuth()
 @Controller('api/subscriptions')
 export class SubscriptionsController {
-    constructor(private readonly subscriptionsService: SubscriptionsService) {}
+    constructor(
+        private readonly subscriptionsService: SubscriptionsService,
+        private readonly i18n: I18nService
+    ) {}
 
     @ApiOperation({ summary: 'Finds subscriptions.', description: 'Finds subscriptions.' })
     @ApiResponse({ status: HttpStatus.OK, type: PaginatedSubscriptionDto, description: 'Got subscriptions successfully.' })
@@ -71,7 +75,7 @@ export class SubscriptionsController {
     @Put(':id')
     update(@Param('id') id: string, @Body() updateSubscriptionDto: UpdateSubscriptionDto): Promise<void> {
         if (updateSubscriptionDto.state && updateSubscriptionDto.state === SubscriptionState.deleted) {
-            throw new BadRequestException('Use the proper endpoint to delete subscription.')
+            throw new BadRequestException(this.i18n.t('subscriptions.errors.cannotUpdateStateToDeleted'))
         }
         return this.subscriptionsService.update(id, updateSubscriptionDto)
     }

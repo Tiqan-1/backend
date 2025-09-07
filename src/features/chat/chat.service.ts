@@ -29,7 +29,7 @@ export class ChatService {
         this.logger.log(`Joining chat room ${chatRoomId.toString()}`)
         const chatRoom = await this.chatRepository.findOne(chatRoomId)
         if (!chatRoom) {
-            throw new NotFoundException(this.i18n.t('chat.errors.NOT_FOUND'))
+            throw new NotFoundException(this.i18n.t('chat.errors.notFound'))
         }
         console.debug('chatRoom: ', JSON.stringify(chatRoom.messages))
         return {
@@ -52,7 +52,7 @@ export class ChatService {
         )
         const chatRoom = await this.chatRepository.findOneRaw(chatRoomId)
         if (!chatRoom) {
-            throw new NotFoundException(this.i18n.t('chat.errors.NOT_FOUND'))
+            throw new NotFoundException(this.i18n.t('chat.errors.notFound'))
         }
         const messageId = await this.messageRepository.create({ sender: userId, text: message, chatRoomId: chatRoomId })
         await chatRoom.updateOne({ messages: [...chatRoom.messages.map(message => message._id), messageId._id] })
