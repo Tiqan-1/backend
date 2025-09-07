@@ -3,7 +3,7 @@ import { LogLevel } from '@nestjs/common/services/logger.service'
 import { NestFactory } from '@nestjs/core'
 import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger'
 import 'multer'
-import { I18nValidationExceptionFilter, I18nValidationPipe } from 'nestjs-i18n'
+import { I18nService, I18nValidationExceptionFilter, I18nValidationPipe } from 'nestjs-i18n'
 import * as process from 'node:process'
 import { AppModule } from './app.module'
 import { MigrationService } from './shared/database-services/migration.service'
@@ -26,7 +26,10 @@ async function bootstrap(): Promise<void> {
         credentials: true,
     })
     app.useGlobalPipes(new I18nValidationPipe())
-    app.useGlobalFilters(new SecurityErrorFilter(), new I18nValidationExceptionFilter({ detailedErrors: false }))
+    app.useGlobalFilters(
+        new SecurityErrorFilter(app.get(I18nService)),
+        new I18nValidationExceptionFilter({ detailedErrors: false })
+    )
 
     const config = new DocumentBuilder()
         .setTitle('Mubadarat')
