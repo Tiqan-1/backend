@@ -14,6 +14,8 @@ import {
 } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger'
 import { I18nService } from 'nestjs-i18n'
+import { BadRequestErrorDto } from '../../shared/dto/bad-request-error.dto'
+import { ErrorDto } from '../../shared/dto/error.dto'
 import { ObjectId } from '../../shared/repository/types'
 import { Roles } from '../authentication/decorators/roles.decorator'
 import { Role } from '../authentication/enums/role.enum'
@@ -38,9 +40,10 @@ export class SubscriptionsController {
 
     @ApiOperation({ summary: 'Finds subscriptions.', description: 'Finds subscriptions.' })
     @ApiResponse({ status: HttpStatus.OK, type: PaginatedSubscriptionDto, description: 'Got subscriptions successfully.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user.' })
-    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request is not valid.', type: BadRequestErrorDto })
     @HttpCode(HttpStatus.OK)
     @Get('v2')
     find(@Query() query: SearchSubscriptionsQueryDto, @Request() req: { user: TokenUser }): Promise<PaginatedSubscriptionDto> {
@@ -49,15 +52,20 @@ export class SubscriptionsController {
 
     @ApiOperation({ summary: 'Approves subscriptions.', description: 'Sets subscription to active state.' })
     @ApiResponse({ status: HttpStatus.OK, type: PaginatedSubscriptionDto, description: 'Subscriptions approved successfully.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user.' })
-    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this endpoint.' })
-    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Subscription not found.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this endpoint.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Subscription not found.', type: ErrorDto })
     @ApiResponse({
         status: HttpStatus.CONFLICT,
         description: 'Subscription not in pending state and therefore cannot be approved.',
+        type: ErrorDto,
     })
-    @ApiResponse({ status: HttpStatus.NOT_ACCEPTABLE, description: 'Current user is not the owner of the subscription.' })
+    @ApiResponse({
+        status: HttpStatus.NOT_ACCEPTABLE,
+        description: 'Current user is not the owner of the subscription.',
+        type: ErrorDto,
+    })
     @HttpCode(HttpStatus.NO_CONTENT)
     @Put(':id/approve')
     approve(@Param('id') id: ObjectId, @Request() req: { user: TokenUser }): Promise<void> {
@@ -66,11 +74,11 @@ export class SubscriptionsController {
 
     @ApiOperation({ summary: 'Updates a subscription', description: 'Updates a subscription.' })
     @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Subscription successfully updated.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Subscription not found.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
-    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Subscription not found.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.', type: BadRequestErrorDto })
     @HttpCode(HttpStatus.NO_CONTENT)
     @Put(':id')
     update(@Param('id') id: string, @Body() updateSubscriptionDto: UpdateSubscriptionDto): Promise<void> {
@@ -82,10 +90,10 @@ export class SubscriptionsController {
 
     @ApiOperation({ summary: 'Deletes a subscription', description: 'Deletes a subscription.' })
     @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Subscription successfully deleted.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Subscription not found.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Subscription not found.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.', type: ErrorDto })
     @HttpCode(HttpStatus.NO_CONTENT)
     @Delete(':id')
     remove(@Param('id') id: string): Promise<void> {

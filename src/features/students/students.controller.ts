@@ -26,9 +26,13 @@ export class StudentsController {
         description: 'The user got created successfully.',
         type: AuthenticationResponseDto,
     })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.CONFLICT, description: 'A user with the same email address already exists.' })
-    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({
+        status: HttpStatus.CONFLICT,
+        description: 'A user with the same email address already exists.',
+        type: ErrorDto,
+    })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.', type: BadRequestErrorDto })
     @HttpCode(HttpStatus.CREATED)
     @Post('sign-up')
     signUp(@Body() signUpStudentDto: SignUpStudentDto): Promise<AuthenticationResponseDto> {
@@ -37,7 +41,7 @@ export class StudentsController {
 
     @ApiOperation({ summary: 'Removes the student.', description: 'Removes the student.' })
     @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'The user got deleted successfully.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
     @HttpCode(HttpStatus.NO_CONTENT)
     @Delete()
     @UseGuards(JwtAuthGuard)
@@ -53,10 +57,10 @@ export class StudentsController {
         deprecated: true,
     })
     @ApiResponse({ status: HttpStatus.CREATED, type: CreatedDto, description: 'The id of the created subscription.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.' })
-    @ApiResponse({ status: HttpStatus.CONFLICT, description: 'Student already have the same subscription.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.', type: BadRequestErrorDto })
+    @ApiResponse({ status: HttpStatus.CONFLICT, description: 'Student already have the same subscription.', type: ErrorDto })
     @Post('subscriptions/subscribe')
     @HttpCode(HttpStatus.CREATED)
     @UseGuards(JwtAuthGuard)
@@ -74,15 +78,16 @@ export class StudentsController {
         description: 'Creates a subscription for the student.',
     })
     @ApiResponse({ status: HttpStatus.CREATED, type: CreatedDto, description: 'The id of the created subscription.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.' })
-    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Program or Level not found.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.', type: BadRequestErrorDto })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Program or Level not found.', type: ErrorDto })
     @ApiResponse({
         status: HttpStatus.NOT_ACCEPTABLE,
         description: 'Trying to subscribe to a program or a level that is not open for registration.',
+        type: ErrorDto,
     })
-    @ApiResponse({ status: HttpStatus.CONFLICT, description: 'Student already have the same subscription.' })
+    @ApiResponse({ status: HttpStatus.CONFLICT, description: 'Student already have the same subscription.', type: ErrorDto })
     @Post('subscriptions')
     @HttpCode(HttpStatus.CREATED)
     @UseGuards(JwtAuthGuard)
@@ -126,8 +131,8 @@ export class StudentsController {
     @ApiQuery({ name: 'limit', type: String, required: false, description: 'Controls the number of returned elements' })
     @ApiQuery({ name: 'skip', type: String, required: false, description: 'Controls the number of elements to be skipped' })
     @ApiResponse({ status: HttpStatus.OK, type: PaginatedStudentSubscriptionDto, description: 'Got subscriptions successfully.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user', type: ErrorDto })
     @Get('subscriptions/v2')
     @HttpCode(HttpStatus.OK)
     @UseGuards(JwtAuthGuard)
@@ -142,10 +147,10 @@ export class StudentsController {
 
     @ApiOperation({ summary: 'Suspends a subscription', description: 'Suspends a subscription.' })
     @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Subscription successfully suspended.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Subscription not found.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Subscription not found.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.', type: BadRequestErrorDto })
     @Put('subscriptions/:id/suspend')
     @HttpCode(HttpStatus.NO_CONTENT)
     @UseGuards(JwtAuthGuard)
@@ -160,9 +165,9 @@ export class StudentsController {
         status: HttpStatus.NO_CONTENT,
         description: 'Subscription removed successfully.',
     })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Subscription not found.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Subscription not found.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user', type: ErrorDto })
     @Delete('subscriptions/:id')
     @HttpCode(HttpStatus.NO_CONTENT)
     @UseGuards(JwtAuthGuard)
@@ -176,8 +181,9 @@ export class StudentsController {
     @ApiQuery({ name: 'limit', type: String, required: false, description: 'Controls the number of returned elements' })
     @ApiQuery({ name: 'skip', type: String, required: false, description: 'Controls the number of elements to be skipped' })
     @ApiResponse({ status: HttpStatus.OK, type: PaginatedProgramDto, description: 'Got programs successfully.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request is not valid.', type: BadRequestErrorDto })
     @Get('programs/v2')
     @HttpCode(HttpStatus.OK)
     @UseGuards(JwtAuthGuard)
@@ -201,6 +207,7 @@ export class StudentsController {
     @ApiResponse({ status: HttpStatus.OK, type: PaginatedProgramWithSubscriptionDto, description: 'Got programs successfully.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request is not valid.', type: BadRequestErrorDto })
     @Get('v3/programs')
     @HttpCode(HttpStatus.OK)
     @UseGuards(JwtAuthGuard)

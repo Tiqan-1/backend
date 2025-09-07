@@ -1,6 +1,8 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, Query, Request, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger'
+import { BadRequestErrorDto } from '../../shared/dto/bad-request-error.dto'
 import { CreatedDto } from '../../shared/dto/created.dto'
+import { ErrorDto } from '../../shared/dto/error.dto'
 import { Roles } from '../authentication/decorators/roles.decorator'
 import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
@@ -17,10 +19,10 @@ export class SubjectsController {
 
     @ApiOperation({ summary: 'Creates a subject', description: `Creates a subject and adds it to the current manager.` })
     @ApiResponse({ status: HttpStatus.CREATED, type: CreatedDto, description: 'Subject successfully created.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
-    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request is not valid.', type: BadRequestErrorDto })
     @Post()
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
@@ -31,9 +33,10 @@ export class SubjectsController {
 
     @ApiOperation({ summary: 'Searches for subjects', description: 'Searches for subjects.' })
     @ApiResponse({ status: HttpStatus.OK, type: PaginatedSubjectDto, description: 'Got subjects successfully.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user.' })
-    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request is not valid.', type: BadRequestErrorDto })
     @Get()
     @HttpCode(HttpStatus.OK)
     @Roles(Role.Manager)
@@ -47,10 +50,10 @@ export class SubjectsController {
 
     @ApiOperation({ summary: 'Updates a subject', description: 'Updates a subject.' })
     @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Subject successfully updated.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
-    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request is not valid.', type: BadRequestErrorDto })
     @Put(':id')
     @HttpCode(HttpStatus.NO_CONTENT)
     @Roles(Role.Manager)
@@ -61,10 +64,10 @@ export class SubjectsController {
 
     @ApiOperation({ summary: 'Removes a subject', description: 'Removes a subject from the manager.' })
     @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Subject successfully removed.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
-    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Subject not found.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Subject not found.', type: ErrorDto })
     @Delete(':subjectId')
     @HttpCode(HttpStatus.NO_CONTENT)
     @Roles(Role.Manager)
