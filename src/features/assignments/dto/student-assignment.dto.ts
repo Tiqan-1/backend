@@ -1,8 +1,7 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { ValidateNested } from 'class-validator';
-import { PaginatedDto } from 'src/shared/dto/paginated.dto';
-
+import { ApiProperty } from '@nestjs/swagger'
+import { Type } from 'class-transformer'
+import { ValidateNested } from 'class-validator'
+import { PaginatedDto } from 'src/shared/dto/paginated.dto'
 
 // // DTO for a single question element, WITHOUT the 'answer' field.
 // export class StudentFormElementDto {
@@ -23,7 +22,7 @@ import { PaginatedDto } from 'src/shared/dto/paginated.dto';
 
 //     @ApiProperty({ required: false })
 //     multiple?: boolean;
-    
+
 //     @ApiProperty({ required: false })
 //     text?: string;
 // }
@@ -41,29 +40,29 @@ import { PaginatedDto } from 'src/shared/dto/paginated.dto';
 // The main DTO for a single assignment in a student's list.
 export class StudentAssignmentDto {
     @ApiProperty()
-    id: string;
+    id: string
 
     @ApiProperty()
-    title: string;
+    title: string
 
     @ApiProperty()
-    type: string;
+    type: string
 
     @ApiProperty()
-    durationInMinutes: number;
+    durationInMinutes: number
 
     @ApiProperty()
-    availableFrom: Date;
+    availableFrom: Date
 
     @ApiProperty()
-    availableUntil: Date;
-    
-    @ApiProperty({ required: false })
-    subjectName?: string;
+    availableUntil: Date
 
     @ApiProperty({ required: false })
-    levelName?: string;
-    
+    subjectName?: string
+
+    @ApiProperty({ required: false })
+    levelName?: string
+
     // // A stripped-down, answer-free version of the form if the student
     // // needs to see the questions before starting. If not, this can be removed.
     // @ApiProperty({ required: false })

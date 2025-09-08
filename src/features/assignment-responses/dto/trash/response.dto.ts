@@ -3,22 +3,20 @@
 // import { IsDate, IsInt, IsMongoId, IsObject, IsOptional, IsString, ValidateNested } from 'class-validator'
 // import { SearchQueryDto } from '../../../shared/dto/search.query.dto'
 // import { normalizeDate } from '../../../shared/helper/date.helper'
-// import { ObjectId } from '../../../shared/repository/types' 
+// import { ObjectId } from '../../../shared/repository/types'
 // import { AssignmentResponseDto } from './assignment-response.dto'
 
 // const now = normalizeDate(new Date())
-
-
 
 // export class CreateAssignmentResponseDto extends OmitType(AssignmentResponseDto, [
 //     'id', 'startedAt', 'submittedAt', 'studentId', 'score', 'notes', 'assignment', 'student'
 // ] as const) {
 
-//     static toDocument(dto: CreateAssignmentResponseDto, studentId: ObjectId): object { 
+//     static toDocument(dto: CreateAssignmentResponseDto, studentId: ObjectId): object {
 //         return {
 //             startedAt: now,
 //             studentId: studentId,
-//             assignmentId: dto.assignmentId, 
+//             assignmentId: dto.assignmentId,
 //             replies: dto.replies ?? undefined,
 //         }
 //     }

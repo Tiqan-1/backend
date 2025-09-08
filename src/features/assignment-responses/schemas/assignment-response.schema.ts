@@ -1,18 +1,17 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
-import { HydratedDocument, Schema as MongooseSchema } from 'mongoose';
-import { ObjectId, Populated } from '../../../shared/repository/types'
+import { HydratedDocument, Schema as MongooseSchema } from 'mongoose'
 import { Assignment, AssignmentDocument } from 'src/features/assignments/schemas/assignment.model'
 import { Student, StudentDocument } from 'src/features/students/schemas/student.schema'
-import { AssignmentResponseStatus } from '../enums/assignment-response-status.enum';
+import { ObjectId, Populated } from '../../../shared/repository/types'
+import { AssignmentResponseStatus } from '../enums/assignment-response-status.enum'
 
 export type AssignmentResponseDocument = HydratedDocument<AssignmentResponse>
 
 @Schema()
 export class AssignmentResponse {
-
     @Prop({ type: String })
-    notes?: string;
-    
+    notes?: string
+
     @Prop({ required: true, type: ObjectId, ref: Student.name })
     studentId: ObjectId | Populated<StudentDocument>
 
@@ -28,20 +27,19 @@ export class AssignmentResponse {
     @Prop({ type: Date })
     submittedAt: Date
 
-    @Prop({ 
-        required: true, 
-        type: String, 
-        enum: AssignmentResponseStatus, 
-        default: AssignmentResponseStatus.IN_PROGRESS 
+    @Prop({
+        required: true,
+        type: String,
+        enum: AssignmentResponseStatus,
+        default: AssignmentResponseStatus.IN_PROGRESS,
     })
-    status: AssignmentResponseStatus;
-
+    status: AssignmentResponseStatus
 
     @Prop({ type: MongooseSchema.Types.Map, of: MongooseSchema.Types.Mixed })
-    replies: Map<string, any>;
-    
+    replies: Map<string, unknown>
+
     @Prop({ type: MongooseSchema.Types.Map, of: Number, default: {} })
-    individualScores: Map<string, number>;
+    individualScores: Map<string, number>
 }
 
 export const AssignmentResponseSchema = SchemaFactory.createForClass(AssignmentResponse)

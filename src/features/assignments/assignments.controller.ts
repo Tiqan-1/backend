@@ -15,18 +15,24 @@ import {
     Request,
     UseGuards,
 } from '@nestjs/common'
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse } from '@nestjs/swagger'
+import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger'
 import { CreatedDto } from '../../shared/dto/created.dto'
+import { GetUser } from '../assignment-responses/assignment-responses.controller'
 import { Roles } from '../authentication/decorators/roles.decorator'
 import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { RolesGuard } from '../authentication/guards/roles.guard'
 import { TokenUser } from '../authentication/types/token-user'
-import { CreateAssignmentDto, AssignmentDto, PaginatedAssignmentDto, SearchAssignmentQueryDto, UpdateAssignmentDto } from './dto/assignment.dto'
-import { AssignmentState } from './enums/assignment-state.enum'
 import { AssignmentsService } from './assignments.service'
-import { GetUser } from '../assignment-responses/assignment-responses.controller'
+import {
+    AssignmentDto,
+    CreateAssignmentDto,
+    PaginatedAssignmentDto,
+    SearchAssignmentQueryDto,
+    UpdateAssignmentDto,
+} from './dto/assignment.dto'
 import { PaginatedAssignmentStudentDto } from './dto/student-assignment.dto'
+import { AssignmentState } from './enums/assignment-state.enum'
 
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -36,17 +42,6 @@ export class AssignmentsController {
 
     constructor(private readonly assignmentsService: AssignmentsService) {}
 
-
-
-    //
-    //
-    //
-    //
-    // === CREATE AN ASSIGNMENT ===
-    //
-    //
-    //
-    //
     @ApiOperation({ summary: '[Manager] Creates a assignment', description: `Creates a assignment.` })
     @ApiResponse({ status: HttpStatus.CREATED, type: CreatedDto, description: 'Assignment successfully created.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
@@ -60,42 +55,17 @@ export class AssignmentsController {
         return this.assignmentsService.create(createAssignmentDto, request.user.id)
     }
 
-
-
-
-
-    //
-    //
-    //
-    //
-    // === SHOW AN ASSIGNMENT ===
-    //
-    //
-    //
-    //
+    @ApiOperation({ summary: '[Manager/Student] Get a single assignment by ID' })
     @Get(':id')
     @Roles(Role.Manager, Role.Student)
-    @ApiOperation({ summary: '[Manager/Student] Get a single assignment by ID' })
-    @ApiResponse({ status: 200, type: AssignmentDto }) 
-    show(
-        @Param('id') assignmentId: string,
-        @GetUser() user: TokenUser,
-    ) { // Promise<AssignmentDto>
-        if(user.role == Role.Manager){
-            return this.assignmentsService.showForManager(assignmentId, user.id.toString());
+    @ApiResponse({ status: 200, type: AssignmentDto })
+    findOne(@Param('id') assignmentId: string, @GetUser() user: TokenUser): Promise<AssignmentDto> {
+        if (user.role == Role.Manager) {
+            return this.assignmentsService.showForManager(assignmentId, user.id.toString())
         }
-        return this.assignmentsService.showForStudent(assignmentId, user.id.toString());
+        return this.assignmentsService.showForStudent(assignmentId, user.id.toString())
     }
 
-    //
-    //
-    //
-    //
-    // === SEARCH AN ASSIGNMENT ===
-    //
-    //
-    //
-    //
     @ApiOperation({ summary: '[Manager] Searches for assignments', description: 'Searches for assignments' })
     @ApiResponse({ status: HttpStatus.OK, type: PaginatedAssignmentDto, description: 'Got assignments successfully.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
@@ -105,46 +75,22 @@ export class AssignmentsController {
     @UseGuards(JwtAuthGuard)
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
-    index(
+    find(
         @Query() searchAssignmentQueryDto: SearchAssignmentQueryDto,
         @Request() request: { user: TokenUser }
     ): Promise<PaginatedAssignmentDto> {
         return this.assignmentsService.search(searchAssignmentQueryDto, request.user.id)
     }
 
-
-    //
-    //
-    //
-    //
-    // === AVAILABLE ASSIGNMENT FOR STUDENTS ===
-    //
-    //
-    //
-    //
+    @ApiOperation({ summary: '[Student] Get a list of available assignments and homeworks' })
     @Get('available')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(Role.Student)
-    @ApiOperation({ summary: '[Student] Get a list of available assignments and homework' })
     @ApiResponse({ status: 200, type: PaginatedAssignmentStudentDto })
-    findMyAvailableAssignments(
-        @GetUser() student: TokenUser
-    ): Promise<PaginatedAssignmentStudentDto> {
-        return this.assignmentsService.findAvailableForStudent(student.id.toString());
+    findForStudent(@GetUser() student: TokenUser): Promise<PaginatedAssignmentStudentDto> {
+        return this.assignmentsService.findAvailableForStudent(student.id.toString())
     }
 
-
-
-
-    //
-    //
-    //
-    //
-    // === UPDATE AN ASSIGNMENT ===
-    //
-    //
-    //
-    //
     @ApiOperation({ summary: '[Manager] Updates a assignment', description: 'Updates a assignment.' })
     @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Assignment successfully updated.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
@@ -168,20 +114,6 @@ export class AssignmentsController {
         return this.assignmentsService.update(id, updateAssignmentDto, request.user.id)
     }
 
-
-
-
-
-    
-    //
-    //
-    //
-    //
-    // === DELETE AN ASSIGNMENT ===
-    //
-    //
-    //
-    //
     @ApiOperation({ summary: '[Manager] Removes a assignment', description: 'Removes a assignment from the manager.' })
     @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Assignment successfully removed.' })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
@@ -197,30 +129,13 @@ export class AssignmentsController {
         return this.assignmentsService.remove(assignmentId, request.user.id)
     }
 
-
-    
-
-
-    
-    //
-    //
-    //
-    //
-    // ===  Publishes assignment responses ===
-    //
-    //
-    //
-    //
     @Patch(':id/publish-grades')
     @Roles(Role.Manager)
     @HttpCode(HttpStatus.NO_CONTENT)
     @ApiOperation({ summary: '[Manager] Publishes all graded responses for an assignment' })
     @ApiResponse({ status: 204, description: 'Grades published successfully.' })
     @ApiResponse({ status: 400, description: 'Cannot publish, not all responses are graded.' })
-    publishGrades(
-        @Param('id') assignmentId: string,
-        @GetUser() manager: TokenUser,
-    ): Promise<void> {
-        return this.assignmentsService.publishGrades(assignmentId, manager.id.toString());
+    publishGrades(@Param('id') assignmentId: string, @GetUser() manager: TokenUser): Promise<void> {
+        return this.assignmentsService.publishGrades(assignmentId, manager.id.toString())
     }
 }

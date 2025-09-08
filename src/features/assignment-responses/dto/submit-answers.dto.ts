@@ -1,7 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsObject } from 'class-validator';
-
-export type RepliesPlainDto = Record<string, any>;
+export type RepliesPlainDto = Record<string, unknown>
 
 // export class RepliesDtoWrapper {
 //     @ApiProperty({

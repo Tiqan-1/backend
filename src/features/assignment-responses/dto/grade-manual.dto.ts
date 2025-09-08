@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsObject, IsOptional, IsString } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger'
+import { IsObject, IsOptional, IsString } from 'class-validator'
 
 export class GradeManualDto {
     @ApiProperty({
@@ -7,10 +7,10 @@ export class GradeManualDto {
         example: { 'essay-question-id': 8 },
     })
     @IsObject()
-    scores: Record<string, number>;
+    scores: Record<string, number>
 
     @ApiProperty({ required: false })
     @IsOptional()
     @IsString()
-    notes?: string;
+    notes?: string
 }

@@ -1,33 +1,31 @@
 import { ApiProperty, IntersectionType, OmitType, PartialType, PickType } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
-import { IsDate, IsEnum, IsInt, IsMongoId, IsNumber, IsObject, IsOptional, IsString, ValidateNested } from 'class-validator'
+import { IsDate, IsEnum, IsInt, IsMongoId, IsObject, IsOptional, IsString, ValidateNested } from 'class-validator'
+import { SimpleManagerDto } from 'src/features/managers/dto/manager.dto'
+import { SubjectDto } from 'src/features/subjects/dto/subject.dto'
+import { SubjectDocument } from 'src/features/subjects/schemas/subject.schema'
+import { PaginatedDto } from '../../../shared/dto/paginated.dto'
 import { SearchQueryDto } from '../../../shared/dto/search.query.dto'
 import { normalizeDate } from '../../../shared/helper/date.helper'
 import { ObjectId } from '../../../shared/repository/types'
+import { LevelDto } from '../../levels/dto/level.dto'
+import { LevelDocument } from '../../levels/schemas/level.schema'
+import { AssignmentGradingState } from '../enums/assignment-grading-state.enum'
 import { AssignmentState, AssignmentType } from '../enums/assignment-state.enum'
 import { AssignmentDocument } from '../schemas/assignment.model'
-import { SimpleManagerDto } from 'src/features/managers/dto/manager.dto'
-import { ManagerDocument } from 'src/features/managers/schemas/manager.schema'
-import { SubjectDto } from 'src/features/subjects/dto/subject.dto'
-import { SubjectDocument } from 'src/features/subjects/schemas/subject.schema'
-import { LevelDto } from 'src/features/levels/dto/level.dto'
-import { LevelDocument } from 'src/features/levels/schemas/level.schema'
-import { AssignmentGradingState } from '../enums/assignment-grading-state.enum'
-import { PaginatedDto } from 'src/shared/dto/paginated.dto'
 
 const now = normalizeDate(new Date())
-
 
 export class SimpleSubjectDto extends PickType(SubjectDto, ['id', 'name']) {
     constructor(doc: SubjectDocument) {
         super()
-        this.id = doc.id
+        this.id = doc._id.toString()
         this.name = doc.name
     }
 
     static fromDocument(createdBy: SubjectDocument): SimpleSubjectDto {
         return {
-            id: createdBy.id,
+            id: createdBy._id.toString(),
             name: createdBy.name,
         }
     }
@@ -35,37 +33,39 @@ export class SimpleSubjectDto extends PickType(SubjectDto, ['id', 'name']) {
 export class SimpleLevelDto extends PickType(LevelDto, ['id', 'name']) {
     constructor(doc: LevelDocument) {
         super()
-        this.id = doc.id
+        this.id = doc._id.toString()
         this.name = doc.name
     }
 
     static fromDocument(createdBy: LevelDocument): SimpleLevelDto {
         return {
-            id: createdBy.id,
+            id: createdBy._id.toString(),
             name: createdBy.name,
         }
     }
 }
 
 export class AssignmentDto {
-    @ApiProperty({ type: String})
+    @ApiProperty({ type: String })
     @IsMongoId()
     id: string
 
-    @ApiProperty({ type: String, required: true})
+    @ApiProperty({ type: String, required: true })
     @IsString()
     title: string
 
     @ApiProperty({ type: String, required: true })
     @IsMongoId()
     levelId: string
+
     @ApiProperty({ type: () => SimpleLevelDto })
     @ValidateNested()
     level: SimpleLevelDto
 
-    @ApiProperty({ type: String})
+    @ApiProperty({ type: String })
     @IsMongoId()
     subjectId: string
+
     @ApiProperty({ type: () => SimpleSubjectDto })
     @ValidateNested()
     subject: SimpleSubjectDto
@@ -77,8 +77,8 @@ export class AssignmentDto {
     @ApiProperty({ type: String, enum: AssignmentState, required: true, default: AssignmentState.draft })
     @IsEnum(AssignmentState)
     state: AssignmentState
-    
-    @ApiProperty({ type: String, enum: AssignmentGradingState, required: true, default: AssignmentGradingState.PENDING })
+
+    @ApiProperty({ type: String, enum: AssignmentGradingState, required: true, default: AssignmentGradingState.pending })
     @IsEnum(AssignmentGradingState)
     gradingState: AssignmentGradingState
 
@@ -91,8 +91,7 @@ export class AssignmentDto {
     durationInMinutes: number
 
     @ApiProperty({ type: Number, required: true })
-    passingScore: Number
-
+    passingScore: number
 
     @ApiProperty({ type: Date, required: true, example: now })
     @Type(() => Date)
@@ -106,15 +105,14 @@ export class AssignmentDto {
     @ApiProperty({ type: () => Object })
     @IsObject()
     @IsOptional()
-    form: object;
-    
+    form: object
 
-    @ApiProperty({ type: Date})
+    @ApiProperty({ type: Date })
     @Type(() => Date)
     @IsDate()
     createdAt: Date
 
-    @ApiProperty({ type: Date})
+    @ApiProperty({ type: Date })
     @Type(() => Date)
     @IsDate()
     updatedAt: Date
@@ -130,13 +128,21 @@ export class PaginatedAssignmentDto extends PaginatedDto<AssignmentDto> {
 export class SimpleAssignmentDto extends PickType(AssignmentDto, ['title']) {
     static fromDocument(subscriber: AssignmentDocument): SimpleAssignmentDto {
         return {
-            title: subscriber.title, 
+            title: subscriber.title,
         }
     }
 }
 
-export class CreateAssignmentDto extends OmitType(AssignmentDto, ['id', 'gradingState', 'state', 'createdBy', 'subject', 'level', 'createdAt', 'updatedAt'] as const) {
-
+export class CreateAssignmentDto extends OmitType(AssignmentDto, [
+    'id',
+    'gradingState',
+    'state',
+    'createdBy',
+    'subject',
+    'level',
+    'createdAt',
+    'updatedAt',
+] as const) {
     static toDocument(dto: CreateAssignmentDto, createdBy: ObjectId): object {
         return {
             createdBy: createdBy,

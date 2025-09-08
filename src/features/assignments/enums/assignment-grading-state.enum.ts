@@ -1,4 +1,4 @@
 export enum AssignmentGradingState {
-    PENDING = 'pending',
-    PUBLISHED = 'published',
+    pending = 'pending',
+    published = 'published',
 }

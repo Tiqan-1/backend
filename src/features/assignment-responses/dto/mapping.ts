@@ -1,12 +1,11 @@
-import { AssignmentResponseDocument } from "../schemas/assignment-response.schema"
-import { AssignmentResponseDto } from "./assignment-response.dto"
-import { StudentDocument } from "src/features/students/schemas/student.schema"
-import { SimpleStudentDto } from "src/features/students/dto/student.dto"
-import { SimpleAssignmentDto } from "src/features/assignments/dto/assignment.dto"
-import { AssignmentDocument } from "src/features/assignments/schemas/assignment.model"
+import { SimpleAssignmentDto } from 'src/features/assignments/dto/assignment.dto'
+import { AssignmentDocument } from 'src/features/assignments/schemas/assignment.model'
+import { SimpleStudentDto } from 'src/features/students/dto/student.dto'
+import { StudentDocument } from 'src/features/students/schemas/student.schema'
+import { AssignmentResponseDocument } from '../schemas/assignment-response.schema'
+import { AssignmentResponseDto } from './assignment-response.dto'
 
 export class AssignmentResponseMapping {
-
     static fromDocuments(foundAssignmentResponses: AssignmentResponseDocument[] = []): AssignmentResponseDto[] {
         return foundAssignmentResponses.map(document => this.fromDocument(document))
     }

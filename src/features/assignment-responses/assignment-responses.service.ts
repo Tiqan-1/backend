@@ -1,69 +1,58 @@
-
-import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common'
+import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { PaginationHelper } from '../../shared/helper/pagination-helper'
 import { SearchFilterBuilder } from '../../shared/helper/search-filter.builder'
-import { ObjectId } from '../../shared/repository/types' 
+import { ObjectId } from '../../shared/repository/types'
 import { PaginatedAssignmentResponseDto } from './dto/paginated.dto'
-import { AssignmentResponsesRepository } from './assignment-responses.repository'
-import { AssignmentResponseDocument } from './schemas/assignment-response.schema'
+
 import { TokenUser } from '../authentication/types/token-user'
+import { AssignmentResponsesRepository } from './assignment-responses.repository'
 import { AssignmentResponseDto, SearchAssignmentResponseQueryDto } from './dto/assignment-response.dto'
 import { AssignmentResponseMapping } from './dto/mapping'
+import { AssignmentResponseDocument } from './schemas/assignment-response.schema'
 
 @Injectable()
 export class AssignmentResponsesService {
     private readonly logger = new Logger(AssignmentResponsesService.name)
 
-    constructor(
-        private readonly assignmentEesponsesRepository: AssignmentResponsesRepository,
-    ) {}
+    constructor(private readonly assignmentEesponsesRepository: AssignmentResponsesRepository) {}
 
-    private async checkOwnership(assignmentresponseId: string, user: TokenUser): Promise<AssignmentResponseDocument> {
-        const assignmentresponse = await this.assignmentEesponsesRepository.findById(new ObjectId(assignmentresponseId))
-        
-        if (!assignmentresponse) {
-            this.logger.error(`AssignmentResponse ${assignmentresponseId} not found`);
-            throw new NotFoundException('Assignment Response not found.');
+    private async checkOwnership(assignmentResponseId: string, user: TokenUser): Promise<AssignmentResponseDocument> {
+        const assignmentResponse = await this.assignmentEesponsesRepository.findById(new ObjectId(assignmentResponseId))
+
+        if (!assignmentResponse) {
+            this.logger.error(`AssignmentResponse ${assignmentResponseId} not found`)
+            throw new NotFoundException('Assignment Response not found.')
         }
 
-        // Mongoose 6 returns ObjectId, Mongoose 7+ returns HydratedDocument.
-        // .toString() is safe for both.
-        const createdById = assignmentresponse.studentId._id?.toString() || assignmentresponse.studentId.toString();
+        const createdById = assignmentResponse.studentId._id.toString()
 
         if (createdById !== user.id.toString()) {
-            this.logger.error(`Permission Denied: User ${user.id} trying to access assignmentresponse ${assignmentresponseId}`);
-            throw new ForbiddenException('Permission Denied.');
+            this.logger.error(
+                `Permission Denied: User ${user.id.toString()} trying to access assignmentResponse ${assignmentResponseId}`
+            )
+            throw new ForbiddenException('Permission Denied.')
         }
-        
-        return assignmentresponse;
+
+        return assignmentResponse
     }
 
-
-    //
-    //
-    //
-    //
-    // === FIND AN ASSIGNMENT RESPONSE ===
-    //
-    //
-    //
-    //
     async findOneById(responseId: string, user: TokenUser): Promise<AssignmentResponseDto> {
-        const response = await this.assignmentEesponsesRepository.findOneById(responseId,
+        const response = await this.assignmentEesponsesRepository.findOneById(
+            responseId,
             {
                 path: 'assignmentId',
                 populate: {
                     path: 'createdBy',
-                    select: 'name email'
-                }
+                    select: 'name email',
+                },
             },
             {
                 path: 'studentId',
-                select: 'name email'
+                select: 'name email',
             }
-        );
+        )
         if (!response) {
-            throw new NotFoundException(`Assignment response with ID "${responseId}" not found.`);
+            throw new NotFoundException(`Assignment response with ID "${responseId}" not found.`)
         }
 
         // TODO: CLEAN THIS
@@ -77,7 +66,7 @@ export class AssignmentResponsesService {
         // } else if (user.role === Role.Manager) {
         //     // A manager can only see responses for assignments they created
         //     // We need to cast the populated field to access its properties
-        //     const assignment = response.assignmentId as any; 
+        //     const assignment = response.assignmentId as any;
         //     if (assignment.createdBy._id.toString() !== user.id) {
         //         throw new ForbiddenException('You are not authorized to view this response.');
         //     }
@@ -87,7 +76,7 @@ export class AssignmentResponsesService {
         // }
 
         // // Map to DTO
-        const responseDto = AssignmentResponseMapping.fromDocument(response);
+        const responseDto = AssignmentResponseMapping.fromDocument(response)
 
         // // --- Data Hiding for Students ---
         // // If the user is a student and the grades are not published, hide the scores.
@@ -97,12 +86,9 @@ export class AssignmentResponsesService {
         //     responseDto.notes = undefined;
         // }
 
-        return responseDto;
+        return responseDto
     }
 
-
-
-    
     //
     //
     //
@@ -112,12 +98,10 @@ export class AssignmentResponsesService {
     //
     //
     //
-    async search(
-        query: SearchAssignmentResponseQueryDto,
-    ): Promise<PaginatedAssignmentResponseDto> {
+    async search(query: SearchAssignmentResponseQueryDto): Promise<PaginatedAssignmentResponseDto> {
         const filter = SearchFilterBuilder.init()
             .withParam('_id', query.id)
-            .withParam('studentId', query.studentId) 
+            .withParam('studentId', query.studentId)
             .withParam('assignmentId', query.assignmentId)
             .build()
 
@@ -141,7 +125,7 @@ export class AssignmentResponsesService {
     // //
     // async update(id: string, updateAssignmentResponseDto: UpdateAssignmentResponseDto, user: TokenUser): Promise<void> {
     //     await this.checkOwnership(id, user);
-        
+
     //     const assignmentresponseId = new ObjectId(id)
     //     const updateObject = UpdateAssignmentResponseDto.toDocument(updateAssignmentResponseDto)
     //     const updated = await this.assignmentEesponsesRepository.update({ _id: assignmentresponseId }, updateObject)
@@ -161,10 +145,10 @@ export class AssignmentResponsesService {
     //
     //
     async remove(id: string, user: TokenUser): Promise<void> {
-        await this.checkOwnership(id, user);
-        
+        await this.checkOwnership(id, user)
+
         const found = await this.assignmentEesponsesRepository.remove(
-            { _id: new ObjectId(id) },
+            { _id: new ObjectId(id) }
             // { expireAt: oneMonth }
         )
         if (!found) {

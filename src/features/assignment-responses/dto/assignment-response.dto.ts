@@ -1,18 +1,16 @@
-import { ApiProperty, OmitType } from '@nestjs/swagger';
-import { SimpleAssignmentDto } from 'src/features/assignments/dto/assignment.dto';
-import { SimpleStudentDto } from 'src/features/students/dto/student.dto';
-import { IsDate, IsEnum, IsInt, IsMongoId, IsObject, IsOptional, IsString, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
-import { IntersectionType, PartialType, PickType } from '@nestjs/mapped-types';
-import { SearchQueryDto } from 'src/shared/dto/search.query.dto';
-import { AssignmentResponseStatus } from '../enums/assignment-response-status.enum';
-
-
+import { IntersectionType, PartialType, PickType } from '@nestjs/mapped-types'
+import { ApiProperty, OmitType } from '@nestjs/swagger'
+import { Type } from 'class-transformer'
+import { IsDate, IsEnum, IsInt, IsMongoId, IsObject, IsOptional, IsString, ValidateNested } from 'class-validator'
+import { SimpleAssignmentDto } from 'src/features/assignments/dto/assignment.dto'
+import { SimpleStudentDto } from 'src/features/students/dto/student.dto'
+import { SearchQueryDto } from 'src/shared/dto/search.query.dto'
+import { AssignmentResponseStatus } from '../enums/assignment-response-status.enum'
 
 export class AssignmentResponseDto {
-    @ApiProperty({ type: String})
+    @ApiProperty({ required: true, type: String })
     @IsMongoId()
-    id: string 
+    id: string
 
     @ApiProperty({ type: String, required: true })
     @IsMongoId()
@@ -21,52 +19,54 @@ export class AssignmentResponseDto {
     @ValidateNested()
     assignment: SimpleAssignmentDto
 
-    @ApiProperty({ type: String})
+    @ApiProperty({ type: String })
     @IsMongoId()
     studentId: string
     @ApiProperty({ type: () => SimpleStudentDto })
     @ValidateNested()
     student: SimpleStudentDto
-    
+
     @ApiProperty({ type: String, enum: AssignmentResponseStatus, required: true, default: AssignmentResponseStatus.IN_PROGRESS })
     @IsEnum(AssignmentResponseStatus)
     status: AssignmentResponseStatus
 
-    @ApiProperty({ type: String})
+    @ApiProperty({ type: String })
     @IsString()
     notes?: string
 
     @ApiProperty({ type: Number })
     @IsInt()
-    score?: Number
-
+    score?: number
 
     @ApiProperty({ type: Date })
     @Type(() => Date)
     @IsOptional()
     @IsDate()
-    startedAt: Date|undefined
+    startedAt: Date | undefined
     @ApiProperty({ type: Date })
     @Type(() => Date)
     @IsOptional()
     @IsDate()
-    submittedAt: Date|undefined
+    submittedAt: Date | undefined
 
     @ApiProperty({ type: () => Object })
     @IsObject()
     @IsOptional()
-    replies: object;
+    replies: object
 
     @ApiProperty({ type: () => Object })
     @IsObject()
     @IsOptional()
-    individualScores?: object;
-} 
+    individualScores?: object
+}
 
 export class SearchAssignmentResponseQueryDto extends IntersectionType(
-    PartialType(OmitType(AssignmentResponseDto, ['score', 'notes', 'replies', 'assignment', 'student', 'individualScores'] as const)),
+    PartialType(
+        OmitType(AssignmentResponseDto, ['score', 'notes', 'replies', 'assignment', 'student', 'individualScores'] as const)
+    ),
     SearchQueryDto
 ) {}
 
-export class SearchStudentAssignmentResponseQueryDto extends PickType(SearchAssignmentResponseQueryDto, ['assignmentId'] as const) {
-}
+export class SearchStudentAssignmentResponseQueryDto extends PickType(SearchAssignmentResponseQueryDto, [
+    'assignmentId',
+] as const) {}
