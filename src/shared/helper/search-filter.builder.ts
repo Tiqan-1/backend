@@ -30,6 +30,16 @@ export class SearchFilterBuilder {
         return this
     }
 
+    withParams(extraFilters?: Map<string, unknown>): SearchFilterBuilder {
+        if (!extraFilters) {
+            return this
+        }
+        for (const [key, value] of extraFilters.entries()) {
+            this.filter[key] = value
+        }
+        return this
+    }
+
     withExactString(key: string, value?: string): SearchFilterBuilder {
         if (value) {
             this.filter[key] = value

@@ -23,8 +23,11 @@ import { FileInterceptor } from '@nestjs/platform-express'
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse } from '@nestjs/swagger'
 import { Express } from 'express'
 import { diskStorage } from 'multer'
+import { I18nService } from 'nestjs-i18n'
 import { v4 as uuidv4 } from 'uuid'
+import { BadRequestErrorDto } from '../../shared/dto/bad-request-error.dto'
 import { CreatedDto } from '../../shared/dto/created.dto'
+import { ErrorDto } from '../../shared/dto/error.dto'
 import { Roles } from '../authentication/decorators/roles.decorator'
 import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
@@ -42,16 +45,17 @@ export class ProgramsController {
     private readonly logger = new Logger(ProgramsController.name)
 
     constructor(
+        private readonly i18n: I18nService,
         private readonly programsService: ProgramsService,
         private readonly thumbnailsRepository: ProgramsThumbnailsRepository
     ) {}
 
     @ApiOperation({ summary: 'Creates a program', description: `Creates a program and adds it to the current manager.` })
     @ApiResponse({ status: HttpStatus.CREATED, type: CreatedDto, description: 'Program successfully created.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
-    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.', type: BadRequestErrorDto })
     @Post()
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
@@ -62,9 +66,10 @@ export class ProgramsController {
 
     @ApiOperation({ summary: 'Searches for programs', description: 'Searches for programs' })
     @ApiResponse({ status: HttpStatus.OK, type: PaginatedProgramDto, description: 'Got programs successfully.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user,' })
-    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user,', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request is not valid.', type: BadRequestErrorDto })
     @Get()
     @UseGuards(JwtAuthGuard)
     @Roles(Role.Manager)
@@ -78,12 +83,12 @@ export class ProgramsController {
 
     @ApiOperation({ summary: 'Updates a program', description: 'Updates a program.' })
     @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Program successfully updated.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Program not found.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
-    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.' })
-    @ApiResponse({ status: HttpStatus.CONFLICT, description: 'Published program has no levels.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Program not found.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request is not valid.', type: BadRequestErrorDto })
+    @ApiResponse({ status: HttpStatus.CONFLICT, description: 'Published program has no levels.', type: ErrorDto })
     @Put(':id')
     @HttpCode(HttpStatus.NO_CONTENT)
     @Roles(Role.Manager)
@@ -95,17 +100,17 @@ export class ProgramsController {
     ): Promise<void> {
         if (updateProgramDto.state === ProgramState.deleted) {
             this.logger.error(`Attempt to update state of program to deleted.`)
-            throw new BadRequestException('Cannot update state to deleted, use the right endpoint to delete the program.')
+            throw new BadRequestException(this.i18n.t('programs.errors.cannotUpdateStateToDeleted'))
         }
         return this.programsService.update(id, updateProgramDto, request.user.id)
     }
 
     @ApiOperation({ summary: 'Removes a program', description: 'Removes a program from the manager.' })
     @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Program successfully removed.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
-    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Program not found.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Program not found.', type: ErrorDto })
     @Delete(':programId')
     @HttpCode(HttpStatus.NO_CONTENT)
     @Roles(Role.Manager)
@@ -130,11 +135,11 @@ export class ProgramsController {
         },
     })
     @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Thumbnail successfully uploaded.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Program not found.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
-    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Thumbnail validation failed.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Program not found.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request is not valid.', type: BadRequestErrorDto })
     @ApiConsumes('multipart/form-data')
     @Post(':id/thumbnail')
     @HttpCode(HttpStatus.NO_CONTENT)
@@ -142,7 +147,7 @@ export class ProgramsController {
         FileInterceptor('thumbnail', {
             limits: { fileSize: 5 * 1024 * 1024, files: 1 },
             storage: diskStorage({
-                destination: './uploads/programs-thumbnails',
+                destination: `./${process.env.UPLOAD_FOLDER ?? 'uploads-test'}/programs-thumbnails`,
                 filename: (_, file, callback) => callback(null, `${uuidv4()}-${file.originalname}`),
             }),
         })
@@ -161,7 +166,6 @@ export class ProgramsController {
         )
         thumbnail: Express.Multer.File
     ): Promise<void> {
-        this.logger.log(`Adding thumbnail ${thumbnail.filename} for program ${id}`)
         return this.programsService.updateThumbnail(id, thumbnail.filename).catch(async () => {
             await this.thumbnailsRepository.remove(thumbnail.filename)
         })

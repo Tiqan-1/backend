@@ -136,3 +136,4 @@ mongodb_data-dev
 # file uploads
 uploads
 uploads-dev
+uploads-test

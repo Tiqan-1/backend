@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "emailAlreadyExists": "يوجد مستخدم بنفس البريد الإلكتروني",
+    "managerCreationError": "خطأ عام أثناء إنشاء الحساب"
+  }
+}

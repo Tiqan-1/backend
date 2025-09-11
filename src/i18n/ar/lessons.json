@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "subjectNotFound": "المادة غير موجودة",
+    "lessonNotFound": "الدرس غير موجود"
+  }
+}

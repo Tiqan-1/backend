@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import * as bcrypt from 'bcryptjs'
+import { I18nService } from 'nestjs-i18n'
 import { v4 as uuidv4 } from 'uuid'
 import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
 import { StudentStatus } from '../students/enums/student-status'
@@ -26,7 +27,8 @@ export class AuthenticationService {
         private readonly usersService: UsersService,
         private readonly documentsService: SharedDocumentsService,
         private readonly jwtService: JwtService,
-        private readonly tokensService: TokensService
+        private readonly tokensService: TokensService,
+        private readonly i18n: I18nService
     ) {}
 
     login(user: UserDocument): Promise<AuthenticationResponseDto> {
@@ -37,7 +39,7 @@ export class AuthenticationService {
         const success = await this.tokensService.remove(refreshToken)
         if (!success) {
             this.logger.error(`Failed to logout user. Token not found.`)
-            throw new NotFoundException('invalid refresh token')
+            throw new NotFoundException(this.i18n.t('auth.errors.invalidRefreshToken'))
         }
     }
 
@@ -45,7 +47,7 @@ export class AuthenticationService {
         const foundToken = await this.tokensService.findOne(refreshToken)
         if (!foundToken) {
             this.logger.error(`Failed to refresh token. Token not found.`)
-            throw new UnauthorizedException('Invalid refresh token.')
+            throw new UnauthorizedException(this.i18n.t('auth.errors.invalidRefreshToken'))
         }
         const newTokens = await this.generateUserTokens(foundToken.user)
         await this.tokensService.remove(refreshToken)
@@ -56,19 +58,19 @@ export class AuthenticationService {
         const student = await this.documentsService.getStudentByEmail(email)
         if (!student) {
             this.logger.error(`Invalid attempt to login a student user with email: ${email}. User Not Found.`)
-            throw new UnauthorizedException(`Invalid credentials.`)
+            throw new UnauthorizedException(this.i18n.t('auth.errors.invalidCredentials'))
         }
         if (!bcrypt.compareSync(password, student.password)) {
             this.logger.error(`Invalid attempt to login a student user with email: ${email}. Password mismatch.`)
-            throw new UnauthorizedException(`Invalid credentials.`)
+            throw new UnauthorizedException(this.i18n.t('auth.errors.invalidCredentials'))
         }
         if (student.role !== Role.Student) {
             this.logger.error(`Invalid attempt to login a student user with email: ${email}. Invalid role.`)
-            throw new ConflictException(`Invalid role.`)
+            throw new ConflictException(this.i18n.t('auth.errors.invalidRole'))
         }
         if (student.status !== StudentStatus.active) {
             this.logger.error(`Invalid attempt to login a student user with email: ${email}. Invalid status ${student.status}.`)
-            throw new NotAcceptableException(`Account not active.`)
+            throw new NotAcceptableException(this.i18n.t('auth.errors.accountNotActive'))
         }
         return student
     }
@@ -77,15 +79,15 @@ export class AuthenticationService {
         const user = await this.usersService.findByEmail(email)
         if (!user) {
             this.logger.error(`Invalid attempt to login a manager user with email: ${email}. User Not Found.`)
-            throw new UnauthorizedException(`Invalid credentials.`)
+            throw new UnauthorizedException(this.i18n.t('auth.errors.invalidCredentials'))
         }
         if (!bcrypt.compareSync(password, user.password)) {
             this.logger.error(`Invalid attempt to login a manager user with email: ${email}. Password mismatch.`)
-            throw new UnauthorizedException(`Invalid credentials.`)
+            throw new UnauthorizedException(this.i18n.t('auth.errors.invalidCredentials'))
         }
         if (user.role !== Role.Manager) {
             this.logger.error(`Invalid attempt to login a manager user with email: ${email}. Invalid role.`)
-            throw new ConflictException(`Invalid role.`)
+            throw new ConflictException(this.i18n.t('auth.errors.invalidRole'))
         }
         return user
     }
@@ -105,7 +107,7 @@ export class AuthenticationService {
             }
         } catch (error) {
             this.logger.error('General Error while generating user tokens.', error)
-            throw new InternalServerErrorException('General Error while generating user tokens.')
+            throw new InternalServerErrorException(this.i18n.t('auth.errors.tokenGenerationError'))
         }
     }
 }

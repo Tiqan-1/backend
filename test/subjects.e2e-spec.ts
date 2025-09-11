@@ -4,7 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { ObjectId } from 'src/shared/repository/types'
 import request from 'supertest'
 import { App } from 'supertest/types'
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { Role } from '../src/features/authentication/enums/role.enum'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
 import { LessonsRepository } from '../src/features/lessons/lessons.repository'
@@ -25,6 +25,7 @@ import {
     mockJwtStrategyValidation,
 } from '../src/shared/test/helper/jwt-authentication-test.helper'
 import { MongoTestHelper } from '../src/shared/test/helper/mongo-test.helper'
+import { I18nService } from 'nestjs-i18n'
 
 describe('SubjectsController (e2e)', () => {
     let app: INestApplication<App>
@@ -38,6 +39,7 @@ describe('SubjectsController (e2e)', () => {
             imports: [JwtMockModule],
             controllers: [SubjectsController],
             providers: [
+                { provide: I18nService, useValue: { t: vi.fn() } },
                 SubjectsService,
                 SubjectsRepository,
                 LessonsService,

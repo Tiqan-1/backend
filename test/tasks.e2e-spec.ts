@@ -134,6 +134,7 @@ describe('TasksController (e2e)', () => {
                     id: task._id.toString(),
                     date: task.date.toISOString(),
                     levelId: level._id.toString(),
+                    hasChatRoom: false,
                     lessons: [
                         {
                             id: lesson._id.toString(),
@@ -169,6 +170,7 @@ describe('TasksController (e2e)', () => {
                     id: task._id.toString(),
                     date: task.date.toISOString(),
                     levelId: level._id.toString(),
+                    hasChatRoom: false,
                     lessons: [
                         {
                             id: lesson._id.toString(),
@@ -219,6 +221,7 @@ describe('TasksController (e2e)', () => {
                     id: task._id.toString(),
                     date: task.date.toISOString(),
                     levelId: level._id.toString(),
+                    hasChatRoom: false,
                     lessons: [
                         {
                             id: lesson._id.toString(),

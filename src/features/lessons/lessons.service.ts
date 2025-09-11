@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { I18nService } from 'nestjs-i18n'
 import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { PaginationHelper } from '../../shared/helper/pagination-helper'
@@ -15,14 +16,15 @@ export class LessonsService {
 
     constructor(
         private readonly repository: LessonsRepository,
-        private readonly documentsService: SharedDocumentsService
+        private readonly documentsService: SharedDocumentsService,
+        private readonly i18n: I18nService
     ) {}
 
     async create(lesson: CreateLessonDto, createdBy: ObjectId): Promise<CreatedDto> {
         const subject = await this.documentsService.getSubject(lesson.subjectId)
         if (!subject) {
             this.logger.error(`Tried to create a lesson for subject ${lesson.subjectId} which does not exist.`)
-            throw new NotFoundException(`Subject not found`)
+            throw new NotFoundException(this.i18n.t('lessons.errors.subjectNotFound'))
         }
         const created = await this.repository.create({ ...lesson, createdBy, subjectId: subject._id })
         ;(subject.lessons as ObjectId[]).push(created._id)
@@ -36,7 +38,7 @@ export class LessonsService {
         const deleted = await this.repository.update({ _id: new ObjectId(lessonId) }, { state: LessonState.deleted })
         if (!deleted) {
             this.logger.error(`Attempt to remove lesson ${lessonId} failed.`)
-            throw new NotFoundException(`Lesson not found`)
+            throw new NotFoundException(this.i18n.t('lessons.errors.lessonNotFound'))
         }
         this.logger.log(`Lesson ${lessonId} removed.`)
     }
@@ -45,7 +47,7 @@ export class LessonsService {
         const deleted = await this.repository.update({ _id: new ObjectId(lessonId) }, { state: LessonState.deleted })
         if (!deleted) {
             this.logger.error(`Attempt to remove lesson ${lessonId} failed. Lesson not found in the db.`)
-            throw new NotFoundException(`Lesson not found`)
+            throw new NotFoundException(this.i18n.t('lessons.errors.lessonNotFound'))
         }
         const subjectId = deleted.subjectId.toString()
         const subject = await this.documentsService.getSubject(subjectId)
@@ -69,7 +71,7 @@ export class LessonsService {
         const updated = await this.repository.update({ _id: new ObjectId(id), state: { $ne: LessonState.deleted } }, lesson)
         if (!updated) {
             this.logger.error(`Attempt to update lesson ${id} failed.`)
-            throw new NotFoundException('Lesson not found.')
+            throw new NotFoundException(this.i18n.t('lessons.errors.lessonNotFound'))
         }
     }
 
@@ -79,7 +81,7 @@ export class LessonsService {
         if (lessons.length < lessonIds.length) {
             const missingLessons = objectIds.filter(id => !lessons.some(lesson => lesson._id === id))
             this.logger.error(`Attempt to validate lessonIds failed, some lessons were not found.`, missingLessons)
-            throw new NotFoundException('Lesson not found.')
+            throw new NotFoundException(this.i18n.t('lessons.errors.lessonNotFound'))
         }
         return objectIds
     }

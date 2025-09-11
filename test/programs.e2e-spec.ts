@@ -77,7 +77,6 @@ describe('ProgramsController (e2e)', () => {
 
         app = module.createNestApplication()
         await app.init()
-        // await app.getHttpAdapter().getInstance().ready()
     })
 
     afterAll(async () => {

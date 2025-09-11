@@ -1,5 +1,7 @@
 import { Body, Controller, HttpCode, HttpStatus, Post, Request, UseGuards } from '@nestjs/common'
 import { ApiBasicAuth, ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger'
+import { BadRequestErrorDto } from '../../shared/dto/bad-request-error.dto'
+import { ErrorDto } from '../../shared/dto/error.dto'
 import { UserDocument } from '../users/schemas/user.schema'
 import { AuthenticationService } from './authentication.service'
 import { AuthenticationRequestDto } from './dto/authentication-request.dto'
@@ -17,11 +19,15 @@ export class AuthenticationController {
         description: 'Logs a student-user in and returns the tokens to be used in further calls.',
     })
     @ApiResponse({ status: HttpStatus.OK, description: 'The user logged in successfully.', type: AuthenticationResponseDto })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Invalid username or password.' })
-    @ApiResponse({ status: HttpStatus.CONFLICT, description: 'Invalid user role (trying to login a manager as a student).' })
-    @ApiResponse({ status: HttpStatus.NOT_ACCEPTABLE, description: 'Student account not active.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.', type: BadRequestErrorDto })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Invalid username or password.', type: ErrorDto })
+    @ApiResponse({
+        status: HttpStatus.CONFLICT,
+        description: 'Invalid user role (trying to login a manager as a student).',
+        type: ErrorDto,
+    })
+    @ApiResponse({ status: HttpStatus.NOT_ACCEPTABLE, description: 'Student account not active.', type: ErrorDto })
     @ApiBody({ type: AuthenticationRequestDto })
     @ApiBasicAuth()
     @HttpCode(HttpStatus.OK)
@@ -36,10 +42,14 @@ export class AuthenticationController {
         description: 'Logs a manager-user in and returns the tokens to be used in further calls.',
     })
     @ApiResponse({ status: HttpStatus.OK, description: 'The user logged in successfully.', type: AuthenticationResponseDto })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Invalid username or password.' })
-    @ApiResponse({ status: HttpStatus.CONFLICT, description: 'Invalid user role (trying to login a student as a manager).' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.', type: BadRequestErrorDto })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Invalid username or password.', type: ErrorDto })
+    @ApiResponse({
+        status: HttpStatus.CONFLICT,
+        description: 'Invalid user role (trying to login a student as a manager).',
+        type: ErrorDto,
+    })
     @ApiBody({ type: AuthenticationRequestDto })
     @ApiBasicAuth()
     @HttpCode(HttpStatus.OK)
@@ -55,8 +65,9 @@ export class AuthenticationController {
     @ApiResponse({
         status: HttpStatus.NOT_FOUND,
         description: 'Refresh token is invalid.',
+        type: ErrorDto,
     })
-    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.' })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.', type: BadRequestErrorDto })
     @HttpCode(HttpStatus.OK)
     @Post('logout')
     logout(@Body('refreshToken') refreshToken: string): Promise<void> {
@@ -66,9 +77,9 @@ export class AuthenticationController {
     @ApiOperation({ summary: 'Refreshes the tokens', description: 'Refreshes the tokens for the session' })
     @ApiBody({ type: RefreshTokenRequestDto })
     @ApiResponse({ status: HttpStatus.OK, description: 'Tokens got refreshed successfully.', type: AuthenticationResponseDto })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.', type: BadRequestErrorDto })
     @HttpCode(HttpStatus.CREATED)
     @Post('refresh-tokens')
     refreshTokens(@Body('refreshToken') refreshToken: string): Promise<AuthenticationResponseDto> {

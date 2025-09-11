@@ -10,18 +10,22 @@ export class ChatRepository extends RepositoryMongoBase<ChatDocument> {
         super(model)
     }
 
+    async findOneRaw(filter: object): Promise<ChatDocument | undefined> {
+        const found = await this.model.findOne(filter)
+        if (!found) {
+            return undefined
+        }
+        return found
+    }
+
     async findOne(filter: object): Promise<ChatDocument | undefined> {
-        return super.findOne(filter, {
-            populate: [
-                {
-                    path: 'messages',
-                    populate: { path: 'sender', select: 'name email' },
-                },
-                {
-                    path: 'createdBy',
-                    select: 'name email',
-                },
-            ],
-        })
+        const found = await this.model
+            .findOne(filter)
+            .populate({ path: 'messages', populate: { path: 'sender', select: 'name email' } })
+            .populate('createdBy', 'name email')
+        if (!found) {
+            return undefined
+        }
+        return found
     }
 }

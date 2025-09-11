@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "programNotFound": "البرنامج غير موجود",
+    "levelNotFound": "المستوى غير موجود"
+  }
+}

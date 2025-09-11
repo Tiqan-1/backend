@@ -1,5 +1,6 @@
 import { ConflictException, Injectable, InternalServerErrorException, Logger } from '@nestjs/common'
 import * as bcrypt from 'bcryptjs'
+import { I18nService } from 'nestjs-i18n'
 import { AuthenticationService } from '../authentication/authentication.service'
 import { AuthenticationResponseDto } from '../authentication/dto/authentication-response.dto'
 import { SignUpManagerDto } from './dto/manager.dto'
@@ -11,14 +12,15 @@ export class ManagersService {
 
     constructor(
         private managersRepository: ManagersRepository,
-        private authenticationService: AuthenticationService
+        private authenticationService: AuthenticationService,
+        private readonly i18n: I18nService
     ) {}
 
     async create(manager: SignUpManagerDto): Promise<AuthenticationResponseDto> {
         const duplicate = await this.managersRepository.findOne({ email: manager.email })
         if (duplicate) {
             this.logger.error(`Manager signup attempt with duplicate email detected: ${duplicate.email}`)
-            throw new ConflictException('A user with the same email already exists.')
+            throw new ConflictException(this.i18n.t('managers.errors.emailAlreadyExists'))
         }
         try {
             manager.password = bcrypt.hashSync(manager.password, 10)
@@ -26,7 +28,7 @@ export class ManagersService {
             return this.authenticationService.generateUserTokens(createdManager)
         } catch (error) {
             this.logger.error('General Error while creating manager.', error)
-            throw new InternalServerErrorException('General Error while creating manager.')
+            throw new InternalServerErrorException(this.i18n.t('managers.errors.managerCreationError'))
         }
     }
 }

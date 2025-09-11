@@ -11,7 +11,7 @@ export const JwtMockModule = JwtModule.register({
     signOptions: { expiresIn: '1d' },
 })
 
-const configService = { get: vi.fn().mockImplementation(key => (key === 'UPLOAD_FOLDER' ? './test-upload' : `secret`)) }
+const configService = { get: vi.fn().mockImplementation(key => (key === 'UPLOAD_FOLDER' ? 'uploads-test' : `secret`)) }
 export const ConfigServiceProvider = { provide: ConfigService, useValue: configService }
 
 // workaround to correctly provide ObjectId to prevent mismatches between in memory and normal mongodb

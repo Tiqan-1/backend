@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { I18nService } from 'nestjs-i18n'
 import { oneMonth } from '../../shared/constants'
 import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
@@ -18,14 +19,15 @@ export class LevelsService {
     constructor(
         private readonly levelsRepository: LevelsRepository,
         private readonly tasksService: TasksService,
-        private readonly documentsService: SharedDocumentsService
+        private readonly documentsService: SharedDocumentsService,
+        private readonly i18n: I18nService
     ) {}
 
     async create(dto: CreateLevelDto, createdBy: ObjectId): Promise<CreatedDto> {
         const program = await this.documentsService.getProgram(dto.programId)
         if (!program) {
             this.logger.error(`Program ${dto.programId} not found.`)
-            throw new NotFoundException('Program not found.')
+            throw new NotFoundException(this.i18n.t('levels.errors.programNotFound'))
         }
         const created = await this.levelsRepository.create({ ...dto, createdBy, programId: program._id })
         ;(program.levels as ObjectId[]).push(created._id)
@@ -74,7 +76,7 @@ export class LevelsService {
         const updated = await this.levelsRepository.update({ _id: new ObjectId(id), state: { $ne: LevelState.deleted } }, dto)
         if (!updated) {
             this.logger.error(`Attempt to update level ${id} failed.`)
-            throw new NotFoundException('Level Not Found')
+            throw new NotFoundException(this.i18n.t('levels.errors.levelNotFound'))
         }
     }
 
@@ -85,7 +87,7 @@ export class LevelsService {
         )
         if (!found) {
             this.logger.error(`Attempt to remove level ${id} failed.`)
-            throw new NotFoundException('Level Not Found')
+            throw new NotFoundException(this.i18n.t('levels.errors.levelNotFound'))
         }
         const program = await this.documentsService.getProgram(found.programId.toString())
         if (program) {

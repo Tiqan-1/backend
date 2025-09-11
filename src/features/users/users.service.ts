@@ -1,11 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
+import { I18nService } from 'nestjs-i18n'
 import { FindUserDto } from './dto/find-user.dto'
 import { UserDocument } from './schemas/user.schema'
 import { UsersRepository } from './users.repository'
 
 @Injectable()
 export class UsersService {
-    constructor(private userRepository: UsersRepository) {}
+    constructor(
+        private userRepository: UsersRepository,
+        private readonly i18n: I18nService
+    ) {}
 
     async findAll(): Promise<FindUserDto[]> {
         const users = await this.userRepository.findAll()
@@ -23,7 +27,7 @@ export class UsersService {
     async remove(email: string): Promise<void> {
         const result = await this.userRepository.remove({ email })
         if (!result) {
-            throw new NotFoundException('User does not exist')
+            throw new NotFoundException(this.i18n.t('users.errors.notFound'))
         }
     }
 }

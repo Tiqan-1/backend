@@ -2,7 +2,6 @@ import { Body, Controller, HttpCode, HttpStatus, Param, Post, Request, UseGuards
 import {
     ApiBadRequestResponse,
     ApiBearerAuth,
-    ApiBody,
     ApiInternalServerErrorResponse,
     ApiNoContentResponse,
     ApiNotFoundResponse,
@@ -18,9 +17,9 @@ import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { TokenUser } from '../authentication/types/token-user'
 import { ChatService } from './chat.service'
 import { ChatDto } from './dto/chat.dto'
-import { CreateMessageDto } from './dto/message.dto'
+import { MessageRequestDto } from './dto/message.dto'
 
-@Controller('chat')
+@Controller('api/chat')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class ChatController {
@@ -43,15 +42,14 @@ export class ChatController {
     @ApiInternalServerErrorResponse({ description: 'An internal server error occurred.', type: ErrorDto })
     @ApiNotFoundResponse({ description: 'Chat room not found.', type: ErrorDto })
     @ApiBadRequestResponse({ description: 'Request validation failed.', type: BadRequestErrorDto })
-    @ApiBody({ required: true, type: CreateMessageDto })
     @HttpCode(HttpStatus.NO_CONTENT)
     @ApiParam({ name: 'chatRoomId', type: String, required: true })
     @Post(':chatRoomId/send-message')
     async sendMessage(
         @Param('chatRoomId', ParseMongoIdPipe) chatRoomId: ObjectId,
         @Request() req: { user: TokenUser },
-        @Body('message') message: string
+        @Body() request: MessageRequestDto
     ): Promise<void> {
-        return this.chatService.sendMessage(req.user.id, chatRoomId, message)
+        return this.chatService.sendMessage(req.user.id, chatRoomId, request)
     }
 }

@@ -1,6 +1,5 @@
 import { ConflictException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common'
 import * as bcrypt from 'bcryptjs'
-import { addMinutes } from 'date-fns'
 import { I18nService } from 'nestjs-i18n'
 import { oneMonth } from '../../shared/constants'
 import { CreatedDto } from '../../shared/dto/created.dto'
@@ -9,7 +8,7 @@ import { ObjectId } from '../../shared/repository/types'
 import { AuthenticationService } from '../authentication/authentication.service'
 import { AuthenticationResponseDto } from '../authentication/dto/authentication-response.dto'
 import { Role } from '../authentication/enums/role.enum'
-import { PaginatedProgramDto } from '../programs/dto/paginated-program.dto'
+import { PaginatedProgramDto, PaginatedProgramWithSubscriptionDto } from '../programs/dto/paginated-program.dto'
 import { SearchStudentProgramQueryDto } from '../programs/dto/program.dto'
 import { ProgramState } from '../programs/enums/program-state.enum'
 import { ProgramsService } from '../programs/programs.service'
@@ -39,7 +38,7 @@ export class StudentsService {
         const duplicate = await this.studentRepository.findOne({ email: student.email })
         if (duplicate) {
             this.logger.error(`Manager signup attempt with duplicate email detected: ${duplicate.email}`)
-            throw new ConflictException('A user with the same email already exists.')
+            throw new ConflictException(this.i18n.t('students.errors.duplicateEmail'))
         }
         try {
             student.password = bcrypt.hashSync(student.password, 10)
@@ -51,7 +50,7 @@ export class StudentsService {
             return this.authenticationService.generateUserTokens(createdStudent)
         } catch (error) {
             this.logger.error('Error while creating user', error)
-            throw new InternalServerErrorException('General Error while creating student.')
+            throw new InternalServerErrorException(this.i18n.t('students.errors.generalCreateError'))
         }
     }
 
@@ -70,7 +69,7 @@ export class StudentsService {
         const student = await this.loadStudent(studentId)
         const hasSubscription = (student.subscriptions as ObjectId[]).includes(subscriptionObjectId)
         if (!hasSubscription) {
-            throw new NotFoundException('Student does not have subscription with the given id.')
+            throw new NotFoundException(this.i18n.t('students.errors.subscriptionNotOwned'))
         }
         await this.subscriptionsService.update(subscriptionId, { state: SubscriptionState.suspended })
         this.logger.log(`Student ${student.email} suspended subscription ${subscriptionId}.`)
@@ -86,7 +85,7 @@ export class StudentsService {
     async remove(id: ObjectId): Promise<void> {
         const student = await this.studentRepository.findById(id)
         if (!student) {
-            throw new InternalServerErrorException('Student not found.')
+            throw new InternalServerErrorException(this.i18n.t('students.errors.notFound'))
         }
         await student.updateOne({ status: StudentStatus.deleted, expireAt: oneMonth })
         this.logger.log(`student with id ${id.toString()} was marked as deleted and will be removed in 30 days.`)
@@ -101,7 +100,7 @@ export class StudentsService {
         const student = await this.loadStudent(studentId)
         const indexOfSubscription = student.subscriptions.findIndex(id => id._id.toString() === subscriptionId)
         if (indexOfSubscription === -1) {
-            throw new NotFoundException('Student does not have subscription with the given id.')
+            throw new NotFoundException(this.i18n.t('students.errors.subscriptionNotOwned'))
         }
         ;(student.subscriptions as ObjectId[]).splice(indexOfSubscription, 1)
         await student.save()
@@ -114,19 +113,36 @@ export class StudentsService {
         return this.programsService.find(query)
     }
 
-    findProgramsV3(query: SearchStudentProgramQueryDto): Promise<PaginatedProgramDto> {
+    async findProgramsV3(query: SearchStudentProgramQueryDto, studentId: ObjectId): Promise<PaginatedProgramWithSubscriptionDto> {
         query.state = query.state ?? ProgramState.published
-        query.registrationEnd = query.registrationEnd ?? addMinutes(Date.now(), 30)
-        return this.programsService.find(query)
+        const extraFilters = new Map<string, unknown>()
+        if (query.openForRegistration === 'true') {
+            extraFilters.set('registrationStart', { $lte: new Date() })
+            extraFilters.set('registrationEnd', { $gt: new Date() })
+        }
+        const programs: PaginatedProgramWithSubscriptionDto = await this.programsService.find(query, undefined, extraFilters)
+        const programIds = programs.items.map(program => program.id)
+        const subscriptions = await this.subscriptionsService.findWithProgramIdsAndSubscriber(
+            programIds,
+            studentId,
+            SubscriptionState.active
+        )
+
+        for (const program of programs.items) {
+            const subscription = subscriptions.find(sub => sub.program._id.equals(program.id))
+            if (subscription) {
+                program.subscriptionId = subscription._id.toString()
+            }
+        }
+
+        return programs
     }
 
     private async loadStudent(studentId: ObjectId): Promise<StudentDocument> {
         const student = await this.studentRepository.findById(studentId)
         if (!student || student.status === StudentStatus.deleted) {
             this.logger.error(`Trying to load student ${studentId.toString()} from session but not found in the database.`)
-            throw new InternalServerErrorException(
-                this.i18n.t('student.subscriptions.createSubscription.errors.INTERNAL_SERVER_ERROR')
-            )
+            throw new InternalServerErrorException(this.i18n.t('students.errors.unknown'))
         }
         return student
     }

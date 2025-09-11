@@ -1,5 +1,6 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { IsEmail, IsEnum, IsString, IsStrongPassword, ValidateNested } from 'class-validator'
+import { i18nValidationMessage } from 'nestjs-i18n'
 import { arePopulated } from '../../../shared/helper/populated-type.helper'
 import { SubscriptionDto } from '../../subscriptions/dto/subscription.dto'
 import { Gender } from '../enums/gender'
@@ -14,15 +15,15 @@ export class StudentDto {
     }
 
     @ApiProperty({ type: String, example: 'John Doe', description: 'full name of student' })
-    @IsString()
+    @IsString({ message: i18nValidationMessage('validation.string', { property: 'name' }) })
     name: string
 
     @ApiProperty({ type: String, example: 'user@email.com', description: 'email of student' })
-    @IsEmail({}, { message: 'البريد الإلكتروني المدخل غير صالح' })
+    @IsEmail({}, { message: i18nValidationMessage('validation.email', { property: 'email' }) })
     email: string
 
     @ApiProperty({ enum: Gender, example: Gender.male, description: 'gender of student' })
-    @IsEnum(Gender)
+    @IsEnum(Gender, { message: i18nValidationMessage('validation.enum', { property: 'gender', values: Object.values(Gender) }) })
     gender: Gender
 
     @ApiProperty({ type: () => SubscriptionDto, isArray: true, description: 'subscriptions for student' })
@@ -42,8 +43,8 @@ export class SimpleStudentDto extends OmitType(StudentDto, ['subscriptions', 'ge
 export class SignUpStudentDto extends OmitType(StudentDto, ['subscriptions']) {
     @ApiProperty({ type: String, example: 'P@ssw0rd', description: 'password of student' })
     @IsStrongPassword(
-        { minLength: 6, minNumbers: 1, minSymbols: 1 },
-        { message: 'كلمة المرور بسيطة وغير آمنة. الرجاء اختيار كلمة مرور أقوى.' }
+        { minLength: 6, minNumbers: 1 },
+        { message: i18nValidationMessage('validation.strongPassword', { property: 'password' }) }
     )
     password: string
 }

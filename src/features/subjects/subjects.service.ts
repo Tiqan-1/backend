@@ -1,4 +1,5 @@
 import { Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common'
+import { I18nService } from 'nestjs-i18n'
 import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { PaginationHelper } from '../../shared/helper/pagination-helper'
@@ -17,7 +18,8 @@ export class SubjectsService {
     constructor(
         private readonly subjectsRepository: SubjectsRepository,
         private readonly lessonsService: LessonsService,
-        private readonly documentsService: SharedDocumentsService
+        private readonly documentsService: SharedDocumentsService,
+        private readonly i18n: I18nService
     ) {}
 
     async create(subject: CreateSubjectDto, createdBy: ObjectId): Promise<CreatedDto> {
@@ -26,7 +28,7 @@ export class SubjectsService {
         const manager = await this.documentsService.getManager(createdBy.toString())
         if (!manager) {
             this.logger.error(`Illegal state: Manager ${createdBy.toString()} is logged in but not found in db.`)
-            throw new InternalServerErrorException('Manager not found.')
+            throw new InternalServerErrorException(this.i18n.t('subjects.errors.managerNotFound'))
         }
         ;(manager.subjects as ObjectId[]).push(_id)
         await manager.save()
@@ -57,19 +59,19 @@ export class SubjectsService {
         const manager = await this.documentsService.getManager(managerId)
         if (!manager) {
             this.logger.error(`Illegal state: Manager ${managerId} is logged in but not found in db.`)
-            throw new InternalServerErrorException('Manager not found.')
+            throw new InternalServerErrorException(this.i18n.t('subjects.errors.managerNotFound'))
         }
         const subjectIndex = manager.subjects.findIndex(subject => subject._id.toString() === subjectId)
         if (subjectIndex === -1) {
             this.logger.error(`Attempt to remove subject ${subjectId} from manager ${managerId} failed.`)
-            throw new NotFoundException('Subject not found in the managers subjects.')
+            throw new NotFoundException(this.i18n.t('subjects.errors.subjectNotOwnedByManager'))
         }
         ;(manager.subjects as ObjectId[]).splice(subjectIndex, 1)
         await manager.save()
         const removed = await this.subjectsRepository.update({ _id: new ObjectId(subjectId) }, { state: SubjectState.deleted })
         if (!removed) {
             this.logger.error(`Attempt to remove subject ${subjectId} failed.`)
-            throw new NotFoundException('Subject not found.')
+            throw new NotFoundException(this.i18n.t('subjects.errors.subjectNotFound'))
         }
         for (const lesson of removed.lessons as ObjectId[]) {
             try {
@@ -86,17 +88,17 @@ export class SubjectsService {
         const manager = await this.documentsService.getManager(managerId)
         if (!manager) {
             this.logger.error(`Illegal state: Manager ${managerId} is logged in but not found in db.`)
-            throw new InternalServerErrorException('Manager not found.')
+            throw new InternalServerErrorException(this.i18n.t('subjects.errors.managerNotFound'))
         }
         const subject = manager.subjects.find(subject => subject._id.toString() === id)
         if (!subject) {
             this.logger.error(`Attempt to update subject ${id} from manager ${managerId} failed.`)
-            throw new NotFoundException('Subject not found in the managers subjects.')
+            throw new NotFoundException(this.i18n.t('subjects.errors.subjectNotOwnedByManager'))
         }
         const updated = await this.subjectsRepository.update({ _id: new ObjectId(id), state: { $ne: SubjectState.deleted } }, dto)
         if (!updated) {
             this.logger.error(`Attempt to update subject ${id} failed.`)
-            throw new NotFoundException(`Subject not found.`)
+            throw new NotFoundException(this.i18n.t('subjects.errors.subjectNotFound'))
         }
     }
 }

@@ -1,6 +1,7 @@
 import { HttpStatus, INestApplication } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
+import { I18nService } from 'nestjs-i18n'
 import request from 'supertest'
 import { App } from 'supertest/types'
 import { afterAll, afterEach, beforeAll, describe, it, vi } from 'vitest'
@@ -35,6 +36,7 @@ describe('AuthenticationController (e2e)', () => {
                 imports: [JwtMockModule],
                 controllers: [AuthenticationController],
                 providers: [
+                    { provide: I18nService, useValue: { t: vi.fn() } },
                     AuthenticationService,
                     SharedDocumentsService,
                     JwtService,
