@@ -1,17 +1,31 @@
-import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import {
+    BadRequestException,
+    ForbiddenException,
+    Injectable,
+    Logger,
+    NotAcceptableException,
+    NotFoundException,
+} from '@nestjs/common'
+import { isAfter, isBefore } from 'date-fns'
 import { ObjectId } from '../../shared/repository/types'
 import { AssignmentsRepository } from '../assignments/assignments.repository'
 import { AssignmentState } from '../assignments/enums/assignment-state.enum'
-import { FormElementDocument } from '../assignments/schemas/assignment-form.schema'
 import { AssignmentDocument } from '../assignments/schemas/assignment.model'
 import { ProgramsRepository } from '../programs/programs.repository'
 import { SubscriptionState } from '../subscriptions/enums/subscription-state.enum'
 import { SubscriptionsRepository } from '../subscriptions/subscriptions.repository'
 import { AssignmentResponsesRepository } from './assignment-responses.repository'
 import { GradeManualDto } from './dto/grade-manual.dto'
+import { StartAssignmentResponseDto } from './dto/start-assignment.response.dto'
 import { RepliesPlainDto } from './dto/submit-answers.dto'
 import { AssignmentResponseStatus } from './enums/assignment-response-status.enum'
 import { AssignmentResponseDocument } from './schemas/assignment-response.schema'
+
+type BaseQuestion = { score?: number }
+type SelectionQuestion = { type: 'select'; answer?: string }
+type NumberQuestion = { type: 'number'; answer?: string }
+type ChoiceQuestion = { type: 'choice'; multiple?: boolean; answer?: string[] }
+type Question = BaseQuestion & (SelectionQuestion | NumberQuestion | ChoiceQuestion)
 
 @Injectable()
 export class AssignmentResponsesHandlerService {
@@ -24,21 +38,20 @@ export class AssignmentResponsesHandlerService {
         private readonly programsRepository: ProgramsRepository
     ) {}
 
-    async startAssignment(assignmentId: string, studentId: string): Promise<any> {
-        const assignment = await this.assignmentsRepository.findById(new ObjectId(assignmentId))
+    async startAssignment(assignmentId: ObjectId, studentId: ObjectId): Promise<StartAssignmentResponseDto> {
+        const assignment = await this.assignmentsRepository.findRawById(assignmentId)
         if (!assignment || assignment.state !== AssignmentState.published) {
             throw new NotFoundException('Assignment not found.')
         }
 
         const now = new Date()
-        if (now < assignment.availableFrom || now > assignment.availableUntil) {
-            throw new ForbiddenException('Assignment is not currently available.')
+        if (isBefore(now, assignment.availableFrom) || isAfter(now, assignment.availableUntil)) {
+            throw new NotAcceptableException('Assignment is not currently available.')
         }
 
         const existingResponse = await this.responsesRepository.findOne({ assignmentId, studentId })
         if (existingResponse) {
-            this.logger.warn(`Student ${studentId} attempting to restart assignment ${assignmentId}.`)
-            // return { id: existingResponse._id.toString() };
+            this.logger.warn(`Student ${studentId.toString()} attempting to restart assignment ${assignmentId.toString()}.`)
             return { startedAt: existingResponse.startedAt, ...assignment.form }
         }
 
@@ -49,12 +62,11 @@ export class AssignmentResponsesHandlerService {
         const newResponse = await this.responsesRepository.create({
             assignmentId,
             studentId,
-            startedAt: new Date(),
-            status: AssignmentResponseStatus.IN_PROGRESS,
         })
 
-        this.logger.log(`Student ${studentId} started assignment ${assignmentId}. Response ID: ${newResponse.id}`)
-        // return { id: newResponse._id.toString() };
+        this.logger.log(
+            `Student ${studentId.toString()} started assignment ${assignmentId.toString()}. Response ID: ${newResponse._id.toString()}`
+        )
         return { startedAt: newResponse.startedAt, ...assignment.form }
     }
 
@@ -64,7 +76,7 @@ export class AssignmentResponsesHandlerService {
             throw new NotFoundException('You have not started this assignment. Please start the assignment before submitting.')
         }
 
-        if (response.status === AssignmentResponseStatus.GRADED) {
+        if (response.status === AssignmentResponseStatus.graded) {
             throw new BadRequestException('Assignment has already been submitted and graded.')
         }
 
@@ -94,7 +106,7 @@ export class AssignmentResponsesHandlerService {
             { _id: response._id },
             {
                 submittedAt: new Date(),
-                status: AssignmentResponseStatus.SUBMITTED,
+                status: AssignmentResponseStatus.submitted,
                 replies: replies,
                 individualScores,
                 score: totalScore,
@@ -130,7 +142,7 @@ export class AssignmentResponsesHandlerService {
                 individualScores: Object.fromEntries(updatedScores),
                 score: newTotalScore,
                 notes: dto.notes,
-                status: AssignmentResponseStatus.GRADED,
+                status: AssignmentResponseStatus.graded,
             }
         )
         this.logger.log(`Manager ${managerId} graded response ${responseId}. New score: ${newTotalScore}.`)
@@ -140,42 +152,54 @@ export class AssignmentResponsesHandlerService {
         assignment: AssignmentDocument,
         replies: RepliesPlainDto
     ): { individualScores: Record<string, number>; totalScore: number } {
-        const questionMap = new Map<string, FormElementDocument>()
+        const questionMap = new Map<string, unknown>()
 
-        assignment.form.slides
-            .flatMap(s => s.elements)
-            .filter(el => el.question) // Only consider elements that are questions
-            .forEach(el => questionMap.set(el._id.toString(), el))
+        // assignment.form.slides
+        //     .flatMap(s => s.elements)
+        //     .filter(el => el.question) // Only consider elements that are questions
+        //     .forEach(el => questionMap.set(el._id.toString(), el))
+
+        for (const element of assignment.form.slides?.flatMap(s => s.elements) ?? []) {
+            if (element.has('question') && element.has('id')) {
+                questionMap.set(element.get('id') as string, element)
+            }
+        }
 
         const individualScores: Record<string, number> = {}
         let totalScore = 0
 
         for (const [questionId, question] of questionMap.entries()) {
+            if (!this.validateQuestion(question)) {
+                this.logger.error(`Invalid question format for question ${questionId}: ${JSON.stringify(question)}`)
+                continue
+            }
             const studentAnswer = replies[questionId]
             let isCorrect = false
 
-            if (studentAnswer === undefined || studentAnswer === null) {
+            if (!studentAnswer) {
                 isCorrect = false
             } else {
+                const answer = question.answer
                 switch (question.type) {
                     case 'number':
                     case 'select':
-                        isCorrect = studentAnswer.toString().toLowerCase() === question.answer?.toString().toLowerCase()
+                        isCorrect = studentAnswer.toLowerCase() === answer?.toString().toLowerCase()
                         break
                     case 'choice':
                         if (question.multiple) {
                             // Compare two arrays, ignoring order
-                            isCorrect = isEqual([...studentAnswer].sort(), [...question.answer].sort())
+                            isCorrect = [...studentAnswer].sort().join(',') === [...(answer ?? [])].sort().join(',')
                         } else {
-                            isCorrect = studentAnswer === question.answer?.[0]
+                            isCorrect = studentAnswer === answer?.[0]
                         }
                         break
                     default:
+                        this.logger.error(`Unsupported question type: ${JSON.stringify(question)}`)
                         isCorrect = false
                 }
             }
 
-            const score = isCorrect ? question.score || 0 : 0
+            const score = isCorrect ? (question.score ?? 0) : 0
             individualScores[questionId] = score
             totalScore += score
         }
@@ -216,5 +240,22 @@ export class AssignmentResponsesHandlerService {
             throw new ForbiddenException('You are not authorized to grade this response.')
         }
         return response
+    }
+
+    private validateQuestion(question: unknown): question is Question {
+        if (!question || typeof question !== 'object' || !('type' in question)) {
+            return false
+        }
+        const type = question.type as string
+        if (!type) {
+            return false
+        }
+        if (type === 'select' || type === 'number') {
+            return 'answer' in question
+        }
+        if (type === 'choice') {
+            return 'answer' in question && Array.isArray(question.answer)
+        }
+        return false
     }
 }

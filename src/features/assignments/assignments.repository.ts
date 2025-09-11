@@ -22,6 +22,14 @@ export class AssignmentsRepository extends RepositoryMongoBase<AssignmentDocumen
             .exec()
     }
 
+    async findRawById(id: ObjectId): Promise<AssignmentDocument | undefined> {
+        const found = await this.model.findById(id).exec()
+        if (found) {
+            return found
+        }
+        return undefined
+    }
+
     async findById(id: ObjectId): Promise<AssignmentDocument | undefined> {
         const found = await this.model
             .findById(id)

@@ -1,7 +1,9 @@
 import { ApiProperty, IntersectionType, OmitType, PartialType } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
-import { ArrayNotEmpty, IsDate, IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
+import { ArrayNotEmpty, IsDate, IsEnum, IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
+import { i18nValidationMessage } from 'nestjs-i18n'
 import { SearchQueryDto } from '../../../shared/dto/search.query.dto'
+import { ObjectId } from '../../../shared/repository/types'
 import { LessonDto } from '../../lessons/dto/lesson.dto'
 import { LessonDocument } from '../../lessons/schemas/lesson.schema'
 import { TaskDocument } from '../schemas/task.schema'
@@ -62,6 +64,16 @@ export class CreateTaskDto extends OmitType(TaskDto, ['id', 'lessons'] as const)
     @ApiProperty({ type: Boolean, required: false, description: 'Whether the task has a chat room', default: false })
     @IsOptional()
     hasChatRoom?: boolean
+
+    @ApiProperty({ type: String, required: true, enum: ['lesson', 'assignment'], default: 'lesson' })
+    @IsEnum(['lesson', 'assignment'], { message: i18nValidationMessage('validation.enum') })
+    type: 'lesson' | 'assignment' = 'lesson'
+
+    @ApiProperty({ type: String, required: false })
+    @IsOptional()
+    @IsMongoId({ message: i18nValidationMessage('validation.mongoId') })
+    @Type(() => ObjectId)
+    assignmentId: ObjectId
 }
 
 export class UpdateTaskDto extends PartialType(OmitType(CreateTaskDto, ['levelId'] as const)) {}

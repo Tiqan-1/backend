@@ -1,4 +1,4 @@
-import { IntersectionType, PartialType, PickType } from '@nestjs/mapped-types'
+import { IntersectionType, PartialType } from '@nestjs/mapped-types'
 import { ApiProperty, OmitType } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
 import { IsDate, IsEnum, IsInt, IsMongoId, IsObject, IsOptional, IsString, ValidateNested } from 'class-validator'
@@ -15,6 +15,7 @@ export class AssignmentResponseDto {
     @ApiProperty({ type: String, required: true })
     @IsMongoId()
     assignmentId: string
+
     @ApiProperty({ type: () => SimpleAssignmentDto })
     @ValidateNested()
     assignment: SimpleAssignmentDto
@@ -26,7 +27,7 @@ export class AssignmentResponseDto {
     @ValidateNested()
     student: SimpleStudentDto
 
-    @ApiProperty({ type: String, enum: AssignmentResponseStatus, required: true, default: AssignmentResponseStatus.IN_PROGRESS })
+    @ApiProperty({ type: String, enum: AssignmentResponseStatus, required: true, default: AssignmentResponseStatus.inProgress })
     @IsEnum(AssignmentResponseStatus)
     status: AssignmentResponseStatus
 
@@ -66,7 +67,3 @@ export class SearchAssignmentResponseQueryDto extends IntersectionType(
     ),
     SearchQueryDto
 ) {}
-
-export class SearchStudentAssignmentResponseQueryDto extends PickType(SearchAssignmentResponseQueryDto, [
-    'assignmentId',
-] as const) {}

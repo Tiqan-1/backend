@@ -1,9 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { HydratedDocument } from 'mongoose'
-import { Subject, SubjectDocument } from 'src/features/subjects/schemas/subject.schema'
-import { ObjectId, Populated } from '../../../shared/repository/types'
-import { Level, LevelDocument } from '../../levels/schemas/level.schema'
+import { ObjectId } from '../../../shared/repository/types'
 import { ManagerDocument } from '../../managers/schemas/manager.schema'
+import { Task } from '../../tasks/schemas/task.schema'
 import { AssignmentGradingState } from '../enums/assignment-grading-state.enum'
 import { AssignmentState, AssignmentType } from '../enums/assignment-state.enum'
 import { AssignmentForm, AssignmentFormDocument } from './assignment-form.schema'
@@ -16,13 +15,10 @@ export class Assignment {
     title: string
 
     @Prop({ required: true, type: ObjectId, ref: 'Manager' })
-    createdBy: ObjectId | Populated<ManagerDocument>
+    createdBy: ObjectId | ManagerDocument
 
-    @Prop({ required: true, type: ObjectId, ref: Level.name })
-    levelId: ObjectId | Populated<LevelDocument>
-
-    @Prop({ type: ObjectId, ref: Subject.name })
-    subjectId: ObjectId | Populated<SubjectDocument>
+    @Prop({ type: ObjectId, ref: Task.name })
+    taskId: ObjectId
 
     @Prop({ type: String, enum: AssignmentGradingState, default: AssignmentGradingState.pending })
     gradingState: AssignmentGradingState
@@ -51,9 +47,7 @@ export class Assignment {
     @Prop({ required: true, type: Date })
     updatedAt: Date
 
-    // @Prop({ required: true, type: AssignmentFormSchema })
-    // form: AssignmentForm;
-    @Prop({ required: true, type: Object })
+    @Prop({ required: true, type: AssignmentForm.name })
     form: AssignmentFormDocument
 }
 

@@ -1,4 +1,4 @@
-export type RepliesPlainDto = Record<string, unknown>
+export type RepliesPlainDto = Record<string, string>
 
 // export class RepliesDtoWrapper {
 //     @ApiProperty({

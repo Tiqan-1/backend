@@ -11,10 +11,6 @@ export class TasksRepository extends RepositoryMongoBase<TaskDocument> {
     }
 
     find(filter: object, limit: number = 10, skip: number = 0): Promise<TaskDocument[]> {
-        return this.model.find(filter).limit(limit).skip(skip).populate('lessons').exec()
-    }
-
-    create(element: unknown): Promise<TaskDocument> {
-        return super.create(element)
+        return this.model.find(filter).limit(limit).skip(skip).populate('lessons').populate('assignment').exec()
     }
 }

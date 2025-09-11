@@ -101,7 +101,7 @@ export class AssignmentsService {
         }
 
         // Validation: Ensure all are graded
-        const allGraded = responses.every(r => r.status === AssignmentResponseStatus.GRADED)
+        const allGraded = responses.every(r => r.status === AssignmentResponseStatus.graded)
         if (!allGraded) {
             throw new BadRequestException(
                 'Cannot publish grades. One or more student submissions have not been marked as "Graded".'
@@ -110,8 +110,8 @@ export class AssignmentsService {
 
         // Perform Bulk Update on responses
         await this.responsesRepository.updateMany(
-            { assignmentId: assignmentId, status: AssignmentResponseStatus.GRADED },
-            { $set: { status: AssignmentResponseStatus.PUBLISHED } }
+            { assignmentId: assignmentId, status: AssignmentResponseStatus.graded },
+            { $set: { status: AssignmentResponseStatus.published } }
         )
 
         // Update the Assignment's state

@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
+import { Assignment, AssignmentSchema } from '../../features/assignments/schemas/assignment.model'
+import { Chat, ChatSchema } from '../../features/chat/schemas/chat.schema'
+import { Message, MessageSchema } from '../../features/chat/schemas/message.schema'
 import { Lesson, LessonSchema } from '../../features/lessons/schemas/lesson.schema'
 import { Level, LevelSchema } from '../../features/levels/schemas/level.schema'
 import { Manager, ManagerSchema } from '../../features/managers/schemas/manager.schema'
@@ -12,8 +15,6 @@ import { User, UserSchema } from '../../features/users/schemas/user.schema'
 import { MigrationService } from './migration.service'
 import { DbVersion, DbVersionSchema } from './schema/db-version.schema'
 import { SharedDocumentsService } from './shared-documents.service'
-import { Chat, ChatSchema } from '../../features/chat/schemas/chat.schema'
-import { Message, MessageSchema } from '../../features/chat/schemas/message.schema'
 
 @Module({
     imports: [
@@ -32,6 +33,7 @@ import { Message, MessageSchema } from '../../features/chat/schemas/message.sche
         MongooseModule.forFeature([
             { name: User.name, schema: UserSchema, discriminators: [{ name: Student.name, schema: StudentSchema }] },
         ]),
+        MongooseModule.forFeature([{ name: Assignment.name, schema: AssignmentSchema }]),
     ],
     providers: [SharedDocumentsService, MigrationService],
     exports: [SharedDocumentsService, MigrationService, MongooseModule],

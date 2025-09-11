@@ -13,8 +13,18 @@ import {
     Query,
     UseGuards,
 } from '@nestjs/common'
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger'
-import { AssignmentForm } from '../assignments/schemas/assignment-form.schema'
+import {
+    ApiBearerAuth,
+    ApiBody,
+    ApiCreatedResponse,
+    ApiNotAcceptableResponse,
+    ApiNotFoundResponse,
+    ApiOperation,
+    ApiResponse,
+} from '@nestjs/swagger'
+import { ErrorDto } from '../../shared/dto/error.dto'
+import { ParseMongoIdPipe } from '../../shared/pipes/ParseMongoIdPipe'
+import { ObjectId } from '../../shared/repository/types'
 import { Roles } from '../authentication/decorators/roles.decorator'
 import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
@@ -25,6 +35,7 @@ import { AssignmentResponsesService } from './assignment-responses.service'
 import { AssignmentResponseDto, SearchAssignmentResponseQueryDto } from './dto/assignment-response.dto'
 import { GradeManualDto } from './dto/grade-manual.dto'
 import { PaginatedAssignmentResponseDto } from './dto/paginated.dto'
+import { StartAssignmentResponseDto } from './dto/start-assignment.response.dto'
 import { RepliesPlainDto } from './dto/submit-answers.dto'
 
 export const GetUser = createParamDecorator((data: unknown, ctx: ExecutionContext): TokenUser => {
@@ -47,9 +58,14 @@ export class AssignmentResponsesController {
         summary: '[Student] Starts an assignment',
         description: 'Creates a new assignment response record for the logged-in student.',
     })
-    @ApiResponse({ status: 201, type: AssignmentForm })
-    startAssignment(@Param('assignmentId') assignmentId: string, @GetUser() user: TokenUser): Promise<any> {
-        return this.assignmentResponsesHandlerService.startAssignment(assignmentId, user.id.toString())
+    @ApiCreatedResponse({ type: StartAssignmentResponseDto })
+    @ApiNotFoundResponse({ type: ErrorDto })
+    @ApiNotAcceptableResponse({ type: ErrorDto })
+    startAssignment(
+        @Param('assignmentId', ParseMongoIdPipe) assignmentId: ObjectId,
+        @GetUser() user: TokenUser
+    ): Promise<StartAssignmentResponseDto> {
+        return this.assignmentResponsesHandlerService.startAssignment(assignmentId, user.id)
     }
 
     @Patch(':assignmentId/submit')

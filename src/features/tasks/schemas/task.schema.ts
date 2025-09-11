@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { HydratedDocument } from 'mongoose'
 import { normalizeDate } from '../../../shared/helper/date.helper'
 import { ObjectId, Populated } from '../../../shared/repository/types'
+import { Assignment } from '../../assignments/schemas/assignment.model'
 import { Lesson, LessonDocument } from '../../lessons/schemas/lesson.schema'
 import { ManagerDocument } from '../../managers/schemas/manager.schema'
 import { TaskState } from '../enums'
@@ -21,6 +22,12 @@ export class Task {
 
     @Prop({ required: true, type: [ObjectId], ref: Lesson.name, default: [] })
     lessons: ObjectId[] | Populated<LessonDocument[]>
+
+    @Prop({ required: false, type: ObjectId, ref: Assignment.name })
+    assignment?: ObjectId
+
+    @Prop({ required: true, type: String, enum: ['lesson', 'assignment'] })
+    type: 'lesson' | 'assignment'
 
     @Prop({ required: false, type: String })
     note?: string
