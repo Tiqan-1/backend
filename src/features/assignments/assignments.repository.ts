@@ -1,9 +1,12 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { Model } from 'mongoose'
+import { HydratedDocument, Model } from 'mongoose'
 import { RepositoryMongoBase } from '../../shared/repository/repository-mongo-base'
 import { ObjectId } from '../../shared/repository/types'
-import { Assignment, AssignmentDocument } from './schemas/assignment.model'
+import { PopulatedUser } from '../users/types/user.types'
+import { Assignment, AssignmentDocument } from './schemas/assignment.schema'
+
+export type PopulatedAssignmentDocument = HydratedDocument<Assignment> & PopulatedUser
 
 @Injectable()
 export class AssignmentsRepository extends RepositoryMongoBase<AssignmentDocument> {
@@ -11,15 +14,13 @@ export class AssignmentsRepository extends RepositoryMongoBase<AssignmentDocumen
         super(model)
     }
 
-    async find(filter: object, limit: number = 10, skip: number = 0): Promise<AssignmentDocument[]> {
+    find(filter: object, limit: number = 10, skip: number = 0): Promise<PopulatedAssignmentDocument[]> {
         return this.model
             .find(filter)
             .limit(limit)
             .skip(skip)
-            .populate({ path: 'createdBy', select: 'name' })
-            .populate({ path: 'subjectId', select: 'name' })
-            .populate({ path: 'levelId', select: 'name' })
-            .exec()
+            .populate({ path: 'createdBy', select: 'name email' })
+            .exec() as unknown as Promise<PopulatedAssignmentDocument[]>
     }
 
     async findRawById(id: ObjectId): Promise<AssignmentDocument | undefined> {
@@ -30,20 +31,11 @@ export class AssignmentsRepository extends RepositoryMongoBase<AssignmentDocumen
         return undefined
     }
 
-    async findById(id: ObjectId): Promise<AssignmentDocument | undefined> {
-        const found = await this.model
-            .findById(id)
-            .populate({ path: 'createdBy', select: 'name' })
-            .populate({ path: 'subjectId', select: 'name' })
-            .populate({ path: 'levelId', select: 'name' })
-            .exec()
+    async findById(id: ObjectId): Promise<PopulatedAssignmentDocument | undefined> {
+        const found = await this.model.findById(id).populate({ path: 'createdBy', select: 'name email' }).exec()
         if (found) {
-            return found
+            return found as unknown as PopulatedAssignmentDocument
         }
         return undefined
-    }
-
-    async findAll(limit = 10, skip = 0): Promise<AssignmentDocument[]> {
-        return this.model.find().limit(limit).skip(skip).populate({ path: 'createdBy', select: 'name' }).exec()
     }
 }

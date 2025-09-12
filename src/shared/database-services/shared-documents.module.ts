@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { Assignment, AssignmentSchema } from '../../features/assignments/schemas/assignment.model'
+import { Assignment, AssignmentSchema } from '../../features/assignments/schemas/assignment.schema'
 import { Chat, ChatSchema } from '../../features/chat/schemas/chat.schema'
 import { Message, MessageSchema } from '../../features/chat/schemas/message.schema'
 import { Lesson, LessonSchema } from '../../features/lessons/schemas/lesson.schema'

@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { HydratedDocument, Schema as MongooseSchema } from 'mongoose'
-import { Assignment, AssignmentDocument } from 'src/features/assignments/schemas/assignment.model'
+import { Assignment, AssignmentDocument } from 'src/features/assignments/schemas/assignment.schema'
 import { Student, StudentDocument } from 'src/features/students/schemas/student.schema'
 import { ObjectId } from '../../../shared/repository/types'
 import { AssignmentResponseStatus } from '../enums/assignment-response-status.enum'

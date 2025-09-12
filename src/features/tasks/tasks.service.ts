@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { Injectable, Logger, NotAcceptableException, NotFoundException } from '@nestjs/common'
 import { I18nService } from 'nestjs-i18n'
 import { oneMonth } from '../../shared/constants'
 import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
@@ -7,6 +7,8 @@ import { normalizeDate } from '../../shared/helper/date.helper'
 import { PaginationHelper } from '../../shared/helper/pagination-helper'
 import { SearchFilterBuilder } from '../../shared/helper/search-filter.builder'
 import { ObjectId } from '../../shared/repository/types'
+import { AssignmentsRepository } from '../assignments/assignments.repository'
+import { AssignmentDocument } from '../assignments/schemas/assignment.schema'
 import { ChatService } from '../chat/chat.service'
 import { LessonsService } from '../lessons/lessons.service'
 import { PaginatedTaskDto } from './dto/paginated-task.dto'
@@ -22,12 +24,29 @@ export class TasksService {
     constructor(
         private readonly taskRepository: TasksRepository,
         private readonly lessonsService: LessonsService,
+        private readonly assignmentRepository: AssignmentsRepository,
         private readonly documentsService: SharedDocumentsService,
         private readonly chatService: ChatService,
         private readonly i18n: I18nService
     ) {}
 
     async create(task: CreateTaskDto, createdBy: ObjectId): Promise<CreatedDto> {
+        if (task.type === 'lesson' && !task.lessonIds?.length) {
+            this.logger.error(`LessonIds are required for task type ${task.type}.`)
+            throw new NotAcceptableException(this.i18n.t('tasks.errors.lessonIdsRequired'))
+        }
+        let assignment: AssignmentDocument | undefined
+        if (task.type === 'assignment') {
+            if (!task.assignmentId) {
+                this.logger.error(`AssignmentId is required for task type ${task.type}.`)
+                throw new NotAcceptableException(this.i18n.t('tasks.errors.assignmentIdRequired'))
+            }
+            assignment = await this.assignmentRepository.findById(task.assignmentId)
+            if (!assignment) {
+                this.logger.error(`Assignment ${task.assignmentId.toString()} not found.`)
+                throw new NotFoundException(this.i18n.t('tasks.errors.assignmentNotFound'))
+            }
+        }
         const validatedLessons = task.lessonIds?.length ? await this.lessonsService.validateLessonIds(task.lessonIds) : undefined
         const level = await this.documentsService.getLevel(task.levelId)
         if (!level) {
@@ -40,6 +59,8 @@ export class TasksService {
             levelId: new ObjectId(task.levelId),
             date: normalizeDate(new Date(task.date)),
             chatRoomId: task.hasChatRoom ? await this.chatService.createChatRoom(createdBy) : undefined,
+            type: task.type,
+            assignment: task.assignmentId,
             ...(task.note && { note: task.note }),
             ...(validatedLessons && { lessons: validatedLessons }),
         }
@@ -48,6 +69,11 @@ export class TasksService {
 
         ;(level.tasks as ObjectId[]).push(created._id)
         await level.save()
+
+        if (assignment) {
+            assignment.taskId = created._id
+            await assignment.save()
+        }
 
         this.logger.log(`Task ${created._id.toString()} created.`)
         return { id: created._id.toString() }

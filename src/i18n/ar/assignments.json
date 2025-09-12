@@ -1,0 +1,13 @@
+{
+  "errors": {
+    "assignmentNotFound": "الاختبار غير موجود",
+    "notAuthorized": "المستخدم لا يمكن صلاحيات لهذه العملية",
+    "assignmentNotOwnedByManager": "لا يسمح بإجراء تعديلات على اختبارات مخصصة لمستخدمين آخرين",
+    "publishedAssignmentCannotBeEdited": "لا ييسمح بالتعديل على محتوى الاختبار بعد إطلاقه.",
+    "closedAssignmentCannotBeEdited": "لا يسمح بالتعديل على محتوى الاختبار بعد إغلاقه.",
+    "gradesAlreadyPublished": "قد تم بالفعل نشر درجات هذا الاختبار.",
+    "noSubmissions": "لا توجد أية إجابات من الطلاب على هذا الاختبار.",
+    "notAllSubmissionsGraded": "لا يمكن نشر الدرجات بسبب وجود بعض الإجابات التي لم يتم تقييمها."
+
+  }
+}

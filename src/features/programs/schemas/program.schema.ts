@@ -45,9 +45,6 @@ export class Program {
 
     @Prop({ required: true, type: [ObjectId], ref: Level.name, default: [] })
     levels: ObjectId[] | Populated<LevelDocument[]>
-
-    @Prop({ type: Date, index: { expireAfterSeconds: 0 } })
-    expireAt?: Date
 }
 
 export const ProgramSchema = SchemaFactory.createForClass(Program)

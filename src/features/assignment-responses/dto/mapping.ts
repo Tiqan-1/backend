@@ -1,5 +1,5 @@
 import { SimpleAssignmentDto } from 'src/features/assignments/dto/assignment.dto'
-import { AssignmentDocument } from 'src/features/assignments/schemas/assignment.model'
+import { AssignmentDocument } from 'src/features/assignments/schemas/assignment.schema'
 import { SimpleStudentDto } from 'src/features/students/dto/student.dto'
 import { StudentDocument } from 'src/features/students/schemas/student.schema'
 import { AssignmentResponseDocument } from '../schemas/assignment-response.schema'

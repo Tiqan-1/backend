@@ -1,11 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { HydratedDocument } from 'mongoose'
 import { ObjectId } from '../../../shared/repository/types'
-import { ManagerDocument } from '../../managers/schemas/manager.schema'
 import { Task } from '../../tasks/schemas/task.schema'
 import { AssignmentGradingState } from '../enums/assignment-grading-state.enum'
 import { AssignmentState, AssignmentType } from '../enums/assignment-state.enum'
-import { AssignmentForm, AssignmentFormDocument } from './assignment-form.schema'
 
 export type AssignmentDocument = HydratedDocument<Assignment>
 
@@ -15,10 +13,10 @@ export class Assignment {
     title: string
 
     @Prop({ required: true, type: ObjectId, ref: 'Manager' })
-    createdBy: ObjectId | ManagerDocument
+    createdBy: ObjectId
 
-    @Prop({ type: ObjectId, ref: Task.name })
-    taskId: ObjectId
+    @Prop({ required: false, type: ObjectId, ref: Task.name })
+    taskId?: ObjectId
 
     @Prop({ type: String, enum: AssignmentGradingState, default: AssignmentGradingState.pending })
     gradingState: AssignmentGradingState
@@ -47,8 +45,11 @@ export class Assignment {
     @Prop({ required: true, type: Date })
     updatedAt: Date
 
-    @Prop({ required: true, type: AssignmentForm.name })
-    form: AssignmentFormDocument
+    @Prop({ required: true, type: Object })
+    form: object
+
+    @Prop({ type: Date, index: { expireAfterSeconds: 0 } })
+    expireAt?: Date
 }
 
 export const AssignmentSchema = SchemaFactory.createForClass(Assignment)
