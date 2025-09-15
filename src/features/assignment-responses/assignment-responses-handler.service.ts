@@ -13,6 +13,7 @@ import { AssignmentFormValidator } from '../assignments/assignment-form.validato
 import { AssignmentsRepository } from '../assignments/assignments.repository'
 import { AssignmentState } from '../assignments/enums/assignment-state.enum'
 import { AssignmentDocument } from '../assignments/schemas/assignment.schema'
+import { Question } from '../assignments/types/form.type'
 import { ProgramsRepository } from '../programs/programs.repository'
 import { SubscriptionState } from '../subscriptions/enums/subscription-state.enum'
 import { SubscriptionsRepository } from '../subscriptions/subscriptions.repository'
@@ -22,12 +23,6 @@ import { StartAssignmentResponseDto } from './dto/start-assignment.response.dto'
 import { RepliesPlainDto } from './dto/submit-answers.dto'
 import { AssignmentResponseStatus } from './enums/assignment-response-status.enum'
 import { AssignmentResponseDocument } from './schemas/assignment-response.schema'
-
-type BaseQuestion = { score?: number }
-type SelectionQuestion = { type: 'select'; answer?: string }
-type NumberQuestion = { type: 'number'; answer?: string }
-type ChoiceQuestion = { type: 'choice'; multiple?: boolean; answer?: string[] }
-type Question = BaseQuestion & (SelectionQuestion | NumberQuestion | ChoiceQuestion)
 
 @Injectable()
 export class AssignmentResponsesHandlerService {
@@ -57,7 +52,7 @@ export class AssignmentResponsesHandlerService {
             return { startedAt: existingResponse.startedAt, ...assignment.form }
         }
 
-        // TODO: FIX AUTHORiZation
+        // TODO: FIX AUTHORIZATION
         // Authorization: Check student's subscription
         // await this.validateStudentSubscription(studentId, assignment.levelId.toString());
 
@@ -95,7 +90,7 @@ export class AssignmentResponsesHandlerService {
             throw new NotFoundException('Associated assignment not found.')
         }
 
-        // Check if time limit has been exceeded
+        // Check if the time limit has been exceeded
         const elapsedTime = (new Date().getTime() - response.startedAt.getTime()) / 60000 // in minutes
         if (elapsedTime > assignment.durationInMinutes) {
             throw new ForbiddenException('The time limit for this assignment has passed.')
@@ -154,7 +149,7 @@ export class AssignmentResponsesHandlerService {
         assignment: AssignmentDocument,
         replies: RepliesPlainDto
     ): { individualScores: Record<string, number>; totalScore: number } {
-        const questionMap = new Map<string, unknown>()
+        const questionMap = new Map<string, Question>()
 
         if (!AssignmentFormValidator.isFormStructureValid(assignment.form)) {
             this.logger.error(
@@ -246,11 +241,11 @@ export class AssignmentResponsesHandlerService {
         return response
     }
 
-    private validateQuestion(question: unknown): question is Question {
-        if (!question || typeof question !== 'object' || !('type' in question)) {
+    private validateQuestion(question: Question): question is Question {
+        if (!question) {
             return false
         }
-        const type = question.type as string
+        const type = question.type
         if (!type) {
             return false
         }

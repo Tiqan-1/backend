@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { ElementType } from '../../assignments/types/form.type'
+import { Question } from '../../assignments/types/form.type'
 
 export class SlideDto {
     @ApiProperty({ type: Object, isArray: true })
-    elements: ElementType[]
+    elements: Question[]
 }
 
 export class AssignmentFormDto {
