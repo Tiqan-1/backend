@@ -1,5 +1,6 @@
 import {
     BadRequestException,
+    ConflictException,
     ForbiddenException,
     Injectable,
     Logger,
@@ -8,6 +9,7 @@ import {
 } from '@nestjs/common'
 import { isAfter, isBefore } from 'date-fns'
 import { ObjectId } from '../../shared/repository/types'
+import { AssignmentFormValidator } from '../assignments/assignment-form.validator'
 import { AssignmentsRepository } from '../assignments/assignments.repository'
 import { AssignmentState } from '../assignments/enums/assignment-state.enum'
 import { AssignmentDocument } from '../assignments/schemas/assignment.schema'
@@ -40,7 +42,7 @@ export class AssignmentResponsesHandlerService {
 
     async startAssignment(assignmentId: ObjectId, studentId: ObjectId): Promise<StartAssignmentResponseDto> {
         const assignment = await this.assignmentsRepository.findRawById(assignmentId)
-        if (!assignment || assignment.state !== AssignmentState.published) {
+        if (!assignment || assignment.state !== AssignmentState.published || !assignment.form) {
             throw new NotFoundException('Assignment not found.')
         }
 
@@ -89,7 +91,7 @@ export class AssignmentResponsesHandlerService {
         // }
 
         const assignment = await this.assignmentsRepository.findById(new ObjectId(assignmentId))
-        if (!assignment) {
+        if (!assignment || !assignment.form) {
             throw new NotFoundException('Associated assignment not found.')
         }
 
@@ -154,14 +156,16 @@ export class AssignmentResponsesHandlerService {
     ): { individualScores: Record<string, number>; totalScore: number } {
         const questionMap = new Map<string, unknown>()
 
-        // assignment.form.slides
-        //     .flatMap(s => s.elements)
-        //     .filter(el => el.question) // Only consider elements that are questions
-        //     .forEach(el => questionMap.set(el._id.toString(), el))
+        if (!AssignmentFormValidator.isFormStructureValid(assignment.form)) {
+            this.logger.error(
+                `Invalid form structure for assignment ${assignment._id.toString()}: ${JSON.stringify(assignment.form)}`
+            )
+            throw new ConflictException('Invalid form structure.')
+        }
 
         for (const element of assignment.form.slides?.flatMap(s => s.elements) ?? []) {
-            if (element.has('question') && element.has('id')) {
-                questionMap.set(element.get('id') as string, element)
+            if (element.question && element.id) {
+                questionMap.set(element.id, element)
             }
         }
 

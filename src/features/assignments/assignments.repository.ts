@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { HydratedDocument, Model } from 'mongoose'
+import { Model } from 'mongoose'
 import { RepositoryMongoBase } from '../../shared/repository/repository-mongo-base'
 import { ObjectId } from '../../shared/repository/types'
 import { PopulatedUser } from '../users/types/user.types'
 import { Assignment, AssignmentDocument } from './schemas/assignment.schema'
 
-export type PopulatedAssignmentDocument = HydratedDocument<Assignment> & PopulatedUser
+export type PopulatedAssignmentDocument = AssignmentDocument & PopulatedUser
 
 @Injectable()
 export class AssignmentsRepository extends RepositoryMongoBase<AssignmentDocument> {

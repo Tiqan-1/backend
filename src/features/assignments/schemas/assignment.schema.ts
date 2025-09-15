@@ -4,6 +4,7 @@ import { ObjectId } from '../../../shared/repository/types'
 import { Task } from '../../tasks/schemas/task.schema'
 import { AssignmentGradingState } from '../enums/assignment-grading-state.enum'
 import { AssignmentState, AssignmentType } from '../enums/assignment-state.enum'
+import { FormType } from '../types/form.type'
 
 export type AssignmentDocument = HydratedDocument<Assignment>
 
@@ -39,14 +40,14 @@ export class Assignment {
     @Prop({ required: true, type: Date })
     availableUntil: Date
 
-    @Prop({ required: true, type: Date })
+    @Prop({ required: true, type: Date, default: Date.now() })
     createdAt: Date
 
-    @Prop({ required: true, type: Date })
+    @Prop({ required: true, type: Date, default: Date.now() })
     updatedAt: Date
 
-    @Prop({ required: true, type: Object })
-    form: object
+    @Prop({ required: false, type: Object })
+    form?: FormType
 
     @Prop({ type: Date, index: { expireAfterSeconds: 0 } })
     expireAt?: Date

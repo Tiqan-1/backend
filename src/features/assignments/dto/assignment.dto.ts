@@ -60,8 +60,9 @@ export class AssignmentDto {
     availableUntil: Date
 
     @ApiProperty({ type: () => Object })
+    @IsOptional()
     @IsObject()
-    form: object
+    form?: object
 
     @ApiProperty({ type: Date })
     @Type(() => Date)

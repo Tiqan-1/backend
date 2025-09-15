@@ -1,8 +1,6 @@
 import {
     ConflictException,
     ForbiddenException,
-    forwardRef,
-    Inject,
     Injectable,
     Logger,
     NotAcceptableException,
@@ -39,7 +37,6 @@ export class AssignmentsService {
 
     constructor(
         private readonly assignmentsRepository: AssignmentsRepository,
-        @Inject(forwardRef(() => AssignmentResponsesRepository))
         private readonly responsesRepository: AssignmentResponsesRepository,
         private readonly tasksService: TasksService,
         private readonly subscriptionsRepository: SubscriptionsRepository,
@@ -212,7 +209,7 @@ export class AssignmentsService {
         managerId: ObjectId,
         updateDto: UpdateAssignmentDto | undefined
     ): void {
-        if (assignment.createdBy !== managerId) {
+        if (!assignment.createdBy.equals(managerId)) {
             this.logger.error(
                 `Permission Denied: Manager ${managerId.toString()} trying to access assignment ${assignment._id.toString()}`
             )

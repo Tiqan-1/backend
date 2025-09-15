@@ -244,6 +244,7 @@ export class MongoTestHelper {
             createdBy,
             date: new Date(),
             state: TaskState.active,
+            type: 'lesson',
             lessons: lessons.map(({ _id }) => _id),
         }
         const model = this.getTaskModel()

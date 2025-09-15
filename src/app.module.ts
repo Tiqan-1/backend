@@ -6,6 +6,8 @@ import { I18nModule } from 'nestjs-i18n'
 import { PusherModule } from 'nestjs-pusher'
 import { join } from 'node:path'
 import * as process from 'node:process'
+import { AssignmentResponsesModule } from './features/assignment-responses/assignment-responses.module'
+import { AssignmentsModule } from './features/assignments/assignments.module'
 import { AuthenticationModule } from './features/authentication/authentication.module'
 import { ChatModule } from './features/chat/chat.module'
 import { LessonsModule } from './features/lessons/lessons.module'
@@ -18,8 +20,6 @@ import { SubscriptionsModule } from './features/subscriptions/subscriptions.modu
 import { TasksModule } from './features/tasks/tasks.module'
 import { TokensModule } from './features/tokens/tokens.module'
 import { UsersModule } from './features/users/users.module'
-import { AssignmentsModule } from './features/assignments/assignments.module'
-import { AssignmentResponsesModule } from './features/assignment-responses/assignment-responses.module'
 import { SharedDocumentsModule } from './shared/database-services/shared-documents.module'
 
 @Module({
@@ -62,8 +62,8 @@ import { SharedDocumentsModule } from './shared/database-services/shared-documen
         SharedDocumentsModule,
         SubscriptionsModule,
         ChatModule,
-        AssignmentResponsesModule,
         AssignmentsModule,
+        AssignmentResponsesModule,
     ],
     providers: [],
 })

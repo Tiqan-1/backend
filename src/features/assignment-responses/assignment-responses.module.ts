@@ -1,5 +1,4 @@
-import { forwardRef, Module } from '@nestjs/common'
-import { MongooseModule } from '@nestjs/mongoose'
+import { Module } from '@nestjs/common'
 import { SharedDocumentsModule } from '../../shared/database-services/shared-documents.module'
 import { AssignmentsModule } from '../assignments/assignments.module'
 import { ProgramsModule } from '../programs/programs.module'
@@ -8,16 +7,9 @@ import { AssignmentResponsesHandlerService } from './assignment-responses-handle
 import { AssignmentResponsesController } from './assignment-responses.controller'
 import { AssignmentResponsesRepository } from './assignment-responses.repository'
 import { AssignmentResponsesService } from './assignment-responses.service'
-import { AssignmentResponse, AssignmentResponseSchema } from './schemas/assignment-response.schema'
 
 @Module({
-    imports: [
-        MongooseModule.forFeature([{ name: AssignmentResponse.name, schema: AssignmentResponseSchema }]),
-        forwardRef(() => AssignmentsModule),
-        SharedDocumentsModule,
-        SubscriptionsModule,
-        ProgramsModule,
-    ],
+    imports: [AssignmentsModule, SharedDocumentsModule, SubscriptionsModule, ProgramsModule],
     controllers: [AssignmentResponsesController],
     providers: [AssignmentResponsesHandlerService, AssignmentResponsesService, AssignmentResponsesRepository],
     exports: [AssignmentResponsesService, AssignmentResponsesRepository],
