@@ -6,6 +6,7 @@ import { PusherService } from 'nestjs-pusher'
 import request from 'supertest'
 import { App } from 'supertest/types'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { AssignmentsRepository } from '../src/features/assignments/assignments.repository'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
 import { ChatRepository } from '../src/features/chat/chat.repository'
 import { ChatService } from '../src/features/chat/chat.service'
@@ -50,6 +51,7 @@ describe('LevelsController', () => {
                 MessageRepository,
                 { provide: I18nService, useValue: { t: vi.fn() } },
                 { provide: PusherService, useValue: { trigger: vi.fn() } },
+                AssignmentsRepository,
                 TasksService,
                 TasksRepository,
                 LessonsService,

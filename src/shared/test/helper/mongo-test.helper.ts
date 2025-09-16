@@ -3,6 +3,11 @@ import { getModelToken } from '@nestjs/mongoose'
 import * as bcrypt from 'bcryptjs'
 import { MongoMemoryServer } from 'mongodb-memory-server'
 import { connect, Connection, Model } from 'mongoose'
+import {
+    AssignmentResponse,
+    AssignmentResponseSchema,
+} from '../../../features/assignment-responses/schemas/assignment-response.schema'
+import { Assignment, AssignmentSchema } from '../../../features/assignments/schemas/assignment.schema'
 import { Role } from '../../../features/authentication/enums/role.enum'
 import { Chat, ChatSchema } from '../../../features/chat/schemas/chat.schema'
 import { Message, MessageSchema } from '../../../features/chat/schemas/message.schema'
@@ -43,6 +48,8 @@ export class MongoTestHelper {
     private studentModel: Model<Student>
     private refreshTokenModel: Model<RefreshToken>
     private subjectModel: Model<Subject>
+    private assigmentModel: Model<Assignment>
+    private assigmentResponseModel: Model<AssignmentResponse>
     private lessonModel: Model<Lesson>
     private taskModel: Model<Task>
     private chatModel: Model<Chat>
@@ -60,6 +67,8 @@ export class MongoTestHelper {
     get providers(): Provider[] {
         return [
             { provide: getModelToken(DbVersion.name), useValue: this.getDbVersionModel() },
+            { provide: getModelToken(Assignment.name), useValue: this.getAssignmentModel() },
+            { provide: getModelToken(AssignmentResponse.name), useValue: this.getAssignmentResponseModel() },
             { provide: getModelToken(Lesson.name), useValue: this.getLessonModel() },
             { provide: getModelToken(Task.name), useValue: this.getTaskModel() },
             { provide: getModelToken(Chat.name), useValue: this.getChatModel() },
@@ -124,6 +133,20 @@ export class MongoTestHelper {
             this.lessonModel = this.mongoConnection.model(Lesson.name, LessonSchema)
         }
         return this.lessonModel
+    }
+
+    getAssignmentModel(): Model<Assignment> {
+        if (!this.assigmentModel) {
+            this.assigmentModel = this.mongoConnection.model(Assignment.name, AssignmentSchema)
+        }
+        return this.assigmentModel
+    }
+
+    getAssignmentResponseModel(): Model<AssignmentResponse> {
+        if (!this.assigmentResponseModel) {
+            this.assigmentResponseModel = this.mongoConnection.model(AssignmentResponse.name, AssignmentResponseSchema)
+        }
+        return this.assigmentResponseModel
     }
 
     getTaskModel(): Model<Task> {

@@ -73,7 +73,7 @@ export class CreateTaskDto extends OmitType(TaskDto, ['id', 'lessons'] as const)
     @IsOptional()
     @IsMongoId({ message: i18nValidationMessage('validation.mongoId') })
     @Type(() => ObjectId)
-    assignmentId: ObjectId
+    assignmentId?: ObjectId
 }
 
 export class UpdateTaskDto extends PartialType(OmitType(CreateTaskDto, ['levelId'] as const)) {}

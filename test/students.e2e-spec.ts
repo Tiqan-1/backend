@@ -6,6 +6,7 @@ import { PusherService } from 'nestjs-pusher'
 import request from 'supertest'
 import { App } from 'supertest/types'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi, vitest } from 'vitest'
+import { AssignmentsRepository } from '../src/features/assignments/assignments.repository'
 import { AuthenticationService } from '../src/features/authentication/authentication.service'
 import { AuthenticationResponseDto } from '../src/features/authentication/dto/authentication-response.dto'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
@@ -93,6 +94,7 @@ describe('StudentsController (e2e)', () => {
                 MessageRepository,
                 { provide: I18nService, useValue: { t: vi.fn() } },
                 { provide: PusherService, useValue: { trigger: vi.fn() } },
+                AssignmentsRepository,
                 TasksService,
                 TasksRepository,
                 JwtStrategy,
