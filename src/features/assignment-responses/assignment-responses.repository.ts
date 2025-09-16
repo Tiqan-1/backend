@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { Model, PopulateOptions } from 'mongoose'
+import { Model } from 'mongoose'
 import { RepositoryMongoBase } from '../../shared/repository/repository-mongo-base'
 import { ObjectId } from '../../shared/repository/types'
 import { AssignmentResponse, AssignmentResponseDocument } from './schemas/assignment-response.schema'
@@ -26,16 +26,14 @@ export class AssignmentResponsesRepository extends RepositoryMongoBase<Assignmen
             .exec()
     }
 
-    async findOneById(id: ObjectId | string, ...populateOptions: PopulateOptions[]): Promise<AssignmentResponseDocument | null> {
-        let query = this.model.findById(id)
-
-        if (populateOptions.length > 0) {
-            populateOptions.forEach(option => {
-                query = query.populate(option)
-            })
+    async findById(id: ObjectId, populated = false): Promise<AssignmentResponseDocument | undefined> {
+        const found = populated
+            ? await this.model.findById(id).populate({ path: 'assignment' }).populate({ path: 'student', select: 'name email' })
+            : await super.findById(id)
+        if (found) {
+            return found
         }
-
-        return query.exec()
+        return undefined
     }
 
     async findAll(limit = 10, skip = 0): Promise<AssignmentResponseDocument[]> {

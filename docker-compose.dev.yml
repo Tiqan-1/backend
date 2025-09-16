@@ -24,7 +24,7 @@ services:
     user: '1000:1000'
     image: mongo:latest
     ports:
-      - "27017:27017"
+      - "27018:27017"
     volumes:
       - ./mongodb_data-dev:/data/db
     networks:

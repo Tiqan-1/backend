@@ -12,7 +12,7 @@ import { PaginationHelper } from '../../shared/helper/pagination-helper'
 import { SearchFilterBuilder } from '../../shared/helper/search-filter.builder'
 import { ObjectId } from '../../shared/repository/types'
 import { AssignmentResponsesRepository } from '../assignment-responses/assignment-responses.repository'
-import { AssignmentResponseStatus } from '../assignment-responses/enums/assignment-response-status.enum'
+import { AssignmentResponseState } from '../assignment-responses/enums/assignment-response-state.enum'
 import { LevelDocument } from '../levels/schemas/level.schema'
 import { ProgramDocument } from '../programs/schemas/program.schema'
 import { SubscriptionState } from '../subscriptions/enums/subscription-state.enum'
@@ -46,7 +46,7 @@ export class AssignmentsService {
     async create(createAssignmentDto: CreateAssignmentDto, createdBy: ObjectId): Promise<CreatedDto> {
         const data = { ...createAssignmentDto, createdBy }
         const created = await this.assignmentsRepository.create(data)
-        this.logger.log(`Assignment ${created.id} created by ${createdBy.toString()}.`)
+        this.logger.log(`Assignment ${created._id.toString()} created by ${createdBy.toString()}.`)
         return { id: created._id.toString() }
     }
 
@@ -74,7 +74,7 @@ export class AssignmentsService {
         const taskIdsForStudent = subscriptions.flatMap(sub =>
             (sub.program as ProgramDocument).levels.flatMap(level => (level as LevelDocument).tasks.map(task => task._id))
         )
-        if (assignment.taskId && !taskIdsForStudent.includes(assignment.taskId)) {
+        if (assignment.taskId && !taskIdsForStudent.some(taskId => taskId.equals(assignment.taskId))) {
             throw new ForbiddenException(this.i18n.t('assignments.errors.notAuthorized'))
         }
 
@@ -128,6 +128,8 @@ export class AssignmentsService {
         if (assignment.taskId) {
             await this.tasksService.remove(assignment.taskId.toString())
         }
+
+        await this.responsesRepository.updateMany({ assignment: assignmentId }, { state: AssignmentResponseState.withdrawn })
     }
 
     async findAvailableForStudent(studentId: ObjectId): Promise<PaginatedAssignmentStudentDto> {
@@ -187,15 +189,15 @@ export class AssignmentsService {
         }
 
         // Validation: Ensure all are graded
-        const allGraded = responses.every(r => r.status === AssignmentResponseStatus.graded)
+        const allGraded = responses.every(r => r.status === AssignmentResponseState.graded)
         if (!allGraded) {
             throw new ConflictException(this.i18n.t('assignments.errors.notAllSubmissionsGraded'))
         }
 
         // Perform Bulk Update on responses
         await this.responsesRepository.updateMany(
-            { assignmentId: assignmentId, status: AssignmentResponseStatus.graded },
-            { $set: { status: AssignmentResponseStatus.published } }
+            { assignmentId: assignmentId, status: AssignmentResponseState.graded },
+            { $set: { status: AssignmentResponseState.published } }
         )
 
         // Update the Assignment's state

@@ -1,9 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
-import { HydratedDocument, Schema as MongooseSchema } from 'mongoose'
+import { HydratedDocument } from 'mongoose'
 import { Assignment, AssignmentDocument } from 'src/features/assignments/schemas/assignment.schema'
 import { Student, StudentDocument } from 'src/features/students/schemas/student.schema'
 import { ObjectId } from '../../../shared/repository/types'
-import { AssignmentResponseStatus } from '../enums/assignment-response-status.enum'
+import { AssignmentResponseState } from '../enums/assignment-response-state.enum'
 
 export type AssignmentResponseDocument = HydratedDocument<AssignmentResponse>
 
@@ -13,10 +13,10 @@ export class AssignmentResponse {
     notes?: string
 
     @Prop({ required: true, type: ObjectId, ref: Student.name })
-    studentId: ObjectId | StudentDocument
+    student: ObjectId | StudentDocument
 
     @Prop({ required: true, type: ObjectId, ref: Assignment.name })
-    assignmentId: ObjectId | AssignmentDocument
+    assignment: ObjectId | AssignmentDocument
 
     @Prop({ required: false, type: Number, default: 0 })
     score: number
@@ -30,16 +30,16 @@ export class AssignmentResponse {
     @Prop({
         required: true,
         type: String,
-        enum: AssignmentResponseStatus,
-        default: AssignmentResponseStatus.inProgress,
+        enum: AssignmentResponseState,
+        default: AssignmentResponseState.inProgress,
     })
-    status: AssignmentResponseStatus
+    status: AssignmentResponseState
 
-    @Prop({ type: MongooseSchema.Types.Map, of: MongooseSchema.Types.Mixed, default: {} })
-    replies: Map<string, unknown>
+    @Prop({ type: Object, default: {} })
+    replies: Record<string, unknown>
 
-    @Prop({ type: MongooseSchema.Types.Map, of: Number, default: {} })
-    individualScores: Map<string, number>
+    @Prop({ type: Object, default: {} })
+    individualScores: Record<string, number>
 }
 
 export const AssignmentResponseSchema = SchemaFactory.createForClass(AssignmentResponse)

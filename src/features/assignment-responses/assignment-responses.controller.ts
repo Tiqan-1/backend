@@ -1,27 +1,22 @@
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, UseGuards } from '@nestjs/common'
 import {
-    Body,
-    Controller,
-    createParamDecorator,
-    Delete,
-    ExecutionContext,
-    Get,
-    HttpCode,
-    HttpStatus,
-    Param,
-    Patch,
-    Post,
-    Query,
-    UseGuards,
-} from '@nestjs/common'
-import {
+    ApiBadRequestResponse,
     ApiBearerAuth,
     ApiBody,
+    ApiConflictResponse,
     ApiCreatedResponse,
+    ApiForbiddenResponse,
+    ApiInternalServerErrorResponse,
+    ApiNoContentResponse,
     ApiNotAcceptableResponse,
     ApiNotFoundResponse,
+    ApiOkResponse,
     ApiOperation,
-    ApiResponse,
+    ApiParam,
+    ApiUnauthorizedResponse,
 } from '@nestjs/swagger'
+import { GetUser } from '../../shared/decorators/get-user.decorator'
+import { BadRequestErrorDto } from '../../shared/dto/bad-request-error.dto'
 import { ErrorDto } from '../../shared/dto/error.dto'
 import { ParseMongoIdPipe } from '../../shared/pipes/ParseMongoIdPipe'
 import { ObjectId } from '../../shared/repository/types'
@@ -30,52 +25,53 @@ import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { RolesGuard } from '../authentication/guards/roles.guard'
 import { TokenUser } from '../authentication/types/token-user'
-import { AssignmentResponsesHandlerService } from './assignment-responses-handler.service'
 import { AssignmentResponsesService } from './assignment-responses.service'
-import { AssignmentResponseDto, SearchAssignmentResponseQueryDto } from './dto/assignment-response.dto'
-import { GradeManualDto } from './dto/grade-manual.dto'
-import { PaginatedAssignmentResponseDto } from './dto/paginated.dto'
+import {
+    AssignmentResponseDto,
+    PaginatedAssignmentResponseDto,
+    SearchAssignmentResponseQueryDto,
+} from './dto/assignment-response.dto'
+import { ManualGradeDto } from './dto/manual-grade.dto'
 import { StartAssignmentResponseDto } from './dto/start-assignment.response.dto'
-import { RepliesPlainDto } from './dto/submit-answers.dto'
-
-export const GetUser = createParamDecorator((data: unknown, ctx: ExecutionContext): TokenUser => {
-    const request = ctx.switchToHttp().getRequest<Request & { user: TokenUser }>()
-    return request.user
-})
+import { RepliesType } from './types/reply.type'
 
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('api/assignment-responses')
 export class AssignmentResponsesController {
-    constructor(
-        private readonly assignmentResponsesService: AssignmentResponsesService,
-        private readonly assignmentResponsesHandlerService: AssignmentResponsesHandlerService
-    ) {}
+    constructor(private readonly assignmentResponsesService: AssignmentResponsesService) {}
 
-    @Post(':assignmentId/start')
-    @Roles(Role.Student)
     @ApiOperation({
         summary: '[Student] Starts an assignment',
         description: 'Creates a new assignment response record for the logged-in student.',
     })
-    @ApiCreatedResponse({ type: StartAssignmentResponseDto })
+    @ApiOkResponse({ type: StartAssignmentResponseDto })
+    @ApiForbiddenResponse({ type: ErrorDto })
+    @ApiUnauthorizedResponse({ type: ErrorDto })
     @ApiNotFoundResponse({ type: ErrorDto })
     @ApiNotAcceptableResponse({ type: ErrorDto })
+    @ApiBadRequestResponse({ type: BadRequestErrorDto })
+    @ApiParam({ name: 'assignmentId', type: String, required: true })
+    @HttpCode(HttpStatus.OK)
+    @Roles(Role.Student)
+    @Post(':assignmentId/start')
     startAssignment(
         @Param('assignmentId', ParseMongoIdPipe) assignmentId: ObjectId,
         @GetUser() user: TokenUser
     ): Promise<StartAssignmentResponseDto> {
-        return this.assignmentResponsesHandlerService.startAssignment(assignmentId, user.id)
+        return this.assignmentResponsesService.startAssignment(assignmentId, user.id)
     }
 
-    @Patch(':assignmentId/submit')
-    @Roles(Role.Student)
-    @HttpCode(HttpStatus.NO_CONTENT)
     @ApiOperation({ summary: '[Student] Submits answers for an assignment they have started' })
-    @ApiResponse({ status: 204, description: 'Answers submitted successfully.' })
+    @ApiCreatedResponse({ description: 'Answers submitted successfully.' })
+    @ApiUnauthorizedResponse({ type: ErrorDto })
+    @ApiForbiddenResponse({ type: ErrorDto })
+    @ApiNotFoundResponse({ type: ErrorDto })
+    @ApiConflictResponse({ type: ErrorDto, description: 'Invalid form structure for this assignment.' })
+    @ApiBadRequestResponse({ type: BadRequestErrorDto })
     @ApiBody({
         description: "A JSON object where keys are question IDs and values are the student's answers.",
-        // type: RepliesPlainDto,
+        type: Object,
         examples: {
             a: {
                 summary: 'Example Submission',
@@ -86,37 +82,40 @@ export class AssignmentResponsesController {
             },
         },
     })
-    @ApiResponse({ status: 204, description: 'Answers submitted successfully.' })
+    @ApiParam({ name: 'assignmentId', type: String, required: true })
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @Roles(Role.Student)
+    @Patch(':assignmentId/submit')
     submitAnswers(
-        @Param('assignmentId') assignmentId: string,
+        @Param('assignmentId', ParseMongoIdPipe) assignmentId: ObjectId,
         @GetUser() user: TokenUser,
-        @Body() replies: RepliesPlainDto
+        @Body() replies: RepliesType
     ): Promise<void> {
-        return this.assignmentResponsesHandlerService.submitAnswers(assignmentId, user.id.toString(), replies)
+        return this.assignmentResponsesService.submitAnswers(assignmentId, user.id, replies)
     }
 
-    @Patch(':id/grade')
-    @Roles(Role.Manager)
-    @HttpCode(HttpStatus.NO_CONTENT)
     @ApiOperation({ summary: '[Manager] Manually grades/overrides scores for a response' })
-    @ApiResponse({ status: 204, description: 'Response graded successfully.' })
+    @ApiNoContentResponse({ description: 'Response graded successfully.' })
+    @ApiNotFoundResponse({ type: ErrorDto })
+    @ApiForbiddenResponse({ type: ErrorDto })
+    @ApiUnauthorizedResponse({ type: ErrorDto })
+    @ApiBadRequestResponse({ type: BadRequestErrorDto })
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @Roles(Role.Manager)
+    @Patch(':id/grade')
     gradeManual(
-        @Param('id') responseId: string,
+        @Param('id', ParseMongoIdPipe) responseId: ObjectId,
         @GetUser() user: TokenUser,
-        @Body() gradeManualDto: GradeManualDto
+        @Body() gradeManualDto: ManualGradeDto
     ): Promise<void> {
-        return this.assignmentResponsesHandlerService.grade(responseId, user.id.toString(), gradeManualDto)
+        return this.assignmentResponsesService.grade(responseId, user.id, gradeManualDto)
     }
 
     @ApiOperation({ summary: '[Manager] Searches for assignment responses', description: 'Searches for assignment responses' })
-    @ApiResponse({
-        status: HttpStatus.OK,
-        type: PaginatedAssignmentResponseDto,
-        description: 'Got assignment responses successfully.',
-    })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user,' })
-    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
+    @ApiOkResponse({ type: PaginatedAssignmentResponseDto, description: 'Got assignment responses successfully.' })
+    @ApiInternalServerErrorResponse({ type: ErrorDto })
+    @ApiForbiddenResponse({ type: ErrorDto })
+    @ApiUnauthorizedResponse({ type: ErrorDto })
     @Get()
     @UseGuards(JwtAuthGuard)
     @Roles(Role.Manager)
@@ -124,28 +123,35 @@ export class AssignmentResponsesController {
         return this.assignmentResponsesService.search(searchAssignmentResponseQueryDto)
     }
 
-    @Get(':id')
-    @Roles(Role.Manager, Role.Student)
     @ApiOperation({ summary: '[Student/Manager] Get a single assignment response by ID' })
-    @ApiResponse({ status: 200, type: AssignmentResponseDto })
-    show(@Param('id') responseId: string, @GetUser() user: TokenUser): Promise<AssignmentResponseDto> {
-        return this.assignmentResponsesService.findOneById(responseId, user)
+    @ApiOkResponse({ type: AssignmentResponseDto })
+    @ApiNotFoundResponse({ type: ErrorDto })
+    @ApiUnauthorizedResponse({ type: ErrorDto })
+    @ApiForbiddenResponse({ type: ErrorDto })
+    @ApiBadRequestResponse({ type: BadRequestErrorDto })
+    @ApiParam({ name: 'id', type: String, required: true })
+    @HttpCode(HttpStatus.OK)
+    @Roles(Role.Manager, Role.Student)
+    @Get(':id')
+    show(@Param('id', ParseMongoIdPipe) responseId: ObjectId, @GetUser() user: TokenUser): Promise<AssignmentResponseDto> {
+        return this.assignmentResponsesService.findById(responseId, user)
     }
 
     @ApiOperation({
         summary: '[Manager] Removes a assignment response',
         description: 'Removes a assignment response from the manager.',
     })
-    @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Assignment Response successfully removed.' })
-    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.' })
-    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user' })
-    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.' })
-    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Assignment Response not found.' })
-    @Delete(':id')
+    @ApiNoContentResponse({ description: 'Assignment Response successfully removed.' })
+    @ApiInternalServerErrorResponse({ description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiUnauthorizedResponse({ description: 'Unauthorized user', type: ErrorDto })
+    @ApiForbiddenResponse({ description: 'User is forbidden to call this function.', type: ErrorDto })
+    @ApiNotFoundResponse({ description: 'Assignment Response not found.', type: ErrorDto })
+    @ApiBadRequestResponse({ description: 'Request validation failed.', type: BadRequestErrorDto })
+    @ApiParam({ name: 'id', type: String, required: true })
     @HttpCode(HttpStatus.NO_CONTENT)
     @Roles(Role.Manager)
-    @ApiBearerAuth()
-    remove(@GetUser() user: TokenUser, @Param('id') assignmentresponseId: string): Promise<void> {
-        return this.assignmentResponsesService.remove(assignmentresponseId, user)
+    @Delete(':id')
+    remove(@GetUser() user: TokenUser, @Param('id', ParseMongoIdPipe) assignmentResponseId: ObjectId): Promise<void> {
+        return this.assignmentResponsesService.remove(assignmentResponseId, user.id)
     }
 }

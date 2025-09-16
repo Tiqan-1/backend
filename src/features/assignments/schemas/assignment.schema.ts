@@ -17,7 +17,7 @@ export class Assignment {
     createdBy: ObjectId
 
     @Prop({ required: false, type: ObjectId, ref: Task.name })
-    taskId?: ObjectId
+    taskId: ObjectId
 
     @Prop({ type: String, enum: AssignmentGradingState, default: AssignmentGradingState.pending })
     gradingState: AssignmentGradingState

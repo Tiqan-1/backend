@@ -8,8 +8,6 @@ export type SlideType = {
     elements: Question[]
 }
 export type FormType = {
-    startSlide?: SlideType
-    endSlide?: SlideType
     slides: SlideType[]
     settings: Record<string, unknown>
 }

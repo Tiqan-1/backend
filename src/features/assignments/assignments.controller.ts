@@ -14,12 +14,12 @@ import {
     UseGuards,
 } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger'
+import { GetUser } from '../../shared/decorators/get-user.decorator'
 import { BadRequestErrorDto } from '../../shared/dto/bad-request-error.dto'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { ErrorDto } from '../../shared/dto/error.dto'
 import { ParseMongoIdPipe } from '../../shared/pipes/ParseMongoIdPipe'
 import { ObjectId } from '../../shared/repository/types'
-import { GetUser } from '../assignment-responses/assignment-responses.controller'
 import { Roles } from '../authentication/decorators/roles.decorator'
 import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'

@@ -1,11 +1,23 @@
 import { ApiProperty, IntersectionType, OmitType, PartialType, PickType } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
-import { IsDate, IsEnum, IsInt, IsMongoId, IsObject, IsOptional, IsString, ValidateNested } from 'class-validator'
+import {
+    IsDate,
+    IsEnum,
+    IsInt,
+    IsMongoId,
+    IsNumber,
+    IsObject,
+    IsOptional,
+    IsString,
+    ValidateNested
+} from 'class-validator'
 import { i18nValidationMessage } from 'nestjs-i18n'
 import { SimpleManagerDto } from 'src/features/managers/dto/manager.dto'
 import { PaginatedDto } from '../../../shared/dto/paginated.dto'
 import { SearchQueryDto } from '../../../shared/dto/search.query.dto'
 import { normalizeDate } from '../../../shared/helper/date.helper'
+import { SimpleLevelDto } from '../../levels/dto/level.dto'
+import { SimpleSubjectDto } from '../../subjects/dto/subject.dto'
 import { PopulatedAssignmentDocument } from '../assignments.repository'
 import { AssignmentGradingState } from '../enums/assignment-grading-state.enum'
 import { AssignmentState, AssignmentType } from '../enums/assignment-state.enum'
@@ -15,48 +27,63 @@ const now = normalizeDate(new Date())
 
 export class AssignmentDto {
     @ApiProperty({ type: String })
-    @IsMongoId()
+    @IsMongoId({ message: i18nValidationMessage('validation.mongoId', { property: 'id' }) })
     id: string
 
     @ApiProperty({ type: String, required: true })
-    @IsString()
+    @IsString({ message: i18nValidationMessage('validation.string', { property: 'title' }) })
     title: string
 
     @ApiProperty({ type: String, required: false })
+    @IsMongoId({ message: i18nValidationMessage('validation.mongoId', { property: 'taskId' }) })
+    taskId: string
+
+    @ApiProperty({ type: SimpleSubjectDto, required: false, deprecated: true })
     @IsOptional()
-    @IsString()
-    taskId?: string
+    @ValidateNested()
+    level?: SimpleLevelDto
+
+    @ApiProperty({ type: SimpleSubjectDto, required: false, deprecated: true })
+    @IsOptional()
+    @ValidateNested()
+    subject?: SimpleSubjectDto
 
     @ApiProperty({ type: () => SimpleManagerDto, required: true })
     @ValidateNested()
     createdBy: SimpleManagerDto
 
     @ApiProperty({ type: String, enum: AssignmentState, required: true, default: AssignmentState.draft })
-    @IsEnum(AssignmentState)
+    @IsEnum(AssignmentState, {
+        message: i18nValidationMessage('validation.enum', { property: 'state', values: AssignmentState }),
+    })
     state: AssignmentState
 
     @ApiProperty({ type: String, enum: AssignmentGradingState, required: true, default: AssignmentGradingState.pending })
-    @IsEnum(AssignmentGradingState)
+    @IsEnum(AssignmentGradingState, {
+        message: i18nValidationMessage('validation.enum', { property: 'gradingState', values: AssignmentGradingState }),
+    })
     gradingState: AssignmentGradingState
 
     @ApiProperty({ type: String, enum: AssignmentType, required: true, default: AssignmentType.exam })
-    @IsEnum(AssignmentType)
+    @IsEnum(AssignmentType, { message: i18nValidationMessage('validation.enum', { property: 'type', values: AssignmentType }) })
     type: AssignmentType
 
     @ApiProperty({ type: Number, default: 0 })
-    @IsInt()
+    @IsInt({ message: i18nValidationMessage('validation.number', { property: 'durationInMinutes' }) })
     durationInMinutes: number
 
     @ApiProperty({ type: Number, required: true })
+    @IsNumber({}, { message: i18nValidationMessage('validation.number', { property: 'passingScore' }) })
     passingScore: number
 
     @ApiProperty({ type: Date, required: true, example: now })
     @Type(() => Date)
-    @IsDate()
+    @IsDate({ message: i18nValidationMessage('validation.date', { property: 'availableFrom' }) })
     availableFrom: Date
+
     @ApiProperty({ type: Date, required: true, example: now })
     @Type(() => Date)
-    @IsDate()
+    @IsDate({ message: i18nValidationMessage('validation.date', { property: 'availableUntil' }) })
     availableUntil: Date
 
     @ApiProperty({ type: () => Object })
@@ -66,12 +93,12 @@ export class AssignmentDto {
 
     @ApiProperty({ type: Date })
     @Type(() => Date)
-    @IsDate()
+    @IsDate({ message: i18nValidationMessage('validation.date', { property: 'createdAt' }) })
     createdAt: Date
 
     @ApiProperty({ type: Date })
     @Type(() => Date)
-    @IsDate()
+    @IsDate({ message: i18nValidationMessage('validation.date', { property: 'updatedAt' }) })
     updatedAt: Date
 
     static fromDocuments(foundAssignments: PopulatedAssignmentDocument[] = []): AssignmentDto[] {
@@ -86,6 +113,8 @@ export class AssignmentDto {
             title: document.title,
             createdBy: document.createdBy,
             taskId: document.taskId?.toString(),
+            level: { name: 'level' },
+            subject: { name: 'subject' },
             state: document.state,
             gradingState: document.gradingState,
             type: document.type,
@@ -107,10 +136,11 @@ export class PaginatedAssignmentDto extends PaginatedDto<AssignmentDto> {
     declare items: AssignmentDto[]
 }
 
-export class SimpleAssignmentDto extends PickType(AssignmentDto, ['title']) {
-    static fromDocument(subscriber: AssignmentDocument): SimpleAssignmentDto {
+export class SimpleAssignmentDto extends PickType(AssignmentDto, ['title', 'id']) {
+    static fromDocument(document: AssignmentDocument): SimpleAssignmentDto {
         return {
-            title: subscriber.title,
+            title: document.title,
+            id: document._id.toString(),
         }
     }
 }

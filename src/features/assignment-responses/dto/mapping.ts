@@ -10,20 +10,18 @@ export class AssignmentResponseMapping {
         return foundAssignmentResponses.map(document => this.fromDocument(document))
     }
 
-    static fromDocument(document: AssignmentResponseDocument): AssignmentResponseDto {
+    static fromDocument(document: AssignmentResponseDocument, hideScores = false): AssignmentResponseDto {
         return {
             id: document._id.toString(),
-            studentId: document.studentId?._id?.toString?.(),
-            assignmentId: document.assignmentId?._id?.toString?.(),
-            student: SimpleStudentDto.fromDocument(document.studentId as StudentDocument),
-            assignment: SimpleAssignmentDto.fromDocument(document.assignmentId as AssignmentDocument),
+            student: SimpleStudentDto.fromDocument(document.student as StudentDocument),
+            assignment: SimpleAssignmentDto.fromDocument(document.assignment as AssignmentDocument),
             status: document.status,
-            score: document.score,
-            notes: document.notes,
+            score: hideScores ? undefined : document.score,
+            notes: hideScores ? undefined : document.notes,
+            individualScores: hideScores ? undefined : document.individualScores,
             startedAt: document.startedAt,
             submittedAt: document.submittedAt,
             replies: document.replies,
-            individualScores: document.individualScores,
         }
     }
 }
