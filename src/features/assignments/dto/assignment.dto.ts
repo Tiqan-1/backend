@@ -1,16 +1,6 @@
 import { ApiProperty, IntersectionType, OmitType, PartialType, PickType } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
-import {
-    IsDate,
-    IsEnum,
-    IsInt,
-    IsMongoId,
-    IsNumber,
-    IsObject,
-    IsOptional,
-    IsString,
-    ValidateNested
-} from 'class-validator'
+import { IsDate, IsEnum, IsInt, IsMongoId, IsNumber, IsObject, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { i18nValidationMessage } from 'nestjs-i18n'
 import { SimpleManagerDto } from 'src/features/managers/dto/manager.dto'
 import { PaginatedDto } from '../../../shared/dto/paginated.dto'
