@@ -31,12 +31,12 @@ export class AssignmentDto {
     @ApiProperty({ type: () => SimpleLevelDto, required: false, deprecated: true })
     @IsOptional()
     @ValidateNested()
-    level?: SimpleLevelDto
+    level?: { name: string }
 
     @ApiProperty({ type: SimpleSubjectDto, required: false, deprecated: true })
     @IsOptional()
     @ValidateNested()
-    subject?: SimpleSubjectDto
+    subject?: { name: string }
 
     @ApiProperty({ type: () => SimpleManagerDto, required: true })
     @ValidateNested()
