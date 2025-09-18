@@ -26,7 +26,13 @@ export class SubscriptionsRepository extends RepositoryMongoBase<SubscriptionDoc
                     {
                         path: 'levels',
                         populate: [
-                            { path: 'tasks', populate: { path: 'lessons' } },
+                            {
+                                path: 'tasks',
+                                populate: [
+                                    { path: 'lessons' },
+                                    { path: 'assignment', populate: { path: 'createdBy', select: 'name email' } },
+                                ],
+                            },
                             { path: 'createdBy', select: 'name email' },
                         ],
                     },
@@ -49,7 +55,16 @@ export class SubscriptionsRepository extends RepositoryMongoBase<SubscriptionDoc
         const found = await this.model
             .findById(id)
             .populate('program')
-            .populate({ path: 'level', populate: { path: 'tasks', populate: { path: 'lessons' } } })
+            .populate({
+                path: 'level',
+                populate: {
+                    path: 'tasks',
+                    populate: [
+                        { path: 'lessons' },
+                        { path: 'assignment', populate: { path: 'createdBy', select: 'name email' } },
+                    ],
+                },
+            })
             .populate({ path: 'subscriber', select: 'name email' })
             .exec()
         if (!found) {
@@ -62,7 +77,16 @@ export class SubscriptionsRepository extends RepositoryMongoBase<SubscriptionDoc
         return this.model
             .find({ _id: { $in: ids }, state: { $ne: SubscriptionState.deleted } })
             .populate('program')
-            .populate({ path: 'level', populate: { path: 'tasks', populate: { path: 'lessons' } } })
+            .populate({
+                path: 'level',
+                populate: {
+                    path: 'tasks',
+                    populate: [
+                        { path: 'lessons' },
+                        { path: 'assignment', populate: { path: 'createdBy', select: 'name email' } },
+                    ],
+                },
+            })
             .populate({ path: 'subscriber', select: 'name email' })
             .limit(limit)
             .skip(skip)

@@ -1,4 +1,4 @@
-import { ApiProperty, IntersectionType, OmitType, PartialType, PickType } from '@nestjs/swagger'
+import { ApiProperty, IntersectionType, OmitType, PartialType } from '@nestjs/swagger'
 import { IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { i18nValidationMessage } from 'nestjs-i18n'
 import { SearchQueryDto } from '../../../shared/dto/search.query.dto'
@@ -51,7 +51,11 @@ export class CreateSubjectDto extends OmitType(SubjectDto, ['id', 'lessons', 'cr
 
 export class UpdateSubjectDto extends PartialType(CreateSubjectDto) {}
 
-export class SimpleSubjectDto extends PickType(SubjectDto, ['name'] as const) {}
+export class SimpleSubjectDto {
+    @ApiProperty({ type: String, required: true, example: 'الفقه' })
+    @IsString({ message: i18nValidationMessage('validation.string', { property: 'name' }) })
+    name: string
+}
 
 export class SearchSubjectQueryDto extends IntersectionType(
     PartialType(OmitType(SubjectDto, ['createdBy', 'lessons'])),

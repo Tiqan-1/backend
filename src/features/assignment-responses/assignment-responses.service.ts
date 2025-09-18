@@ -264,7 +264,7 @@ export class AssignmentResponsesService {
         }
 
         const assignment = await this.assignmentsRepository.findRawById(response.assignment._id)
-        if (assignment?.createdBy.equals(managerId)) {
+        if (assignment?.createdBy._id.equals(managerId)) {
             throw new ForbiddenException(this.i18n.t('assignments.errors.managerNotAuthorized'))
         }
         return response
@@ -302,7 +302,7 @@ export class AssignmentResponsesService {
     private async validateManagerOwnership(assignmentResponse: AssignmentResponseDocument, userId: ObjectId): Promise<void> {
         const assignment = await this.assignmentsRepository.findById(assignmentResponse.assignment as ObjectId)
 
-        if (!assignment?.createdBy.equals(userId)) {
+        if (!assignment?.createdBy._id.equals(userId)) {
             this.logger.error(
                 `Permission Denied: User ${userId.toString()} trying to access assignmentResponse ${assignmentResponse._id.toString()}`
             )

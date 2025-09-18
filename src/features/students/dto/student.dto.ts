@@ -43,7 +43,7 @@ export class SimpleStudentDto extends OmitType(StudentDto, ['subscriptions', 'ge
 export class SignUpStudentDto extends OmitType(StudentDto, ['subscriptions']) {
     @ApiProperty({ type: String, example: 'P@ssw0rd', description: 'password of student' })
     @IsStrongPassword(
-        { minLength: 6, minNumbers: 1 },
+        { minLength: 6, minNumbers: 0, minSymbols: 0, minLowercase: 0, minUppercase: 0 },
         { message: i18nValidationMessage('validation.strongPassword', { property: 'password' }) }
     )
     password: string

@@ -1,14 +1,24 @@
 import { ApiProperty, IntersectionType, OmitType, PartialType, PickType } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
-import { IsDate, IsEnum, IsInt, IsMongoId, IsNumber, IsObject, IsOptional, IsString, ValidateNested } from 'class-validator'
+import {
+    IsDate,
+    IsEnum,
+    IsInt,
+    IsMongoId,
+    IsNumber,
+    IsObject,
+    IsOptional,
+    IsString,
+    ValidateNested
+} from 'class-validator'
 import { i18nValidationMessage } from 'nestjs-i18n'
 import { SimpleManagerDto } from 'src/features/managers/dto/manager.dto'
 import { PaginatedDto } from '../../../shared/dto/paginated.dto'
 import { SearchQueryDto } from '../../../shared/dto/search.query.dto'
 import { normalizeDate } from '../../../shared/helper/date.helper'
 import { SimpleLevelDto } from '../../levels/dto/level.dto'
+import { ManagerDocument } from '../../managers/schemas/manager.schema'
 import { SimpleSubjectDto } from '../../subjects/dto/subject.dto'
-import { PopulatedAssignmentDocument } from '../assignments.repository'
 import { AssignmentGradingState } from '../enums/assignment-grading-state.enum'
 import { AssignmentState, AssignmentType } from '../enums/assignment-state.enum'
 import { AssignmentDocument } from '../schemas/assignment.schema'
@@ -28,7 +38,7 @@ export class AssignmentDto {
     @IsMongoId({ message: i18nValidationMessage('validation.mongoId', { property: 'taskId' }) })
     taskId: string
 
-    @ApiProperty({ type: SimpleSubjectDto, required: false, deprecated: true })
+    @ApiProperty({ type: () => SimpleLevelDto, required: false, deprecated: true })
     @IsOptional()
     @ValidateNested()
     level?: SimpleLevelDto
@@ -40,7 +50,8 @@ export class AssignmentDto {
 
     @ApiProperty({ type: () => SimpleManagerDto, required: true })
     @ValidateNested()
-    createdBy: SimpleManagerDto
+    @IsOptional()
+    createdBy?: SimpleManagerDto
 
     @ApiProperty({ type: String, enum: AssignmentState, required: true, default: AssignmentState.draft })
     @IsEnum(AssignmentState, {
@@ -91,17 +102,17 @@ export class AssignmentDto {
     @IsDate({ message: i18nValidationMessage('validation.date', { property: 'updatedAt' }) })
     updatedAt: Date
 
-    static fromDocuments(foundAssignments: PopulatedAssignmentDocument[] = []): AssignmentDto[] {
+    static fromDocuments(foundAssignments: AssignmentDocument[] = []): AssignmentDto[] {
         return foundAssignments
             .map(document => this.fromDocument(document))
             .sort((a, b) => a.availableFrom.getTime() - b.availableFrom.getTime())
     }
 
-    static fromDocument(document: PopulatedAssignmentDocument, withoutForm: boolean = false): AssignmentDto {
+    static fromDocument(document: AssignmentDocument, withoutForm: boolean = false): AssignmentDto {
         return {
             id: document._id.toString(),
             title: document.title,
-            createdBy: document.createdBy,
+            createdBy: document.createdBy ? SimpleManagerDto.fromDocument(document.createdBy as ManagerDocument) : undefined,
             taskId: document.taskId?.toString(),
             level: { name: 'level' },
             subject: { name: 'subject' },

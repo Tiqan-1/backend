@@ -36,7 +36,7 @@ export class SimpleManagerDto extends PickType(ManagerDto, ['name', 'email']) {
 export class SignUpManagerDto extends PickType(ManagerDto, ['name', 'email']) {
     @ApiProperty({ type: String, example: 'P@ssw0rd', description: 'password of manager' })
     @IsStrongPassword(
-        { minLength: 6, minNumbers: 1 },
+        { minLength: 6, minNumbers: 0, minSymbols: 0, minLowercase: 0, minUppercase: 0 },
         { message: i18nValidationMessage('validation.strongPassword', { property: 'password' }) }
     )
     @MinLength(6, { message: i18nValidationMessage('validation.minLength', { min: 6, property: 'password' }) })

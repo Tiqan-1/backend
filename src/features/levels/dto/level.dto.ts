@@ -1,4 +1,4 @@
-import { ApiProperty, IntersectionType, OmitType, PartialType, PickType } from '@nestjs/swagger'
+import { ApiProperty, IntersectionType, OmitType, PartialType } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
 import { IsDate, IsMongoId, IsString, ValidateNested } from 'class-validator'
 import { i18nValidationMessage } from 'nestjs-i18n'
@@ -62,7 +62,11 @@ export class CreateLevelDto extends OmitType(LevelDto, ['id', 'tasks', 'createdB
 
 export class UpdateLevelDto extends PartialType(OmitType(CreateLevelDto, ['programId'] as const)) {}
 
-export class SimpleLevelDto extends PickType(LevelDto, ['name'] as const) {}
+export class SimpleLevelDto {
+    @ApiProperty({ type: String, required: true, example: 'المستوى الأول' })
+    @IsString({ message: i18nValidationMessage('validation.string', { property: 'name' }) })
+    name: string
+}
 
 export class SearchLevelsQueryDto extends IntersectionType(
     PartialType(OmitType(LevelDto, ['tasks', 'createdBy'] as const)),

@@ -211,7 +211,7 @@ export class AssignmentsService {
         managerId: ObjectId,
         updateDto: UpdateAssignmentDto | undefined
     ): void {
-        if (!assignment.createdBy.equals(managerId)) {
+        if (!assignment.createdBy._id.equals(managerId)) {
             this.logger.error(
                 `Permission Denied: Manager ${managerId.toString()} trying to access assignment ${assignment._id.toString()}`
             )

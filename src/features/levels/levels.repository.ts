@@ -15,7 +15,10 @@ export class LevelsRepository extends RepositoryMongoBase<LevelDocument> {
             .find(filter)
             .limit(limit)
             .skip(skip)
-            .populate({ path: 'tasks', populate: { path: 'lessons' } })
+            .populate({
+                path: 'tasks',
+                populate: [{ path: 'lessons' }, { path: 'assignment', populate: { path: 'createdBy', select: 'name email' } }],
+            })
             .populate('createdBy', 'name email')
             .exec()
     }

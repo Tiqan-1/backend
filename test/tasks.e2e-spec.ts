@@ -146,6 +146,7 @@ describe('TasksController (e2e)', () => {
                             url: lesson.url,
                         },
                     ],
+                    type: 'lesson',
                 },
             ]
 
@@ -182,6 +183,7 @@ describe('TasksController (e2e)', () => {
                             url: lesson.url,
                         },
                     ],
+                    type: 'lesson',
                 },
             ]
 
@@ -233,6 +235,7 @@ describe('TasksController (e2e)', () => {
                             url: lesson.url,
                         },
                     ],
+                    type: 'lesson',
                 },
             ]
 

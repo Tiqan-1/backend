@@ -17,7 +17,16 @@ export class ProgramsRepository extends RepositoryMongoBase<ProgramDocument> {
             .limit(limit)
             .skip(skip)
             .populate({ path: 'createdBy', select: 'name email' })
-            .populate({ path: 'levels', populate: { path: 'tasks', populate: 'lessons' } })
+            .populate({
+                path: 'levels',
+                populate: {
+                    path: 'tasks',
+                    populate: [
+                        { path: 'lessons' },
+                        { path: 'assignment', populate: { path: 'createdBy', select: 'name email' } },
+                    ],
+                },
+            })
             .exec()
     }
 
@@ -39,7 +48,16 @@ export class ProgramsRepository extends RepositoryMongoBase<ProgramDocument> {
             .limit(limit)
             .skip(skip)
             .populate({ path: 'createdBy', select: 'name email' })
-            .populate({ path: 'levels', populate: { path: 'tasks', populate: 'lessons' } })
+            .populate({
+                path: 'levels',
+                populate: {
+                    path: 'tasks',
+                    populate: [
+                        { path: 'lessons' },
+                        { path: 'assignment', populate: { path: 'createdBy', select: 'name email' } },
+                    ],
+                },
+            })
             .exec()
     }
 }

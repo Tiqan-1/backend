@@ -4,6 +4,8 @@ import { IsDate, IsEnum, IsMongoId, IsOptional, IsString, ValidateNested } from 
 import { i18nValidationMessage } from 'nestjs-i18n'
 import { SearchQueryDto } from '../../../shared/dto/search.query.dto'
 import { ObjectId } from '../../../shared/repository/types'
+import { AssignmentDto } from '../../assignments/dto/assignment.dto'
+import { AssignmentDocument } from '../../assignments/schemas/assignment.schema'
 import { LessonDto } from '../../lessons/dto/lesson.dto'
 import { LessonDocument } from '../../lessons/schemas/lesson.schema'
 import { TaskDocument } from '../schemas/task.schema'
@@ -40,6 +42,16 @@ export class TaskDto {
     @IsOptional()
     hasChatRoom?: boolean
 
+    @ApiProperty({ type: String, required: true, enum: ['lesson', 'assignment'], default: 'lesson' })
+    @IsEnum(['lesson', 'assignment'], {
+        message: i18nValidationMessage('validation.enum', { values: ['lesson', 'assignment'], property: 'type' }),
+    })
+    type: 'lesson' | 'assignment' = 'lesson'
+
+    @ApiProperty({ type: AssignmentDto, required: false })
+    @IsOptional()
+    assignment?: AssignmentDto
+
     constructor(document: TaskDocument) {
         this.id = document._id.toString()
         this.levelId = document.levelId.toString()
@@ -48,6 +60,8 @@ export class TaskDto {
         this.lessons = document.lessons.map(lesson => LessonDto.fromDocument(lesson as LessonDocument))
         this.chatRoomId = document.chatRoomId?.toString()
         this.hasChatRoom = !!document.chatRoomId
+        this.type = document.type
+        this.assignment = document.assignment && AssignmentDto.fromDocument(document.assignment as AssignmentDocument)
     }
 
     static fromDocument(document: TaskDocument): TaskDto {

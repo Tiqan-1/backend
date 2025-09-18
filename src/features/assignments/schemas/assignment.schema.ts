@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { HydratedDocument } from 'mongoose'
 import { ObjectId } from '../../../shared/repository/types'
+import { ManagerDocument } from '../../managers/schemas/manager.schema'
 import { Task } from '../../tasks/schemas/task.schema'
 import { AssignmentGradingState } from '../enums/assignment-grading-state.enum'
 import { AssignmentState, AssignmentType } from '../enums/assignment-state.enum'
@@ -14,7 +15,7 @@ export class Assignment {
     title: string
 
     @Prop({ required: true, type: ObjectId, ref: 'Manager' })
-    createdBy: ObjectId
+    createdBy: ObjectId | ManagerDocument
 
     @Prop({ required: false, type: ObjectId, ref: Task.name })
     taskId: ObjectId
