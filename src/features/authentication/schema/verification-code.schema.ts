@@ -1,8 +1,9 @@
-import { Prop, SchemaFactory } from '@nestjs/mongoose'
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { HydratedDocument } from 'mongoose'
 
 export type VerificationCodeDocument = HydratedDocument<VerificationCode>
 
+@Schema()
 export class VerificationCode {
     @Prop({ required: true, unique: true, type: String })
     code: string

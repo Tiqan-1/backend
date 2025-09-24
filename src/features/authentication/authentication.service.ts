@@ -1,6 +1,5 @@
 import {
     ConflictException,
-    ForbiddenException,
     Injectable,
     InternalServerErrorException,
     Logger,
@@ -72,7 +71,7 @@ export class AuthenticationService {
         }
         const prevCode = await this.verificationCodeRepository.findOne({ email: user.email })
         if (prevCode) {
-            await this.verificationCodeRepository.remove(prevCode._id)
+            await this.verificationCodeRepository.remove({ _id: prevCode._id })
         }
         const resetCode = uuidv4().substring(0, 8)
         await this.verificationCodeRepository.create({ email: user.email, code: resetCode, expiresAt: addDays(Date.now(), 1) })
@@ -83,7 +82,7 @@ export class AuthenticationService {
     async changePassword(dto: ChangePasswordRequestDto): Promise<void> {
         const verifyCode = await this.verificationCodeRepository.findOne({ email: dto.email, code: dto.code })
         if (!verifyCode) {
-            throw new ForbiddenException(this.i18n.t('auth.errors.invalidCode'))
+            throw new NotAcceptableException(this.i18n.t('auth.errors.invalidCode'))
         }
         const newHashedPassword = bcrypt.hashSync(dto.password, 10)
         await this.usersService.updatePassword(dto.email, newHashedPassword)
@@ -148,6 +147,10 @@ export class AuthenticationService {
         if (user.role !== Role.Manager) {
             this.logger.error(`Invalid attempt to login a manager user with email: ${email}. Invalid role.`)
             throw new ConflictException(this.i18n.t('auth.errors.invalidRole'))
+        }
+        if (user.status !== UserStatus.active) {
+            this.logger.error(`Invalid attempt to login a manager user with email: ${email}. Invalid status ${user.status}.`)
+            throw new NotAcceptableException(this.i18n.t('auth.errors.accountNotActive'))
         }
         return user
     }

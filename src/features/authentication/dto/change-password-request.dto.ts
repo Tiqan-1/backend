@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsEmail, IsNumber, IsString } from 'class-validator'
+import { IsEmail, IsString } from 'class-validator'
 import { i18nValidationMessage } from 'nestjs-i18n'
 
 export class ChangePasswordRequestDto {
@@ -12,6 +12,6 @@ export class ChangePasswordRequestDto {
     password: string
 
     @ApiProperty({ type: Number, description: 'password reset code' })
-    @IsNumber({}, { message: i18nValidationMessage('validation.number', { property: 'code' }) })
-    code: number
+    @IsString({ message: i18nValidationMessage('validation.string', { property: 'code' }) })
+    code: string
 }

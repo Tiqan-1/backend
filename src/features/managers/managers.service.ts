@@ -2,8 +2,6 @@ import { ConflictException, Injectable, InternalServerErrorException, Logger } f
 import * as bcrypt from 'bcryptjs'
 import { I18nService } from 'nestjs-i18n'
 import { EmailService } from '../../shared/email/email.service'
-import { AuthenticationService } from '../authentication/authentication.service'
-import { AuthenticationResponseDto } from '../authentication/dto/authentication-response.dto'
 import { UserStatus } from '../users/enums/user-status'
 import { SignUpManagerDto } from './dto/manager.dto'
 import { ManagersRepository } from './managers.repository'
@@ -26,7 +24,7 @@ export class ManagersService {
         }
         try {
             manager.password = bcrypt.hashSync(manager.password, 10)
-            const createdManager = await this.managersRepository.create({ ...manager, statue: UserStatus.inactive })
+            const createdManager = await this.managersRepository.create({ ...manager, status: UserStatus.inactive })
             await this.emailService.sendVerificationEmail(createdManager.email, createdManager._id.toString())
         } catch (error) {
             this.logger.error('General Error while creating manager.', error)

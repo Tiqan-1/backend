@@ -58,6 +58,8 @@ export class AuthenticationController {
 
     @ApiOperation({ summary: 'Sends email to reset password', description: 'Sends email to reset password.' })
     @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'The password reset email was sent successfully.' })
+    @ApiResponse({ status: HttpStatus.NOT_ACCEPTABLE, description: 'Verification code is invalid.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.', type: BadRequestErrorDto })
     @HttpCode(HttpStatus.NO_CONTENT)
     @Put('change-password')
     async changePassword(@Body() dto: ChangePasswordRequestDto): Promise<void> {

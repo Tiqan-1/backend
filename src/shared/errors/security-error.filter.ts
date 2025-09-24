@@ -32,7 +32,7 @@ export class SecurityErrorFilter implements ExceptionFilter {
             return
         }
         if (error.name === ForbiddenException.name) {
-            this.logger.error(`Forbidden user ${user.id.toString()} accessing ${request.url}.`, { origin: error })
+            this.logger.error(`Forbidden user ${user?.id.toString()} accessing ${request.url}.`, { origin: error })
             response
                 .status(HttpStatus.FORBIDDEN)
                 .contentType('application/json')
