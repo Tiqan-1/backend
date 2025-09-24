@@ -33,6 +33,10 @@ export class UsersService {
         return this.userRepository.findOne({ email })
     }
 
+    async updatePassword(email: string, password: string): Promise<void> {
+        await this.userRepository.update({ email }, { password })
+    }
+
     async remove(email: string): Promise<void> {
         const result = await this.userRepository.remove({ email })
         if (!result) {

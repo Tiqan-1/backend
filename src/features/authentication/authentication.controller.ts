@@ -21,6 +21,7 @@ import { UserDocument } from '../users/schemas/user.schema'
 import { AuthenticationService } from './authentication.service'
 import { AuthenticationRequestDto } from './dto/authentication-request.dto'
 import { AuthenticationResponseDto } from './dto/authentication-response.dto'
+import { ChangePasswordRequestDto } from './dto/change-password-request.dto'
 import { RefreshTokenRequestDto } from './dto/refresh-token-request.dto'
 import { ManagersLocalAuthGuard } from './guards/managers-local-auth-guard.service'
 import { StudentsLocalAuthGuard } from './guards/students-local-auth-guard.service'
@@ -59,7 +60,7 @@ export class AuthenticationController {
     @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'The password reset email was sent successfully.' })
     @HttpCode(HttpStatus.NO_CONTENT)
     @Put('change-password')
-    async changePassword(@Body() dto: ChangePasswordDto): Promise<void> {
+    async changePassword(@Body() dto: ChangePasswordRequestDto): Promise<void> {
         return await this.authenticationService.changePassword(dto)
     }
 

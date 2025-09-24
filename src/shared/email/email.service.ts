@@ -7,13 +7,11 @@ import * as nodemailer from 'nodemailer'
 
 @Injectable()
 export class EmailService {
-    private transporter: nodemailer.Transporter
-    private verificationCodeTemplate: HandlebarsTemplateDelegate
-    private resetPasswordTemplate: HandlebarsTemplateDelegate
+    private readonly transporter: nodemailer.Transporter
+    private readonly verificationCodeTemplate: HandlebarsTemplateDelegate
+    private readonly resetPasswordTemplate: HandlebarsTemplateDelegate
 
-    constructor(private configService: ConfigService) {}
-
-    onModuleInit(): void {
+    constructor(private configService: ConfigService) {
         this.transporter = nodemailer.createTransport({
             host: this.configService.get('EMAIL_HOST'),
             port: this.configService.get('EMAIL_PORT'),

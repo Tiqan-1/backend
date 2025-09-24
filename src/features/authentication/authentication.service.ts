@@ -1,5 +1,6 @@
 import {
     ConflictException,
+    ForbiddenException,
     Injectable,
     InternalServerErrorException,
     Logger,
@@ -21,6 +22,7 @@ import { UserStatus } from '../users/enums/user-status'
 import { UserDocument } from '../users/schemas/user.schema'
 import { UsersService } from '../users/users.service'
 import { AuthenticationResponseDto } from './dto/authentication-response.dto'
+import { ChangePasswordRequestDto } from './dto/change-password-request.dto'
 import { Role } from './enums/role.enum'
 import { VerificationCodesRepository } from './verification-codes.repository'
 
@@ -51,6 +53,7 @@ export class AuthenticationService {
         }
         user.status = UserStatus.active
         await user.save()
+        this.logger.log(`User ${user.email} verified.`)
         if (user.role === Role.Student) {
             return this.configService.get('STUDENT_WEB_URL') + '#/login'
         }
@@ -74,6 +77,18 @@ export class AuthenticationService {
         const resetCode = uuidv4().substring(0, 8)
         await this.verificationCodeRepository.create({ email: user.email, code: resetCode, expiresAt: addDays(Date.now(), 1) })
         await this.emailService.sendResetPasswordEmail(user.email, resetCode)
+        this.logger.log(`Password reset code sent to user ${user.email}.`)
+    }
+
+    async changePassword(dto: ChangePasswordRequestDto): Promise<void> {
+        const verifyCode = await this.verificationCodeRepository.findOne({ email: dto.email, code: dto.code })
+        if (!verifyCode) {
+            throw new ForbiddenException(this.i18n.t('auth.errors.invalidCode'))
+        }
+        const newHashedPassword = bcrypt.hashSync(dto.password, 10)
+        await this.usersService.updatePassword(dto.email, newHashedPassword)
+        await this.verificationCodeRepository.remove({ email: dto.email })
+        this.logger.log(`Password reset successfully for user ${dto.email}.`)
     }
 
     login(user: UserDocument): Promise<AuthenticationResponseDto> {
