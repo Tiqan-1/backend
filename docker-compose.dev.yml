@@ -9,9 +9,28 @@ services:
       - "5000:3000"
     env_file:
       - .env
+    depends_on:
+      - mongodb
+    networks:
+      - dev-network
     restart: unless-stopped
     volumes:
       - .:/app
       - /app/node_modules
       - ./uploads-dev:/app/uploads
     command: npm run start:debug
+
+  mongodb:
+    user: '1000:1000'
+    image: mongo:latest
+    ports:
+      - "27018:27017"
+    volumes:
+      - ./mongodb_data-dev:/data/db
+    networks:
+      - dev-network
+    restart: unless-stopped
+
+networks:
+  dev-network:
+    driver: bridge
