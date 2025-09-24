@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <style>
+        body {
+            background-color: #f3f4f6;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .title {
+            color: #1f2937;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 16px;
+        }
+
+        .message {
+            font-size: 16px;
+            color: #4b5563;
+            margin-bottom: 24px;
+        }
+
+        .button {
+            display: inline-block;
+            background-color: #1070b9;
+            color: #ffffff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 12px;
+            color: #9ca3af;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="title">🎉 نرحب بكم في تطبيق مبادرة!</div>
+    <div class="message">
+        يسعدنا انضمامكم إلينا! الرجاء الضغط على الرابط التالي لتنشيط حسابكم:
+    </div>
+    <a href="{{verificationUrl}}" class="button">تفعيل الحساب</a>
+    <div class="footer">
+        إن كنت لم تقم بإنشاء هذا الحساب فيمكنك تجاهل هذه الرسالة.
+    </div>
+</div>
+</body>
+</html>

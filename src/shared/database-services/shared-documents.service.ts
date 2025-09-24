@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
+import { VerificationCode, VerificationCodeDocument } from '../../features/authentication/schema/verification-code.schema'
 import { Lesson, LessonDocument } from '../../features/lessons/schemas/lesson.schema'
 import { Level, LevelDocument } from '../../features/levels/schemas/level.schema'
 import { Manager, ManagerDocument } from '../../features/managers/schemas/manager.schema'

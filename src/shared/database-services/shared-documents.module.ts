@@ -5,6 +5,7 @@ import {
     AssignmentResponseSchema,
 } from '../../features/assignment-responses/schemas/assignment-response.schema'
 import { Assignment, AssignmentSchema } from '../../features/assignments/schemas/assignment.schema'
+import { VerificationCode, VerificationCodeSchema } from '../../features/authentication/schema/verification-code.schema'
 import { Chat, ChatSchema } from '../../features/chat/schemas/chat.schema'
 import { Message, MessageSchema } from '../../features/chat/schemas/message.schema'
 import { Lesson, LessonSchema } from '../../features/lessons/schemas/lesson.schema'
@@ -33,6 +34,7 @@ import { SharedDocumentsService } from './shared-documents.service'
         MongooseModule.forFeature([{ name: Level.name, schema: LevelSchema }]),
         MongooseModule.forFeature([{ name: Program.name, schema: ProgramSchema }]),
         MongooseModule.forFeature([{ name: Subscription.name, schema: SubscriptionSchema }]),
+        MongooseModule.forFeature([{ name: VerificationCode.name, schema: VerificationCodeSchema }]),
         MongooseModule.forFeature([
             { name: User.name, schema: UserSchema, discriminators: [{ name: Manager.name, schema: ManagerSchema }] },
         ]),

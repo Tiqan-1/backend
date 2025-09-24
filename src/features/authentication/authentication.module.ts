@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt'
 import { JwtModuleOptions } from '@nestjs/jwt/dist/interfaces/jwt-module-options.interface'
 import { PassportModule } from '@nestjs/passport'
 import { SharedDocumentsModule } from '../../shared/database-services/shared-documents.module'
+import { EmailModule } from '../../shared/email/email.module'
 import { TokensModule } from '../tokens/tokens.module'
 import { UsersModule } from '../users/users.module'
 import { AuthenticationController } from './authentication.controller'
@@ -13,6 +14,7 @@ import { RolesGuard } from './guards/roles.guard'
 import { JwtStrategy } from './strategies/jwt.strategy'
 import { ManagersLocalStrategy } from './strategies/managers-local-strategy.service'
 import { StudentsLocalStrategy } from './strategies/students-local-strategy.service'
+import { VerificationCodesRepository } from './verification-codes.repository'
 
 async function getJwtModuleOptions(): Promise<JwtModuleOptions> {
     await ConfigModule.envVariablesLoaded
@@ -24,6 +26,7 @@ async function getJwtModuleOptions(): Promise<JwtModuleOptions> {
 
 @Module({
     imports: [
+        EmailModule,
         SharedDocumentsModule,
         UsersModule,
         TokensModule,
@@ -31,7 +34,15 @@ async function getJwtModuleOptions(): Promise<JwtModuleOptions> {
         JwtModule.registerAsync({ useFactory: () => getJwtModuleOptions() }),
     ],
     controllers: [AuthenticationController],
-    providers: [AuthenticationService, JwtStrategy, StudentsLocalStrategy, ManagersLocalStrategy, JwtAuthGuard, RolesGuard],
+    providers: [
+        AuthenticationService,
+        JwtStrategy,
+        StudentsLocalStrategy,
+        ManagersLocalStrategy,
+        JwtAuthGuard,
+        RolesGuard,
+        VerificationCodesRepository,
+    ],
     exports: [AuthenticationService, JwtAuthGuard, RolesGuard],
 })
 export class AuthenticationModule {}

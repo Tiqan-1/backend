@@ -1,7 +1,22 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Request, UseGuards } from '@nestjs/common'
-import { ApiBasicAuth, ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger'
+import {
+    Body,
+    Controller,
+    Get,
+    HttpCode,
+    HttpRedirectResponse,
+    HttpStatus,
+    Param,
+    Post,
+    Put,
+    Redirect,
+    Request,
+    UseGuards,
+} from '@nestjs/common'
+import { ApiBasicAuth, ApiBody, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger'
 import { BadRequestErrorDto } from '../../shared/dto/bad-request-error.dto'
 import { ErrorDto } from '../../shared/dto/error.dto'
+import { ParseMongoIdPipe } from '../../shared/pipes/ParseMongoIdPipe'
+import { ObjectId } from '../../shared/repository/types'
 import { UserDocument } from '../users/schemas/user.schema'
 import { AuthenticationService } from './authentication.service'
 import { AuthenticationRequestDto } from './dto/authentication-request.dto'
@@ -13,6 +28,40 @@ import { StudentsLocalAuthGuard } from './guards/students-local-auth-guard.servi
 @Controller('api/authentication')
 export class AuthenticationController {
     constructor(private readonly authenticationService: AuthenticationService) {}
+
+    @ApiOperation({ summary: 'Activates user account', description: 'activates user account.' })
+    @ApiResponse({ status: HttpStatus.FOUND, description: 'The user account got verified successfully.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.', type: BadRequestErrorDto })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'User is not found.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.CONFLICT, description: 'User is not in a verifiable state.', type: ErrorDto })
+    @ApiParam({ name: 'id', type: String, description: 'The id of the user to be verified.' })
+    @HttpCode(HttpStatus.FOUND)
+    @Get('verify/:id')
+    @Redirect()
+    async verify(@Param('id', ParseMongoIdPipe) id: ObjectId): Promise<HttpRedirectResponse> {
+        const redirectUrl = await this.authenticationService.verify(id)
+        return { url: redirectUrl, statusCode: HttpStatus.FOUND }
+    }
+
+    @ApiOperation({ summary: 'Sends email to reset password', description: 'Sends email to reset password.' })
+    @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'The password reset email was sent successfully.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'User is not found.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.CONFLICT, description: 'User account is not activated.', type: ErrorDto })
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @Get('forgot-password/:email')
+    forgotPassword(@Param('email') email: string): Promise<void> {
+        return this.authenticationService.sendPasswordResetCode(email)
+    }
+
+    @ApiOperation({ summary: 'Sends email to reset password', description: 'Sends email to reset password.' })
+    @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'The password reset email was sent successfully.' })
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @Put('change-password')
+    async changePassword(@Body() dto: ChangePasswordDto): Promise<void> {
+        return await this.authenticationService.changePassword(dto)
+    }
 
     @ApiOperation({
         summary: 'Logs a student-user in',
