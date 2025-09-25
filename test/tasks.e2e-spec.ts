@@ -23,7 +23,6 @@ import { TasksRepository } from '../src/features/tasks/tasks.repository'
 import { TasksService } from '../src/features/tasks/tasks.service'
 import { SharedDocumentsService } from '../src/shared/database-services/shared-documents.service'
 import { CreatedDto } from '../src/shared/dto/created.dto'
-import { normalizeDate } from '../src/shared/helper/date.helper'
 import { ObjectId } from '../src/shared/repository/types'
 import {
     ConfigServiceProvider,
@@ -103,7 +102,7 @@ describe('TasksController (e2e)', () => {
 
             const created = (await mongoTestHelper.getTaskModel().findOne()) as TaskDocument
             expect(created).toBeDefined()
-            expect(created.date).toEqual(normalizeDate(body.date))
+            expect(created.date).toEqual(body.date)
             expect(created.lessons).toEqual([lesson._id])
 
             const updated = (await mongoTestHelper.getLevelModel().findOne()) as LevelDocument
