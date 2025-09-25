@@ -284,8 +284,8 @@ describe('TasksController (e2e)', () => {
             const token = jwtService.sign({ id: manager._id, role: manager.role })
 
             const newLesson = await mongoTestHelper.createLesson(manager._id)
-            const body: UpdateTaskDto = {
-                date: new Date(2020, 5),
+            const body = {
+                date: '2025-10-08T22:00:00.000Z',
                 lessonIds: [newLesson._id.toString()],
             }
 
@@ -298,8 +298,8 @@ describe('TasksController (e2e)', () => {
             const updated = await mongoTestHelper.getTaskModel().findById(task._id)
 
             expect(updated).toBeDefined()
-            const expectedDate = new Date(2020, 5)
-            expect(updated?.date).toEqual(expectedDate)
+            const expectedDate = '2025-10-08T22:00:00.000Z'
+            expect(updated?.date.toISOString()).toEqual(expectedDate)
             expect(updated?.lessons).toEqual([newLesson._id])
         })
 
