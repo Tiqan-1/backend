@@ -3,7 +3,6 @@ import { I18nService } from 'nestjs-i18n'
 import { oneMonth } from '../../shared/constants'
 import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
-import { normalizeDate } from '../../shared/helper/date.helper'
 import { PaginationHelper } from '../../shared/helper/pagination-helper'
 import { SearchFilterBuilder } from '../../shared/helper/search-filter.builder'
 import { ObjectId } from '../../shared/repository/types'
@@ -57,7 +56,7 @@ export class TasksService {
         const createObject: Partial<TaskDocument> = {
             createdBy,
             levelId: new ObjectId(task.levelId),
-            date: normalizeDate(new Date(task.date)),
+            date: task.date,
             chatRoomId: task.hasChatRoom ? await this.chatService.createChatRoom(createdBy) : undefined,
             type: task.type,
             assignment: task.assignmentId,
@@ -100,10 +99,7 @@ export class TasksService {
             filterBuilder.withObjectIds('_id', levelTasks)
         }
 
-        filterBuilder
-            .withObjectId('createdBy', createdBy)
-            .withDate('date', query.date && normalizeDate(new Date(query.date)))
-            .withStringLike('note', query.note)
+        filterBuilder.withObjectId('createdBy', createdBy).withDate('date', query.date).withStringLike('note', query.note)
 
         const filter = filterBuilder.build()
 
@@ -126,7 +122,7 @@ export class TasksService {
         }
 
         const updateObject: Partial<TaskDocument> = {
-            ...(task.date && { date: normalizeDate(new Date(task.date)) }),
+            ...(task.date && { date: task.date }),
             ...(task.note && { note: task.note }),
             chatRoomId: task.hasChatRoom ? await this.chatService.createChatRoom(updatedBy) : undefined,
             ...(validatedLessons && { lessons: validatedLessons }),
