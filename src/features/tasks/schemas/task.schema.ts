@@ -1,6 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { HydratedDocument } from 'mongoose'
-import { normalizeDate } from '../../../shared/helper/date.helper'
 import { ObjectId, Populated } from '../../../shared/repository/types'
 import { AssignmentDocument } from '../../assignments/schemas/assignment.schema'
 import { Lesson, LessonDocument } from '../../lessons/schemas/lesson.schema'
@@ -43,9 +42,3 @@ export class Task {
 }
 
 export const TaskSchema = SchemaFactory.createForClass(Task)
-
-// Middleware to normalize date
-TaskSchema.pre('save', function (next) {
-    this.date = normalizeDate(this.date)
-    next()
-})
