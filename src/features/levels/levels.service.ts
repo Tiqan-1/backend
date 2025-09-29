@@ -37,7 +37,7 @@ export class LevelsService {
         return { id: createdId }
     }
 
-    async find(query: SearchLevelsQueryDto): Promise<PaginatedLevelDto> {
+    async find(query: SearchLevelsQueryDto, userId: ObjectId): Promise<PaginatedLevelDto> {
         let programLevels: ObjectId[] | undefined
         if (query.programId) {
             const program = await this.documentsService.getProgram(query.programId)
@@ -58,7 +58,11 @@ export class LevelsService {
             filterBuilder.withObjectIds('_id', programLevels)
         }
 
-        filterBuilder.withStringLike('name', query.name).withDateAfter('start', query.start).withDateBefore('end', query.end)
+        filterBuilder
+            .withObjectId('createdBy', userId)
+            .withStringLike('name', query.name)
+            .withDateAfter('start', query.start)
+            .withDateBefore('end', query.end)
 
         const filter = filterBuilder.build()
 
