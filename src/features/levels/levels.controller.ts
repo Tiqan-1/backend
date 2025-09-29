@@ -42,8 +42,8 @@ export class LevelsController {
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
     @ApiBearerAuth()
-    find(@Query() searchQuery: SearchLevelsQueryDto): Promise<PaginatedLevelDto> {
-        return this.service.find(searchQuery)
+    find(@Query() searchQuery: SearchLevelsQueryDto, @Request() request: { user: TokenUser }): Promise<PaginatedLevelDto> {
+        return this.service.find(searchQuery, request.user.id)
     }
 
     @ApiOperation({ summary: 'Updates a level', description: 'Updates a level.' })
