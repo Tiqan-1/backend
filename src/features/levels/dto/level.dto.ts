@@ -52,7 +52,7 @@ export class LevelDto {
             start: document.start,
             end: document.end,
             programId: document.programId.toString(),
-            createdBy: SimpleManagerDto.fromDocument(document.createdBy as ManagerDocument),
+            createdBy: document.createdBy && SimpleManagerDto.fromDocument(document.createdBy as ManagerDocument),
             tasks: TaskDto.fromDocuments(document.tasks as Populated<TaskDocument[]>),
         }
     }
