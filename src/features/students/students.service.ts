@@ -18,6 +18,7 @@ import { CreateSubscriptionDto, CreateSubscriptionV2Dto, StudentSubscriptionDto 
 import { SubscriptionState } from '../subscriptions/enums/subscription-state.enum'
 import { SubscriptionsService } from '../subscriptions/subscriptions.service'
 import { UserStatus } from '../users/enums/user-status'
+import { UsersRepository } from '../users/users.repository'
 import { SignUpStudentDto } from './dto/student.dto'
 import { StudentDocument } from './schemas/student.schema'
 import { StudentRepository } from './students.repository'
@@ -28,6 +29,7 @@ export class StudentsService {
 
     constructor(
         private readonly studentRepository: StudentRepository,
+        private readonly userRepository: UsersRepository,
         private readonly authenticationService: AuthenticationService,
         private readonly subscriptionsService: SubscriptionsService,
         private readonly programsService: ProgramsService,
@@ -36,7 +38,7 @@ export class StudentsService {
     ) {}
 
     async create(student: SignUpStudentDto): Promise<void> {
-        const duplicate = await this.studentRepository.findOne({ email: student.email })
+        const duplicate = await this.userRepository.findOne({ email: student.email })
         if (duplicate) {
             this.logger.error(`Manager signup attempt with duplicate email detected: ${duplicate.email}`)
             throw new ConflictException(this.i18n.t('students.errors.duplicateEmail'))
