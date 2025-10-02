@@ -34,7 +34,7 @@ export class SubjectDto {
         this.id = subject._id.toString()
         this.name = subject.name
         this.description = subject.description
-        this.createdBy = SimpleManagerDto.fromDocument(subject.createdBy as ManagerDocument)
+        this.createdBy = subject.createdBy && SimpleManagerDto.fromDocument(subject.createdBy as ManagerDocument)
         this.lessons = arePopulated(subject.lessons) ? subject.lessons.map(lesson => new LessonDto(lesson)) : []
     }
 
