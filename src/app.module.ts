@@ -13,6 +13,7 @@ import { ChatModule } from './features/chat/chat.module'
 import { LessonsModule } from './features/lessons/lessons.module'
 import { LevelsModule } from './features/levels/levels.module'
 import { ManagersModule } from './features/managers/managers.module'
+import { PermissionsModule } from './features/permissions/permissions.module'
 import { ProgramsModule } from './features/programs/programs.module'
 import { StudentsModule } from './features/students/students.module'
 import { SubjectsModule } from './features/subjects/subjects.module'
@@ -66,6 +67,7 @@ import { EmailModule } from './shared/email/email.module'
         AssignmentsModule,
         AssignmentResponsesModule,
         EmailModule,
+        PermissionsModule,
     ],
     providers: [],
 })

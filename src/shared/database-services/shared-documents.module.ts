@@ -11,6 +11,7 @@ import { Message, MessageSchema } from '../../features/chat/schemas/message.sche
 import { Lesson, LessonSchema } from '../../features/lessons/schemas/lesson.schema'
 import { Level, LevelSchema } from '../../features/levels/schemas/level.schema'
 import { Manager, ManagerSchema } from '../../features/managers/schemas/manager.schema'
+import { Permission, PermissionSchema } from '../../features/permissions/schemas/permission.schema'
 import { Program, ProgramSchema } from '../../features/programs/schemas/program.schema'
 import { Student, StudentSchema } from '../../features/students/schemas/student.schema'
 import { Subject, SubjectSchema } from '../../features/subjects/schemas/subject.schema'
@@ -35,6 +36,7 @@ import { SharedDocumentsService } from './shared-documents.service'
         MongooseModule.forFeature([{ name: Program.name, schema: ProgramSchema }]),
         MongooseModule.forFeature([{ name: Subscription.name, schema: SubscriptionSchema }]),
         MongooseModule.forFeature([{ name: VerificationCode.name, schema: VerificationCodeSchema }]),
+        MongooseModule.forFeature([{ name: Permission.name, schema: PermissionSchema }]),
         MongooseModule.forFeature([
             { name: User.name, schema: UserSchema, discriminators: [{ name: Manager.name, schema: ManagerSchema }] },
         ]),
