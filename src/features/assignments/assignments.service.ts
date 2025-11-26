@@ -85,7 +85,7 @@ export class AssignmentsService {
         const filter = SearchFilterBuilder.init()
             .withObjectId('_id', query.id)
             .withObjectId('createdBy', createdById)
-            .withParam('state', query.state)
+            .withParam('state', query.state ?? { $ne: AssignmentState.deleted })
             .withStringLike('type', query.type)
             .withStringLike('title', query.title)
             .withDateAfter('availableFrom', query.availableFrom)

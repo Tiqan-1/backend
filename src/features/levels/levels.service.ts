@@ -63,6 +63,7 @@ export class LevelsService {
             .withStringLike('name', query.name)
             .withDateAfter('start', query.start)
             .withDateBefore('end', query.end)
+            .excludeParam('state', LevelState.deleted)
 
         const filter = filterBuilder.build()
 

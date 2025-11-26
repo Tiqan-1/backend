@@ -195,6 +195,25 @@ describe('TasksController (e2e)', () => {
             expect(body.items).toEqual(expected)
         })
 
+        it('should not return deleted tasks', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const lesson = await mongoTestHelper.createLesson(manager._id)
+            const program = await mongoTestHelper.createProgram(manager._id)
+            const level = await mongoTestHelper.createLevel(manager._id, program._id)
+            const task = await mongoTestHelper.createTask(manager._id, level._id, [lesson._id])
+            task.state = TaskState.deleted
+            await task.save()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+
+            const response = await request(app.getHttpServer())
+                .get(`/api/tasks`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.OK)
+
+            const body = response.body as PaginatedTaskDto
+            expect(body.items).to.have.lengthOf(0)
+        })
+
         it('should only return tasks selected by query', async () => {
             const date = new Date(2020, 5, 1)
             const date2 = new Date(2020, 5, 2)

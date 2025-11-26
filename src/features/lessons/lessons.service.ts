@@ -113,6 +113,7 @@ export class LessonsService {
             .withStringLike('title', query.title)
             .withExactString('type', query.type)
             .withStringLike('url', query.url)
+            .excludeParam('state', LessonState.deleted)
 
         const filter = filterBuilder.build()
         const skip = PaginationHelper.calculateSkip(query.page, query.pageSize)

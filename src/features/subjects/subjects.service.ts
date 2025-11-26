@@ -42,6 +42,7 @@ export class SubjectsService {
             .withObjectId('createdBy', userObjectId)
             .withStringLike('name', query.name)
             .withStringLike('description', query.description)
+            .excludeParam('state', SubjectState.deleted)
             .build()
 
         const skip = PaginationHelper.calculateSkip(query.page, query.pageSize)

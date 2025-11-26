@@ -16,6 +16,7 @@ import { LessonsRepository } from '../src/features/lessons/lessons.repository'
 import { LessonsService } from '../src/features/lessons/lessons.service'
 import { CreateLevelDto, UpdateLevelDto } from '../src/features/levels/dto/level.dto'
 import { PaginatedLevelDto } from '../src/features/levels/dto/paginated-level.dto'
+import { LevelState } from '../src/features/levels/enums/level-stats.enum'
 import { LevelsController } from '../src/features/levels/levels.controller'
 import { LevelsRepository } from '../src/features/levels/levels.repository'
 import { LevelsService } from '../src/features/levels/levels.service'
@@ -154,6 +155,23 @@ describe('LevelsController', () => {
             expect(receivedLevel.tasks[0].lessons[0]).toBeDefined()
             expect(receivedLevel.tasks[0].lessons[0].id).toEqual(lesson._id.toString())
             expect(receivedLevel.tasks[0].lessons[0].url).toEqual(lesson.url)
+        })
+
+        it('should not return deleted levels', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+            const program = await mongoTestHelper.createProgram(manager._id)
+            const level = await mongoTestHelper.createLevel(manager._id, program._id)
+            level.state = LevelState.deleted
+            await level.save()
+
+            const response = await request(app.getHttpServer())
+                .get(`/api/levels`)
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.OK)
+
+            const body = response.body as PaginatedLevelDto
+            expect(body.items).to.have.lengthOf(0)
         })
 
         it('should fail if called by a student', async () => {

@@ -75,6 +75,13 @@ export class SearchFilterBuilder {
         return this
     }
 
+    excludeParam(key: string, value?: unknown): SearchFilterBuilder {
+        if (value) {
+            this.filter[key] = { $ne: value }
+        }
+        return this
+    }
+
     build(): Record<string, unknown> {
         return this.filter
     }

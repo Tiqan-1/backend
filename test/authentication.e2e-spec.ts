@@ -10,6 +10,7 @@ import { AuthenticationService } from '../src/features/authentication/authentica
 import { RefreshTokenRequestDto } from '../src/features/authentication/dto/refresh-token-request.dto'
 import { ManagersLocalStrategy } from '../src/features/authentication/strategies/managers-local-strategy.service'
 import { StudentsLocalStrategy } from '../src/features/authentication/strategies/students-local-strategy.service'
+import { VerificationCodesRepository } from '../src/features/authentication/verification-codes.repository'
 import { RefreshToken } from '../src/features/tokens/schemas/refresh-token.schema'
 import { TokensRepository } from '../src/features/tokens/tokens.repository'
 import { TokensService } from '../src/features/tokens/tokens.service'
@@ -17,7 +18,11 @@ import { UserDocument } from '../src/features/users/schemas/user.schema'
 import { UsersRepository } from '../src/features/users/users.repository'
 import { UsersService } from '../src/features/users/users.service'
 import { SharedDocumentsService } from '../src/shared/database-services/shared-documents.service'
-import { ConfigServiceProvider, JwtMockModule } from '../src/shared/test/helper/jwt-authentication-test.helper'
+import {
+    ConfigServiceProvider,
+    EmailServiceProvider,
+    JwtMockModule,
+} from '../src/shared/test/helper/jwt-authentication-test.helper'
 import { MongoTestHelper } from '../src/shared/test/helper/mongo-test.helper'
 
 const jwtService = {
@@ -46,8 +51,10 @@ describe('AuthenticationController (e2e)', () => {
                     TokensRepository,
                     StudentsLocalStrategy,
                     ManagersLocalStrategy,
+                    VerificationCodesRepository,
                     { provide: JwtService, useValue: jwtService },
                     ConfigServiceProvider,
+                    EmailServiceProvider,
                     ...mongoTestHelper.providers,
                 ],
             }).compile()

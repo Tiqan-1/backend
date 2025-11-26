@@ -9,6 +9,7 @@ import {
 } from '../../../features/assignment-responses/schemas/assignment-response.schema'
 import { Assignment, AssignmentSchema } from '../../../features/assignments/schemas/assignment.schema'
 import { Role } from '../../../features/authentication/enums/role.enum'
+import { VerificationCode, VerificationCodeSchema } from '../../../features/authentication/schema/verification-code.schema'
 import { Chat, ChatSchema } from '../../../features/chat/schemas/chat.schema'
 import { Message, MessageSchema } from '../../../features/chat/schemas/message.schema'
 import { LessonState } from '../../../features/lessons/enums/lesson-state.enum'
@@ -44,6 +45,7 @@ export class MongoTestHelper {
 
     private dbVersionModel: Model<DbVersion>
     private userModel: Model<User>
+    private verificationCodeModel: Model<VerificationCode>
     private managerModel: Model<Manager>
     private studentModel: Model<Student>
     private refreshTokenModel: Model<RefreshToken>
@@ -81,6 +83,7 @@ export class MongoTestHelper {
             { provide: getModelToken(RefreshToken.name), useValue: this.getRefreshTokenModel() },
             { provide: getModelToken(Subscription.name), useValue: this.getSubscriptionModel() },
             { provide: getModelToken(User.name), useValue: this.getUserModel() },
+            { provide: getModelToken(VerificationCode.name), useValue: this.getVerificationCodeModel() },
         ]
     }
 
@@ -103,6 +106,13 @@ export class MongoTestHelper {
             this.userModel = this.mongoConnection.model(User.name, UserSchema)
         }
         return this.userModel
+    }
+
+    getVerificationCodeModel(): Model<VerificationCode> {
+        if (!this.verificationCodeModel) {
+            this.verificationCodeModel = this.mongoConnection.model(VerificationCode.name, VerificationCodeSchema)
+        }
+        return this.verificationCodeModel
     }
 
     getManagerModel(): Model<Manager> {

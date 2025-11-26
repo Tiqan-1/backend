@@ -8,8 +8,8 @@ import { App } from 'supertest/types'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi, vitest } from 'vitest'
 import { AssignmentsRepository } from '../src/features/assignments/assignments.repository'
 import { AuthenticationService } from '../src/features/authentication/authentication.service'
-import { AuthenticationResponseDto } from '../src/features/authentication/dto/authentication-response.dto'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
+import { VerificationCodesRepository } from '../src/features/authentication/verification-codes.repository'
 import { ChatRepository } from '../src/features/chat/chat.repository'
 import { ChatService } from '../src/features/chat/chat.service'
 import { MessageRepository } from '../src/features/chat/message.repository'
@@ -48,6 +48,7 @@ import { SharedDocumentsService } from '../src/shared/database-services/shared-d
 import { CreatedDto } from '../src/shared/dto/created.dto'
 import {
     ConfigServiceProvider,
+    EmailServiceProvider,
     JwtMockModule,
     mockJwtStrategyValidation,
 } from '../src/shared/test/helper/jwt-authentication-test.helper'
@@ -99,7 +100,9 @@ describe('StudentsController (e2e)', () => {
                 TasksRepository,
                 JwtStrategy,
                 SharedDocumentsService,
+                VerificationCodesRepository,
                 ConfigServiceProvider,
+                EmailServiceProvider,
                 ...mongoTestHelper.providers,
             ],
         }).compile()
@@ -133,21 +136,7 @@ describe('StudentsController (e2e)', () => {
                 gender: Gender.male,
                 password: 'P@ssw0rd',
             }
-            const expectedResult: AuthenticationResponseDto = {
-                name: 'test user',
-                email: 'testUser@gmail.com',
-                accessToken: 'any',
-                refreshToken: 'any',
-            }
-            const response = await request(app.getHttpServer())
-                .post('/api/students/sign-up')
-                .send(user)
-                .expect(HttpStatus.CREATED)
-
-            expect(response.body).toBeDefined()
-            const body = response.body as AuthenticationResponseDto
-            expect(body.name).toBe(expectedResult.name)
-            expect(body.email).toBe(expectedResult.email)
+            await request(app.getHttpServer()).post('/api/students/sign-up').send(user).expect(HttpStatus.CREATED)
         })
     })
 

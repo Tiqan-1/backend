@@ -6,6 +6,7 @@ import { CreatedDto } from '../../shared/dto/created.dto'
 import { PaginationHelper } from '../../shared/helper/pagination-helper'
 import { SearchFilterBuilder } from '../../shared/helper/search-filter.builder'
 import { ObjectId } from '../../shared/repository/types'
+import { AssignmentState } from '../assignments/enums/assignment-state.enum'
 import { ProgramState } from '../programs/enums/program-state.enum'
 import { ProgramSubscriptionType } from '../programs/enums/program-subscription-type.enum'
 import { ProgramDocument } from '../programs/schemas/program.schema'
@@ -109,7 +110,7 @@ export class SubscriptionsService {
         queryBuilder
             .withObjectId('_id', query.id)
             .withDate('subscriptionDate', query.subscriptionDate)
-            .withParam('state', query.state)
+            .withParam('state', query.state ?? { $ne: AssignmentState.deleted })
             .withStringLike('notes', query.notes)
 
         const filter = queryBuilder.build()
@@ -152,7 +153,7 @@ export class SubscriptionsService {
         const query = SearchFilterBuilder.init()
             .withObjectIds('program', programIds)
             .withObjectId('subscriber', subscriberId)
-            .withParam('state', state)
+            .withParam('state', state ?? { $ne: AssignmentState.deleted })
             .build()
 
         return this.repository.findRaw(query)
