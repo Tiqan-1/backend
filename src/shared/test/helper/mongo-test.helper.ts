@@ -343,6 +343,8 @@ export class MongoTestHelper {
             gradingState: AssignmentGradingState.pending,
             state: AssignmentState.published,
             type: AssignmentType.exam,
+            durationInMinutes: 5,
+            passingScore: 10,
             availableFrom: new Date(),
             availableUntil: new Date(),
             createdAt: new Date(),
