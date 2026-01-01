@@ -116,7 +116,7 @@ export class TaskDto {
     }
 }
 
-export class CreateTaskDto extends OmitType(TaskDto, ['id', 'lessons'] as const) {
+export class CreateTaskDto extends OmitType(TaskDto, ['id', 'lessons', 'assignment'] as const) {
     @ApiProperty({ type: String, isArray: true, required: false })
     @IsOptional()
     @IsMongoId({ each: true, message: i18nValidationMessage('validation.mongoId', { property: 'lessonIds' }) })
