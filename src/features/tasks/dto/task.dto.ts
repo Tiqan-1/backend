@@ -105,6 +105,10 @@ export class TaskDto {
         this.hasChatRoom = !!document.chatRoomId
         this.type = document.type
         this.assignment = document.assignment && AssignmentDto.fromDocument(document.assignment as AssignmentDocument)
+        this.meetingLink = document.meetingLink
+        this.minimumWatchTime = document.minimumWatchTime
+        this.wirdTitle = document.wirdTitle
+        this.wirdDetails = document.wirdDetails
     }
 
     static fromDocument(document: TaskDocument): TaskDto {
@@ -137,6 +141,16 @@ export class CreateTaskDto extends OmitType(TaskDto, ['id', 'lessons', 'assignme
 export class UpdateTaskDto extends PartialType(OmitType(CreateTaskDto, ['levelId'] as const)) {}
 
 export class SearchTasksQueryDto extends IntersectionType(
-    PartialType(OmitType(TaskDto, ['lessons', 'chatRoomId'] as const)),
+    PartialType(
+        OmitType(TaskDto, [
+            'lessons',
+            'chatRoomId',
+            'assignment',
+            'meetingLink',
+            'minimumWatchTime',
+            'wirdDetails',
+            'wirdTitle',
+        ] as const)
+    ),
     SearchQueryDto
 ) {}
