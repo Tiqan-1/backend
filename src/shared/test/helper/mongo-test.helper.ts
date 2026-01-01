@@ -9,6 +9,7 @@ import {
 } from '../../../features/assignment-responses/schemas/assignment-response.schema'
 import { Assignment, AssignmentSchema } from '../../../features/assignments/schemas/assignment.schema'
 import { Role } from '../../../features/authentication/enums/role.enum'
+import { VerificationCode, VerificationCodeSchema } from '../../../features/authentication/schema/verification-code.schema'
 import { Chat, ChatSchema } from '../../../features/chat/schemas/chat.schema'
 import { Message, MessageSchema } from '../../../features/chat/schemas/message.schema'
 import { LessonState } from '../../../features/lessons/enums/lesson-state.enum'
@@ -22,7 +23,6 @@ import { ProgramState } from '../../../features/programs/enums/program-state.enu
 import { ProgramSubscriptionType } from '../../../features/programs/enums/program-subscription-type.enum'
 import { Program, ProgramDocument, ProgramSchema } from '../../../features/programs/schemas/program.schema'
 import { Gender } from '../../../features/students/enums/gender'
-import { StudentStatus } from '../../../features/students/enums/student-status'
 import { Student, StudentDocument, StudentSchema } from '../../../features/students/schemas/student.schema'
 import { Subject, SubjectDocument, SubjectSchema } from '../../../features/subjects/schemas/subject.schema'
 import { SubscriptionState } from '../../../features/subscriptions/enums/subscription-state.enum'
@@ -34,6 +34,7 @@ import {
 import { TaskState } from '../../../features/tasks/enums'
 import { Task, TaskDocument, TaskSchema } from '../../../features/tasks/schemas/task.schema'
 import { RefreshToken, RefreshTokenSchema } from '../../../features/tokens/schemas/refresh-token.schema'
+import { UserStatus } from '../../../features/users/enums/user-status'
 import { User, UserDocument, UserSchema } from '../../../features/users/schemas/user.schema'
 import { DbVersion, DbVersionSchema } from '../../database-services/schema/db-version.schema'
 import { ObjectId } from '../../repository/types'
@@ -44,6 +45,7 @@ export class MongoTestHelper {
 
     private dbVersionModel: Model<DbVersion>
     private userModel: Model<User>
+    private verificationCodeModel: Model<VerificationCode>
     private managerModel: Model<Manager>
     private studentModel: Model<Student>
     private refreshTokenModel: Model<RefreshToken>
@@ -81,6 +83,7 @@ export class MongoTestHelper {
             { provide: getModelToken(RefreshToken.name), useValue: this.getRefreshTokenModel() },
             { provide: getModelToken(Subscription.name), useValue: this.getSubscriptionModel() },
             { provide: getModelToken(User.name), useValue: this.getUserModel() },
+            { provide: getModelToken(VerificationCode.name), useValue: this.getVerificationCodeModel() },
         ]
     }
 
@@ -103,6 +106,13 @@ export class MongoTestHelper {
             this.userModel = this.mongoConnection.model(User.name, UserSchema)
         }
         return this.userModel
+    }
+
+    getVerificationCodeModel(): Model<VerificationCode> {
+        if (!this.verificationCodeModel) {
+            this.verificationCodeModel = this.mongoConnection.model(VerificationCode.name, VerificationCodeSchema)
+        }
+        return this.verificationCodeModel
     }
 
     getManagerModel(): Model<Manager> {
@@ -209,7 +219,7 @@ export class MongoTestHelper {
             gender: Gender.male,
             role: Role.Student,
             subscriptions: [],
-            status: StudentStatus.active,
+            status: UserStatus.active,
         }
         const model = this.getStudentModel()
         return model.create(student)
@@ -220,6 +230,7 @@ export class MongoTestHelper {
             name: 'test user',
             email: 'testUser@gmail.com',
             password: bcrypt.hashSync('testPassword', 10),
+            status: UserStatus.active,
             role: Role.Manager,
         }
         const model = this.getUserModel()

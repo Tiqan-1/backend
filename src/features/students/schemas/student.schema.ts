@@ -3,8 +3,8 @@ import { HydratedDocument } from 'mongoose'
 import { ObjectId, Populated } from '../../../shared/repository/types'
 import { Role } from '../../authentication/enums/role.enum'
 import { Subscription, SubscriptionDocument } from '../../subscriptions/schemas/subscription.schema'
+import { UserStatus } from '../../users/enums/user-status'
 import { Gender } from '../enums/gender'
-import { StudentStatus } from '../enums/student-status'
 
 export type StudentDocument = HydratedDocument<Student>
 
@@ -14,9 +14,7 @@ export class Student {
     email: string
     password: string
     role: Role
-
-    @Prop({ required: true, enum: StudentStatus, type: String, default: StudentStatus.active })
-    status: StudentStatus
+    status: UserStatus
 
     @Prop({ required: true, enum: [Gender.male, Gender.female], type: String })
     gender: Gender

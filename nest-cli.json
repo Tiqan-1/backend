@@ -7,7 +7,8 @@
     "typeCheck": true,
     "deleteOutDir": true,
     "assets": [
-      { "include": "i18n/**/*", "watchAssets": true }
+      { "include": "i18n/**/*", "watchAssets": true },
+      { "include": "shared/email/templates/**/*" }
     ]
   }
 }

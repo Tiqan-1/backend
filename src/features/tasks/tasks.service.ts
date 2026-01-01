@@ -99,7 +99,11 @@ export class TasksService {
             filterBuilder.withObjectIds('_id', levelTasks)
         }
 
-        filterBuilder.withObjectId('createdBy', createdBy).withDate('date', query.date).withStringLike('note', query.note)
+        filterBuilder
+            .withObjectId('createdBy', createdBy)
+            .withDate('date', query.date)
+            .withStringLike('note', query.note)
+            .excludeParam('state', TaskState.deleted)
 
         const filter = filterBuilder.build()
 

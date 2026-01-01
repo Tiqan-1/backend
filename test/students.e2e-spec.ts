@@ -8,8 +8,8 @@ import { App } from 'supertest/types'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi, vitest } from 'vitest'
 import { AssignmentsRepository } from '../src/features/assignments/assignments.repository'
 import { AuthenticationService } from '../src/features/authentication/authentication.service'
-import { AuthenticationResponseDto } from '../src/features/authentication/dto/authentication-response.dto'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
+import { VerificationCodesRepository } from '../src/features/authentication/verification-codes.repository'
 import { ChatRepository } from '../src/features/chat/chat.repository'
 import { ChatService } from '../src/features/chat/chat.service'
 import { MessageRepository } from '../src/features/chat/message.repository'
@@ -25,7 +25,6 @@ import { ProgramsService } from '../src/features/programs/programs.service'
 import { ProgramsThumbnailsRepository } from '../src/features/programs/programs.thumbnails.repository'
 import { SignUpStudentDto } from '../src/features/students/dto/student.dto'
 import { Gender } from '../src/features/students/enums/gender'
-import { StudentStatus } from '../src/features/students/enums/student-status'
 import { StudentDocument } from '../src/features/students/schemas/student.schema'
 import { StudentsController } from '../src/features/students/students.controller'
 import { StudentRepository } from '../src/features/students/students.repository'
@@ -42,12 +41,14 @@ import { TasksRepository } from '../src/features/tasks/tasks.repository'
 import { TasksService } from '../src/features/tasks/tasks.service'
 import { TokensRepository } from '../src/features/tokens/tokens.repository'
 import { TokensService } from '../src/features/tokens/tokens.service'
+import { UserStatus } from '../src/features/users/enums/user-status'
 import { UsersRepository } from '../src/features/users/users.repository'
 import { UsersService } from '../src/features/users/users.service'
 import { SharedDocumentsService } from '../src/shared/database-services/shared-documents.service'
 import { CreatedDto } from '../src/shared/dto/created.dto'
 import {
     ConfigServiceProvider,
+    EmailServiceProvider,
     JwtMockModule,
     mockJwtStrategyValidation,
 } from '../src/shared/test/helper/jwt-authentication-test.helper'
@@ -99,7 +100,9 @@ describe('StudentsController (e2e)', () => {
                 TasksRepository,
                 JwtStrategy,
                 SharedDocumentsService,
+                VerificationCodesRepository,
                 ConfigServiceProvider,
+                EmailServiceProvider,
                 ...mongoTestHelper.providers,
             ],
         }).compile()
@@ -133,21 +136,7 @@ describe('StudentsController (e2e)', () => {
                 gender: Gender.male,
                 password: 'P@ssw0rd',
             }
-            const expectedResult: AuthenticationResponseDto = {
-                name: 'test user',
-                email: 'testUser@gmail.com',
-                accessToken: 'any',
-                refreshToken: 'any',
-            }
-            const response = await request(app.getHttpServer())
-                .post('/api/students/sign-up')
-                .send(user)
-                .expect(HttpStatus.CREATED)
-
-            expect(response.body).toBeDefined()
-            const body = response.body as AuthenticationResponseDto
-            expect(body.name).toBe(expectedResult.name)
-            expect(body.email).toBe(expectedResult.email)
+            await request(app.getHttpServer()).post('/api/students/sign-up').send(user).expect(HttpStatus.CREATED)
         })
     })
 
@@ -170,7 +159,7 @@ describe('StudentsController (e2e)', () => {
                 .expect(HttpStatus.NO_CONTENT)
 
             const deletedStudent = (await mongoTestHelper.getStudentModel().findOne()) as StudentDocument
-            expect(deletedStudent.status).toEqual(StudentStatus.deleted)
+            expect(deletedStudent.status).toEqual(UserStatus.deleted)
 
             const deletedSubscription = (await mongoTestHelper.getSubscriptionModel().findOne()) as SubscriptionDocument
             expect(deletedSubscription.state).toEqual(SubscriptionState.deleted)

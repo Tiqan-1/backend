@@ -21,6 +21,7 @@ import { TasksModule } from './features/tasks/tasks.module'
 import { TokensModule } from './features/tokens/tokens.module'
 import { UsersModule } from './features/users/users.module'
 import { SharedDocumentsModule } from './shared/database-services/shared-documents.module'
+import { EmailModule } from './shared/email/email.module'
 
 @Module({
     imports: [
@@ -64,6 +65,7 @@ import { SharedDocumentsModule } from './shared/database-services/shared-documen
         ChatModule,
         AssignmentsModule,
         AssignmentResponsesModule,
+        EmailModule,
     ],
     providers: [],
 })

@@ -3,6 +3,7 @@ import * as bcrypt from 'bcryptjs'
 import { I18nService } from 'nestjs-i18n'
 import { oneMonth } from '../../shared/constants'
 import { CreatedDto } from '../../shared/dto/created.dto'
+import { EmailService } from '../../shared/email/email.service'
 import { PaginationHelper } from '../../shared/helper/pagination-helper'
 import { ObjectId } from '../../shared/repository/types'
 import { AuthenticationService } from '../authentication/authentication.service'
@@ -16,9 +17,9 @@ import { SearchSubscriptionsQueryDto } from '../subscriptions/dto/search-subscri
 import { CreateSubscriptionDto, CreateSubscriptionV2Dto, StudentSubscriptionDto } from '../subscriptions/dto/subscription.dto'
 import { SubscriptionState } from '../subscriptions/enums/subscription-state.enum'
 import { SubscriptionsService } from '../subscriptions/subscriptions.service'
+import { UserStatus } from '../users/enums/user-status'
 import { UsersRepository } from '../users/users.repository'
 import { SignUpStudentDto } from './dto/student.dto'
-import { StudentStatus } from './enums/student-status'
 import { StudentDocument } from './schemas/student.schema'
 import { StudentRepository } from './students.repository'
 
@@ -32,10 +33,11 @@ export class StudentsService {
         private readonly authenticationService: AuthenticationService,
         private readonly subscriptionsService: SubscriptionsService,
         private readonly programsService: ProgramsService,
-        private readonly i18n: I18nService
+        private readonly i18n: I18nService,
+        private readonly emailService: EmailService
     ) {}
 
-    async create(student: SignUpStudentDto): Promise<AuthenticationResponseDto> {
+    async create(student: SignUpStudentDto): Promise<void> {
         const duplicate = await this.userRepository.findOne({ email: student.email })
         if (duplicate) {
             this.logger.error(`Manager signup attempt with duplicate email detected: ${duplicate.email}`)
@@ -46,9 +48,9 @@ export class StudentsService {
             const createdStudent = await this.studentRepository.create({
                 ...student,
                 role: Role.Student,
-                status: StudentStatus.active,
+                status: UserStatus.inactive,
             })
-            return this.authenticationService.generateUserTokens(createdStudent)
+            await this.emailService.sendVerificationEmail(createdStudent.email, createdStudent._id.toString())
         } catch (error) {
             this.logger.error('Error while creating user', error)
             throw new InternalServerErrorException(this.i18n.t('students.errors.generalCreateError'))
@@ -88,7 +90,7 @@ export class StudentsService {
         if (!student) {
             throw new InternalServerErrorException(this.i18n.t('students.errors.notFound'))
         }
-        await student.updateOne({ status: StudentStatus.deleted, expireAt: oneMonth })
+        await student.updateOne({ status: UserStatus.deleted, expireAt: oneMonth })
         this.logger.log(`student with id ${id.toString()} was marked as deleted and will be removed in 30 days.`)
         for (const subscription of student.subscriptions) {
             await this.subscriptionsService.remove(subscription._id.toString())
@@ -141,7 +143,7 @@ export class StudentsService {
 
     private async loadStudent(studentId: ObjectId): Promise<StudentDocument> {
         const student = await this.studentRepository.findById(studentId)
-        if (!student || student.status === StudentStatus.deleted) {
+        if (!student || student.status === UserStatus.deleted) {
             this.logger.error(`Trying to load student ${studentId.toString()} from session but not found in the database.`)
             throw new InternalServerErrorException(this.i18n.t('students.errors.unknown'))
         }

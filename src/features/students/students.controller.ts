@@ -24,7 +24,6 @@ export class StudentsController {
     @ApiResponse({
         status: HttpStatus.CREATED,
         description: 'The user got created successfully.',
-        type: AuthenticationResponseDto,
     })
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
     @ApiResponse({
@@ -35,7 +34,7 @@ export class StudentsController {
     @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.', type: BadRequestErrorDto })
     @HttpCode(HttpStatus.CREATED)
     @Post('sign-up')
-    signUp(@Body() signUpStudentDto: SignUpStudentDto): Promise<AuthenticationResponseDto> {
+    signUp(@Body() signUpStudentDto: SignUpStudentDto): Promise<void> {
         return this.service.create(signUpStudentDto)
     }
 

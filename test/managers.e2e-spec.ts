@@ -4,11 +4,11 @@ import { I18nService } from 'nestjs-i18n'
 import { PusherService } from 'nestjs-pusher'
 import request from 'supertest'
 import { App } from 'supertest/types'
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, it, vi } from 'vitest'
 import { AssignmentsRepository } from '../src/features/assignments/assignments.repository'
 import { AuthenticationService } from '../src/features/authentication/authentication.service'
-import { AuthenticationResponseDto } from '../src/features/authentication/dto/authentication-response.dto'
 import { JwtStrategy } from '../src/features/authentication/strategies/jwt.strategy'
+import { VerificationCodesRepository } from '../src/features/authentication/verification-codes.repository'
 import { ChatRepository } from '../src/features/chat/chat.repository'
 import { ChatService } from '../src/features/chat/chat.service'
 import { MessageRepository } from '../src/features/chat/message.repository'
@@ -32,7 +32,11 @@ import { TokensService } from '../src/features/tokens/tokens.service'
 import { UsersRepository } from '../src/features/users/users.repository'
 import { UsersService } from '../src/features/users/users.service'
 import { SharedDocumentsService } from '../src/shared/database-services/shared-documents.service'
-import { ConfigServiceProvider, JwtMockModule } from '../src/shared/test/helper/jwt-authentication-test.helper'
+import {
+    ConfigServiceProvider,
+    EmailServiceProvider,
+    JwtMockModule,
+} from '../src/shared/test/helper/jwt-authentication-test.helper'
 import { MongoTestHelper } from '../src/shared/test/helper/mongo-test.helper'
 
 describe('ManagersController (e2e)', () => {
@@ -72,7 +76,9 @@ describe('ManagersController (e2e)', () => {
                 TasksRepository,
                 SharedDocumentsService,
                 JwtStrategy,
+                VerificationCodesRepository,
                 ConfigServiceProvider,
+                EmailServiceProvider,
                 ...mongoTestHelper.providers,
             ],
         }).compile()
@@ -92,12 +98,7 @@ describe('ManagersController (e2e)', () => {
 
     it('POST /api/managers/sign-up', async () => {
         const user: SignUpManagerDto = { name: 'test user', email: 'testUser@gmail.com', password: 'testPassword' }
-        const expectedResult = { name: 'test user', email: 'testUser@gmail.com' }
 
-        const response = await request(app.getHttpServer()).post('/api/managers/sign-up').send(user).expect(HttpStatus.CREATED)
-        expect(response).toBeDefined()
-        const body = response.body as AuthenticationResponseDto
-        expect(body.name).toEqual(expectedResult.name)
-        expect(body.email).toEqual(expectedResult.email)
+        await request(app.getHttpServer()).post('/api/managers/sign-up').send(user).expect(HttpStatus.CREATED)
     })
 })

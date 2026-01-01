@@ -25,8 +25,9 @@ export class AssignmentDto {
     title: string
 
     @ApiProperty({ type: String, required: false })
+    @IsOptional()
     @IsMongoId({ message: i18nValidationMessage('validation.mongoId', { property: 'taskId' }) })
-    taskId: string
+    taskId?: string
 
     @ApiProperty({ type: () => SimpleLevelDto, required: false, deprecated: true })
     @IsOptional()

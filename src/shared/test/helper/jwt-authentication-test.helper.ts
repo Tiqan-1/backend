@@ -4,6 +4,7 @@ import { TestingModule } from '@nestjs/testing'
 import { vi } from 'vitest'
 import { JwtStrategy } from '../../../features/authentication/strategies/jwt.strategy'
 import { TokenUser } from '../../../features/authentication/types/token-user'
+import { EmailService } from '../../email/email.service'
 import { ObjectId } from '../../repository/types'
 
 export const JwtMockModule = JwtModule.register({
@@ -13,6 +14,8 @@ export const JwtMockModule = JwtModule.register({
 
 const configService = { get: vi.fn().mockImplementation(key => (key === 'UPLOAD_FOLDER' ? 'uploads-test' : `secret`)) }
 export const ConfigServiceProvider = { provide: ConfigService, useValue: configService }
+const emailService = { sendVerificationEmail: vi.fn(), sendResetPasswordEmail: vi.fn() }
+export const EmailServiceProvider = { provide: EmailService, useValue: emailService }
 
 // workaround to correctly provide ObjectId to prevent mismatches between in memory and normal mongodb
 export function mockJwtStrategyValidation(module: TestingModule): void {
