@@ -30,10 +30,10 @@ export class Assignment {
     type: AssignmentType
 
     @Prop({ required: false, type: Number })
-    durationInMinutes: number
+    durationInMinutes?: number
 
     @Prop({ required: false, type: Number })
-    passingScore: number
+    passingScore?: number
 
     @Prop({ required: true, type: Date })
     availableFrom: Date

@@ -7,7 +7,9 @@ import {
     AssignmentResponse,
     AssignmentResponseSchema,
 } from '../../../features/assignment-responses/schemas/assignment-response.schema'
-import { Assignment, AssignmentSchema } from '../../../features/assignments/schemas/assignment.schema'
+import { AssignmentGradingState } from '../../../features/assignments/enums/assignment-grading-state.enum'
+import { AssignmentState, AssignmentType } from '../../../features/assignments/enums/assignment-state.enum'
+import { Assignment, AssignmentDocument, AssignmentSchema } from '../../../features/assignments/schemas/assignment.schema'
 import { Role } from '../../../features/authentication/enums/role.enum'
 import { VerificationCode, VerificationCodeSchema } from '../../../features/authentication/schema/verification-code.schema'
 import { Chat, ChatSchema } from '../../../features/chat/schemas/chat.schema'
@@ -31,7 +33,7 @@ import {
     SubscriptionDocument,
     SubscriptionSchema,
 } from '../../../features/subscriptions/schemas/subscription.schema'
-import { TaskState } from '../../../features/tasks/enums'
+import { TaskState, TaskType } from '../../../features/tasks/enums'
 import { Task, TaskDocument, TaskSchema } from '../../../features/tasks/schemas/task.schema'
 import { RefreshToken, RefreshTokenSchema } from '../../../features/tokens/schemas/refresh-token.schema'
 import { UserStatus } from '../../../features/users/enums/user-status'
@@ -278,7 +280,8 @@ export class MongoTestHelper {
             createdBy,
             date: new Date(),
             state: TaskState.active,
-            type: 'lesson',
+            type: TaskType.lesson,
+            createdAt: new Date(),
             lessons: lessons.map(({ _id }) => _id),
         }
         const model = this.getTaskModel()
@@ -330,6 +333,23 @@ export class MongoTestHelper {
         }
         const model = this.getSubscriptionModel()
         return model.create(subscription)
+    }
+
+    async createAssignment(createdBy: ObjectId, taskId: ObjectId = new ObjectId()): Promise<AssignmentDocument> {
+        const assignment: Assignment = {
+            title: 'Assignment Title',
+            createdBy,
+            taskId,
+            gradingState: AssignmentGradingState.pending,
+            state: AssignmentState.published,
+            type: AssignmentType.exam,
+            availableFrom: new Date(),
+            availableUntil: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        }
+        const model = this.getAssignmentModel()
+        return model.create(assignment)
     }
 
     async clearCollections(): Promise<void> {

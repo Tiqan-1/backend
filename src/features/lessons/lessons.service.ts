@@ -75,15 +75,13 @@ export class LessonsService {
         }
     }
 
-    async validateLessonIds(lessonIds: string[]): Promise<ObjectId[]> {
-        const objectIds = lessonIds.map(lessonId => new ObjectId(lessonId))
-        const lessons = await this.repository.findActiveByIds(objectIds)
+    async validateLessonIds(lessonIds: ObjectId[]): Promise<void> {
+        const lessons = await this.repository.findActiveByIds(lessonIds)
         if (lessons.length < lessonIds.length) {
-            const missingLessons = objectIds.filter(id => !lessons.some(lesson => lesson._id === id))
+            const missingLessons = lessonIds.filter(id => !lessons.some(lesson => lesson._id === id))
             this.logger.error(`Attempt to validate lessonIds failed, some lessons were not found.`, missingLessons)
             throw new NotFoundException(this.i18n.t('lessons.errors.lessonNotFound'))
         }
-        return objectIds
     }
 
     async find(query: SearchLessonsQueryDto, createdBy: ObjectId): Promise<PaginatedLessonDto> {
