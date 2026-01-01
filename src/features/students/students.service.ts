@@ -6,7 +6,6 @@ import { CreatedDto } from '../../shared/dto/created.dto'
 import { EmailService } from '../../shared/email/email.service'
 import { PaginationHelper } from '../../shared/helper/pagination-helper'
 import { ObjectId } from '../../shared/repository/types'
-import { AuthenticationService } from '../authentication/authentication.service'
 import { Role } from '../authentication/enums/role.enum'
 import { PaginatedProgramDto, PaginatedProgramWithSubscriptionDto } from '../programs/dto/paginated-program.dto'
 import { SearchStudentProgramQueryDto } from '../programs/dto/program.dto'
@@ -30,7 +29,6 @@ export class StudentsService {
     constructor(
         private readonly studentRepository: StudentRepository,
         private readonly userRepository: UsersRepository,
-        private readonly authenticationService: AuthenticationService,
         private readonly subscriptionsService: SubscriptionsService,
         private readonly programsService: ProgramsService,
         private readonly i18n: I18nService,
