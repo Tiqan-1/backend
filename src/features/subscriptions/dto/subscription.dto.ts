@@ -54,6 +54,13 @@ export class SubscriptionDto {
     @IsOptional()
     notes?: string
 
+    @ApiProperty({ type: [String], required: true })
+    @IsString({ each: true, message: i18nValidationMessage('validation.string', { property: 'completedTaskIds' }) })
+    completedTaskIds: string[]
+
+    @ApiProperty({ type: Number, required: true })
+    progressPercentage: number
+
     static fromDocuments(subscriptions: SubscriptionDocument[] = []): SubscriptionDto[] {
         return subscriptions.map(subscription => this.fromDocument(subscription))
     }
@@ -71,6 +78,8 @@ export class SubscriptionDto {
             subscriber: SimpleStudentDto.fromDocument(subscription.subscriber as StudentDocument),
             state: subscription.state,
             notes: subscription.notes,
+            completedTaskIds: subscription.completedTaskIds.map(id => id.toString()),
+            progressPercentage: subscription.progressPercentage,
         }
     }
 }
@@ -97,6 +106,8 @@ export class StudentSubscriptionDto extends OmitType(SubscriptionDto, ['subscrib
             subscriptionDate: subscription.subscriptionDate,
             state: subscription.state,
             notes: subscription.notes,
+            completedTaskIds: subscription.completedTaskIds.map(id => id.toString()),
+            progressPercentage: subscription.progressPercentage,
         }
     }
 }
