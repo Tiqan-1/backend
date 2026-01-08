@@ -330,6 +330,8 @@ export class MongoTestHelper {
             subscriptionDate: new Date(),
             state: SubscriptionState.active,
             notes: 'subscription notes',
+            completedTaskIds: [],
+            progressPercentage: 0,
         }
         const model = this.getSubscriptionModel()
         return model.create(subscription)

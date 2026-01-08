@@ -32,11 +32,11 @@ export class Subscription {
     @Prop({ type: Date, index: { expireAfterSeconds: 0 } })
     expireAt?: Date
 
-    // @Prop({ type: [ObjectId], default: [] })
-    // completedTaskIds: ObjectId[]
-    //
-    // @Prop({ type: Number, default: 0 })
-    // progressPercentage: number
+    @Prop({ type: [ObjectId], default: [] })
+    completedTaskIds: ObjectId[]
+
+    @Prop({ type: Number, default: 0 })
+    progressPercentage: number
 }
 
 export const SubscriptionSchema = SchemaFactory.createForClass(Subscription)

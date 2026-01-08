@@ -32,6 +32,8 @@ import {
     mockJwtStrategyValidation,
 } from '../src/shared/test/helper/jwt-authentication-test.helper'
 import { MongoTestHelper } from '../src/shared/test/helper/mongo-test.helper'
+import { SubscriptionsService } from '../src/features/subscriptions/subscriptions.service'
+import { SubscriptionsRepository } from '../src/features/subscriptions/subscriptions.repository'
 
 describe('LevelsController', () => {
     let app: INestApplication<App>
@@ -55,6 +57,8 @@ describe('LevelsController', () => {
                 AssignmentsRepository,
                 TasksService,
                 TasksRepository,
+                SubscriptionsService,
+                SubscriptionsRepository,
                 LessonsService,
                 LessonsRepository,
                 SharedDocumentsService,
@@ -152,9 +156,9 @@ describe('LevelsController', () => {
             expect(receivedLevel.tasks[0]).toBeDefined()
             expect(receivedLevel.tasks[0].id).toEqual(task._id.toString())
             expect(receivedLevel.tasks[0].date).toEqual(task.date.toISOString())
-            expect(receivedLevel.tasks[0].lessons[0]).toBeDefined()
-            expect(receivedLevel.tasks[0].lessons[0].id).toEqual(lesson._id.toString())
-            expect(receivedLevel.tasks[0].lessons[0].url).toEqual(lesson.url)
+            expect(receivedLevel.tasks[0].lessons?.[0]).toBeDefined()
+            expect(receivedLevel.tasks[0].lessons?.[0].id).toEqual(lesson._id.toString())
+            expect(receivedLevel.tasks[0].lessons?.[0].url).toEqual(lesson.url)
         })
 
         it('should not return deleted levels', async () => {

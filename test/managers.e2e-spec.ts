@@ -38,6 +38,8 @@ import {
     JwtMockModule,
 } from '../src/shared/test/helper/jwt-authentication-test.helper'
 import { MongoTestHelper } from '../src/shared/test/helper/mongo-test.helper'
+import { SubscriptionsService } from '../src/features/subscriptions/subscriptions.service'
+import { SubscriptionsRepository } from '../src/features/subscriptions/subscriptions.repository'
 
 describe('ManagersController (e2e)', () => {
     let app: INestApplication<App>
@@ -74,6 +76,8 @@ describe('ManagersController (e2e)', () => {
                 AssignmentsRepository,
                 TasksService,
                 TasksRepository,
+                SubscriptionsService,
+                SubscriptionsRepository,
                 SharedDocumentsService,
                 JwtStrategy,
                 VerificationCodesRepository,

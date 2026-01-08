@@ -11,6 +11,8 @@ import { AssignmentDocument } from '../assignments/schemas/assignment.schema'
 import { ChatService } from '../chat/chat.service'
 import { LessonsService } from '../lessons/lessons.service'
 import { LevelDocument } from '../levels/schemas/level.schema'
+import { SubscriptionsService } from '../subscriptions/subscriptions.service'
+import { CompleteTaskDto } from './dto/complete-task.dto'
 import { PaginatedTaskDto } from './dto/paginated-task.dto'
 import { CreateTaskDto, SearchTasksQueryDto, TaskDto, UpdateTaskDto } from './dto/task.dto'
 import { TaskState, TaskType } from './enums'
@@ -26,6 +28,7 @@ export class TasksService {
         private readonly lessonsService: LessonsService,
         private readonly assignmentRepository: AssignmentsRepository,
         private readonly documentsService: SharedDocumentsService,
+        private readonly subscriptionService: SubscriptionsService,
         private readonly chatService: ChatService,
         private readonly i18n: I18nService
     ) {}
@@ -154,6 +157,26 @@ export class TasksService {
             }
         }
         this.logger.log(`Task ${id} removed.`)
+    }
+
+    async complete(id: ObjectId, dto: CompleteTaskDto, studentId: ObjectId): Promise<void> {
+        const task = await this.taskRepository.findById(id)
+        if (!task) {
+            this.logger.error(`Attempt to complete Task ${id.toString()} failed.`)
+            throw new NotFoundException(this.i18n.t('tasks.errors.taskNotFound'))
+        }
+        const student = await this.documentsService.getStudent(studentId.toString())
+        if (!student) {
+            this.logger.error(`Attempt to complete Task ${id.toString()} failed. Student ${studentId.toString()} not found.`)
+            throw new NotFoundException(this.i18n.t('tasks.errors.studentNotFound'))
+        }
+        if (!student.subscriptions.some(subscription => subscription._id.equals(dto.subscriptionId))) {
+            this.logger.error(
+                `Attempt to complete Task ${id.toString()} failed. Subscription ${dto.subscriptionId.toString()} not found for student ${studentId.toString()}.`
+            )
+            throw new NotFoundException(this.i18n.t('tasks.errors.studentSubscriptionNotFound'))
+        }
+        await this.subscriptionService.addCompletedTask(dto.subscriptionId, id)
     }
 
     private async validateAndGetLevel(task: CreateTaskDto): Promise<LevelDocument> {

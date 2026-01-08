@@ -30,6 +30,9 @@ import {
     mockJwtStrategyValidation,
 } from '../src/shared/test/helper/jwt-authentication-test.helper'
 import { MongoTestHelper } from '../src/shared/test/helper/mongo-test.helper'
+import { SubscriptionsService } from '../src/features/subscriptions/subscriptions.service'
+import { SubscriptionsRepository } from '../src/features/subscriptions/subscriptions.repository'
+import { CompleteTaskDto } from '../src/features/tasks/dto/complete-task.dto'
 
 describe('TasksController (e2e)', () => {
     let app: INestApplication<App>
@@ -53,6 +56,8 @@ describe('TasksController (e2e)', () => {
                 TasksRepository,
                 LessonsService,
                 LessonsRepository,
+                SubscriptionsService,
+                SubscriptionsRepository,
                 SharedDocumentsService,
                 JwtService,
                 JwtStrategy,
@@ -565,6 +570,43 @@ describe('TasksController (e2e)', () => {
                 .delete(`/api/tasks/anyId`)
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.FORBIDDEN)
+        })
+    })
+
+    describe('POST /api/tasks/:taskId/complete', () => {
+        it('should succeed', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const lesson = await mongoTestHelper.createLesson(manager._id)
+            const program = await mongoTestHelper.createProgram(manager._id)
+            const level = await mongoTestHelper.createLevel(manager._id, program._id)
+            program.levels = [level._id]
+            await program.save()
+
+            const task = await mongoTestHelper.createTask(manager._id, level._id, [lesson._id])
+            const task2 = await mongoTestHelper.createTask(manager._id, level._id, [lesson._id])
+            level.tasks = [task._id, task2._id]
+            await level.save()
+
+            const student = await mongoTestHelper.createStudent()
+            const subscription = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
+            ;(student.subscriptions as ObjectId[]).push(subscription._id)
+            await student.save()
+            const token = jwtService.sign({ id: student._id, role: student.role })
+
+            const body: CompleteTaskDto = {
+                subscriptionId: subscription._id,
+            }
+
+            await request(app.getHttpServer())
+                .post(`/api/tasks/${task._id.toString()}/complete`)
+                .set('Authorization', `Bearer ${token}`)
+                .send(body)
+                .expect(HttpStatus.NO_CONTENT)
+
+
+            const found = await mongoTestHelper.getSubscriptionModel().findById(subscription._id)
+            expect(found?.completedTaskIds[0].toString()).toEqual(task._id.toString())
+            expect(found?.progressPercentage).toEqual(50)
         })
     })
 })

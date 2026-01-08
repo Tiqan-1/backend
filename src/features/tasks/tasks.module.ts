@@ -3,12 +3,13 @@ import { SharedDocumentsModule } from '../../shared/database-services/shared-doc
 import { AssignmentsModule } from '../assignments/assignments.module'
 import { ChatModule } from '../chat/chat.module'
 import { LessonsModule } from '../lessons/lessons.module'
+import { SubscriptionsModule } from '../subscriptions/subscriptions.module'
 import { TasksController } from './tasks.controller'
 import { TasksRepository } from './tasks.repository'
 import { TasksService } from './tasks.service'
 
 @Module({
-    imports: [SharedDocumentsModule, LessonsModule, ChatModule, forwardRef(() => AssignmentsModule)],
+    imports: [SharedDocumentsModule, LessonsModule, ChatModule, SubscriptionsModule, forwardRef(() => AssignmentsModule)],
     controllers: [TasksController],
     providers: [TasksService, TasksRepository],
     exports: [TasksService],
