@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, Query, Request, UseGuards } from '@nestjs/common'
-import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger'
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger'
 import { BadRequestErrorDto } from '../../shared/dto/bad-request-error.dto'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { ErrorDto } from '../../shared/dto/error.dto'
@@ -89,6 +89,7 @@ export class TasksController {
     @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user', type: ErrorDto })
     @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.', type: ErrorDto })
     @Post(':id/complete')
+    @ApiParam({ name: 'id', type: String, required: true })
     @HttpCode(HttpStatus.NO_CONTENT)
     @Roles(Role.Student)
     @UseGuards(JwtAuthGuard, RolesGuard)
