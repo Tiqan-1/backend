@@ -13,7 +13,7 @@ async function bootstrap(): Promise<void> {
     const logLevels: LogLevel[] =
         process.env.NODE_ENV === 'production' ? ['log', 'error', 'warn'] : ['log', 'error', 'warn', 'debug', 'verbose']
     const app = await NestFactory.create(AppModule, {
-        logger: new ConsoleLogger({ logLevels, json: true, colors: process.env.NODE_ENV === 'development' }),
+        logger: new ConsoleLogger({ logLevels, colors: process.env.NODE_ENV === 'development' }),
     })
 
     const migrationService = app.get(MigrationService)
@@ -21,12 +21,7 @@ async function bootstrap(): Promise<void> {
 
     //await app.register(multipart)
     app.enableCors({
-        origin: [
-            'https://mubadarat.yaseen.dev',
-            'https://student.yaseen.dev',
-            'https://mubadarah.github.io',
-            'https://tiqan-1.github.io',
-        ],
+        origin: [/https:\/\/.*\.yaseen\.dev$/, 'https://mubadarah.github.io', 'https://tiqan-1.github.io'],
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
         credentials: true,
     })
