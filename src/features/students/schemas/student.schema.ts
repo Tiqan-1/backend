@@ -22,6 +22,9 @@ export class Student {
     @Prop({ required: true, type: [ObjectId], ref: Subscription.name, default: [] })
     subscriptions: ObjectId[] | Populated<SubscriptionDocument[]>
 
+    @Prop({ required: false, type: String })
+    profilePicture?: string
+
     @Prop({ type: Date, index: { expireAfterSeconds: 0 } })
     expireAt?: Date
 }

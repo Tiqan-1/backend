@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post, Put, Query, Request, UseGuards } from '@nestjs/common'
-import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger'
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger'
 import { BadRequestErrorDto } from '../../shared/dto/bad-request-error.dto'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { ErrorDto } from '../../shared/dto/error.dto'
@@ -10,6 +10,7 @@ import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { RolesGuard } from '../authentication/guards/roles.guard'
 import { TokenUser } from '../authentication/types/token-user'
+import { CompleteTaskDto } from './dto/complete-task.dto'
 import { PaginatedTaskDto } from './dto/paginated-task.dto'
 import { CreateTaskDto, SearchTasksQueryDto, UpdateTaskDto } from './dto/task.dto'
 import { TasksService } from './tasks.service'
@@ -79,5 +80,24 @@ export class TasksController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     delete(@Param('id') id: string): Promise<void> {
         return this.service.remove(id)
+    }
+
+    @ApiOperation({ summary: 'Marks a task as completed', description: 'Marks a task as completed for the user.' })
+    @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Task successfully marked as completed.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Task not found.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.', type: ErrorDto })
+    @Post(':id/complete')
+    @ApiParam({ name: 'id', type: String, required: true })
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @Roles(Role.Student)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    complete(
+        @Param('id', ParseMongoIdPipe) id: ObjectId,
+        @Body() completeTaskDto: CompleteTaskDto,
+        @Request() request: { user: TokenUser }
+    ): Promise<void> | undefined {
+        return this.service.complete(id, completeTaskDto, request.user.id)
     }
 }

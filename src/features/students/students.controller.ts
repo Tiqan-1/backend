@@ -4,7 +4,6 @@ import { BadRequestErrorDto } from '../../shared/dto/bad-request-error.dto'
 import { CreatedDto } from '../../shared/dto/created.dto'
 import { ErrorDto } from '../../shared/dto/error.dto'
 import { Roles } from '../authentication/decorators/roles.decorator'
-import { AuthenticationResponseDto } from '../authentication/dto/authentication-response.dto'
 import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { TokenUser } from '../authentication/types/token-user'
@@ -13,7 +12,7 @@ import { SearchStudentProgramQueryDto } from '../programs/dto/program.dto'
 import { PaginatedStudentSubscriptionDto } from '../subscriptions/dto/paginated-subscripition.dto'
 import { SearchSubscriptionsQueryDto } from '../subscriptions/dto/search-subscriptions-query.dto'
 import { CreateSubscriptionDto, CreateSubscriptionV2Dto } from '../subscriptions/dto/subscription.dto'
-import { SignUpStudentDto } from './dto/student.dto'
+import { SignUpStudentDto, StudentDto } from './dto/student.dto'
 import { StudentsService } from './students.service'
 
 @Controller('api/students')
@@ -217,5 +216,18 @@ export class StudentsController {
         @Request() request: { user: TokenUser }
     ): Promise<PaginatedProgramWithSubscriptionDto> {
         return this.service.findProgramsV3(query, request.user.id)
+    }
+
+    @ApiOperation({ summary: 'Gets profile', description: 'Gets profile of the student.' })
+    @ApiResponse({ status: HttpStatus.OK, type: StudentDto, description: 'Got profile successfully.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user', type: ErrorDto })
+    @Get('v1/profile')
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @Roles(Role.Student)
+    getProfile(@Request() request: { user: TokenUser }): Promise<StudentDto> {
+        return this.service.getProfile(request.user.id)
     }
 }

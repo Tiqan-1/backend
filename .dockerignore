@@ -11,3 +11,5 @@ mongodb_data-dev
 uploads
 uploads-dev
 uploads-test
+.env
+.env.production

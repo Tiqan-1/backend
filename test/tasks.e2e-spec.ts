@@ -16,7 +16,7 @@ import { LessonsService } from '../src/features/lessons/lessons.service'
 import { LevelDocument } from '../src/features/levels/schemas/level.schema'
 import { PaginatedTaskDto } from '../src/features/tasks/dto/paginated-task.dto'
 import { CreateTaskDto, UpdateTaskDto } from '../src/features/tasks/dto/task.dto'
-import { TaskState } from '../src/features/tasks/enums'
+import { TaskState, TaskType } from '../src/features/tasks/enums'
 import { TaskDocument } from '../src/features/tasks/schemas/task.schema'
 import { TasksController } from '../src/features/tasks/tasks.controller'
 import { TasksRepository } from '../src/features/tasks/tasks.repository'
@@ -30,6 +30,9 @@ import {
     mockJwtStrategyValidation,
 } from '../src/shared/test/helper/jwt-authentication-test.helper'
 import { MongoTestHelper } from '../src/shared/test/helper/mongo-test.helper'
+import { SubscriptionsService } from '../src/features/subscriptions/subscriptions.service'
+import { SubscriptionsRepository } from '../src/features/subscriptions/subscriptions.repository'
+import { CompleteTaskDto } from '../src/features/tasks/dto/complete-task.dto'
 
 describe('TasksController (e2e)', () => {
     let app: INestApplication<App>
@@ -53,6 +56,8 @@ describe('TasksController (e2e)', () => {
                 TasksRepository,
                 LessonsService,
                 LessonsRepository,
+                SubscriptionsService,
+                SubscriptionsRepository,
                 SharedDocumentsService,
                 JwtService,
                 JwtStrategy,
@@ -78,17 +83,17 @@ describe('TasksController (e2e)', () => {
     })
 
     describe('POST /api/tasks', () => {
-        it('should succeed', async () => {
+        it('should succeed creating task with type lesson', async () => {
             const manager = await mongoTestHelper.createManager()
             const token = jwtService.sign({ id: manager._id, role: manager.role })
             const lesson = await mongoTestHelper.createLesson(manager._id)
             const level = await mongoTestHelper.createLevel(manager._id)
 
             const body: CreateTaskDto = {
-                levelId: level._id.toString(),
+                levelId: level._id,
                 date: new Date(),
-                type: 'lesson',
-                lessonIds: [lesson._id.toString()],
+                type: TaskType.lesson,
+                lessonIds: [lesson._id],
             }
 
             const response = await request(app.getHttpServer())
@@ -103,11 +108,95 @@ describe('TasksController (e2e)', () => {
             const created = (await mongoTestHelper.getTaskModel().findOne()) as TaskDocument
             expect(created).toBeDefined()
             expect(created.date).toEqual(body.date)
-            expect(created.lessons).toEqual([lesson._id])
+            expect(created.lessons).toEqual([lesson._id.toString()])
 
             const updated = (await mongoTestHelper.getLevelModel().findOne()) as LevelDocument
             expect(updated).toBeDefined()
             expect(updated.tasks.length).toEqual(1)
+        })
+
+        it('should succeed creating task with type lesson', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+            const assignment = await mongoTestHelper.createAssignment(manager._id)
+            const level = await mongoTestHelper.createLevel(manager._id)
+
+            const body: CreateTaskDto = {
+                levelId: level._id,
+                date: new Date(),
+                type: TaskType.assignment,
+                assignmentId: assignment.id.toString(),
+            }
+
+            const response = await request(app.getHttpServer())
+                .post(`/api/tasks`)
+                .set('Authorization', `Bearer ${token}`)
+                .send(body)
+                .expect(HttpStatus.CREATED)
+
+            const { id } = response.body as CreatedDto
+            expect(id).toBeDefined()
+
+            const created = (await mongoTestHelper.getTaskModel().findOne()) as TaskDocument
+            expect(created).toBeDefined()
+            expect(created.date).toEqual(body.date)
+            expect(created.assignment).toEqual(assignment._id.toString())
+        })
+
+        it('should succeed creating task with type meeting', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+            const level = await mongoTestHelper.createLevel(manager._id)
+
+            const body: CreateTaskDto = {
+                levelId: level._id,
+                date: new Date(),
+                type: TaskType.meeting,
+                meetingLink: 'https://youtube.com/live',
+            }
+
+            const response = await request(app.getHttpServer())
+                .post(`/api/tasks`)
+                .set('Authorization', `Bearer ${token}`)
+                .send(body)
+                .expect(HttpStatus.CREATED)
+
+            const { id } = response.body as CreatedDto
+            expect(id).toBeDefined()
+
+            const created = (await mongoTestHelper.getTaskModel().findOne()) as TaskDocument
+            expect(created).toBeDefined()
+            expect(created.date).toEqual(body.date)
+            expect(created.meetingLink).toEqual(body.meetingLink)
+        })
+
+        it('should succeed creating task with type wird', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const token = jwtService.sign({ id: manager._id, role: manager.role })
+            const level = await mongoTestHelper.createLevel(manager._id)
+
+            const body: CreateTaskDto = {
+                levelId: level._id,
+                date: new Date(),
+                type: TaskType.wird,
+                wirdTitle: 'wirdTitle',
+                wirdDetails: 'wirdDetails',
+            }
+
+            const response = await request(app.getHttpServer())
+                .post(`/api/tasks`)
+                .set('Authorization', `Bearer ${token}`)
+                .send(body)
+                .expect(HttpStatus.CREATED)
+
+            const { id } = response.body as CreatedDto
+            expect(id).toBeDefined()
+
+            const created = (await mongoTestHelper.getTaskModel().findOne()) as TaskDocument
+            expect(created).toBeDefined()
+            expect(created.date).toEqual(body.date)
+            expect(created.wirdTitle).toEqual(body.wirdTitle)
+            expect(created.wirdDetails).toEqual(body.wirdDetails)
         })
 
         it('should fail if called by a student', async () => {
@@ -318,7 +407,7 @@ describe('TasksController (e2e)', () => {
             expect(updated).toBeDefined()
             const expectedDate = '2025-10-08T22:00:00.000Z'
             expect(updated?.date.toISOString()).toEqual(expectedDate)
-            expect(updated?.lessons).toEqual([newLesson._id])
+            expect(updated?.lessons).toEqual([newLesson._id.toString()])
         })
 
         it('should succeed when only updating date', async () => {
@@ -357,7 +446,7 @@ describe('TasksController (e2e)', () => {
 
             const newLesson = await mongoTestHelper.createLesson(manager._id)
             const body: UpdateTaskDto = {
-                lessonIds: [newLesson._id.toString()],
+                lessonIds: [newLesson._id],
             }
 
             await request(app.getHttpServer())
@@ -370,7 +459,7 @@ describe('TasksController (e2e)', () => {
 
             expect(updated).toBeDefined()
             expect(updated?.date).toEqual(task.date)
-            expect(updated?.lessons).toEqual([newLesson._id])
+            expect(updated?.lessons).toEqual([newLesson._id.toString()])
         })
 
         it('should fail with 403 if called by a student', async () => {
@@ -481,6 +570,43 @@ describe('TasksController (e2e)', () => {
                 .delete(`/api/tasks/anyId`)
                 .set('Authorization', `Bearer ${token}`)
                 .expect(HttpStatus.FORBIDDEN)
+        })
+    })
+
+    describe('POST /api/tasks/:taskId/complete', () => {
+        it('should succeed', async () => {
+            const manager = await mongoTestHelper.createManager()
+            const lesson = await mongoTestHelper.createLesson(manager._id)
+            const program = await mongoTestHelper.createProgram(manager._id)
+            const level = await mongoTestHelper.createLevel(manager._id, program._id)
+            program.levels = [level._id]
+            await program.save()
+
+            const task = await mongoTestHelper.createTask(manager._id, level._id, [lesson._id])
+            const task2 = await mongoTestHelper.createTask(manager._id, level._id, [lesson._id])
+            level.tasks = [task._id, task2._id]
+            await level.save()
+
+            const student = await mongoTestHelper.createStudent()
+            const subscription = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
+            ;(student.subscriptions as ObjectId[]).push(subscription._id)
+            await student.save()
+            const token = jwtService.sign({ id: student._id, role: student.role })
+
+            const body: CompleteTaskDto = {
+                subscriptionId: subscription._id,
+            }
+
+            await request(app.getHttpServer())
+                .post(`/api/tasks/${task._id.toString()}/complete`)
+                .set('Authorization', `Bearer ${token}`)
+                .send(body)
+                .expect(HttpStatus.NO_CONTENT)
+
+
+            const found = await mongoTestHelper.getSubscriptionModel().findById(subscription._id)
+            expect(found?.completedTaskIds[0].toString()).toEqual(task._id.toString())
+            expect(found?.progressPercentage).toEqual(50)
         })
     })
 })

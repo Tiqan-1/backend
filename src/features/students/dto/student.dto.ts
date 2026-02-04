@@ -12,6 +12,7 @@ export class StudentDto {
         this.email = student.email
         this.subscriptions = arePopulated(student.subscriptions) ? SubscriptionDto.fromDocuments(student.subscriptions) : []
         this.gender = student.gender
+        this.profilePicture = student.profilePicture
     }
 
     @ApiProperty({ type: String, example: 'John Doe', description: 'full name of student' })
@@ -26,12 +27,16 @@ export class StudentDto {
     @IsEnum(Gender, { message: i18nValidationMessage('validation.enum', { property: 'gender', values: Object.values(Gender) }) })
     gender: Gender
 
+    @ApiProperty({ type: String, required: false, description: 'profile picture of student' })
+    @IsString({ message: i18nValidationMessage('validation.string', { property: 'profilePicture' }) })
+    profilePicture?: string
+
     @ApiProperty({ type: () => SubscriptionDto, isArray: true, description: 'subscriptions for student' })
     @ValidateNested({ each: true })
     subscriptions: SubscriptionDto[]
 }
 
-export class SimpleStudentDto extends OmitType(StudentDto, ['subscriptions', 'gender']) {
+export class SimpleStudentDto extends OmitType(StudentDto, ['subscriptions', 'gender', 'profilePicture']) {
     static fromDocument(subscriber: StudentDocument): SimpleStudentDto {
         return {
             name: subscriber.name,
@@ -40,7 +45,7 @@ export class SimpleStudentDto extends OmitType(StudentDto, ['subscriptions', 'ge
     }
 }
 
-export class SignUpStudentDto extends OmitType(StudentDto, ['subscriptions']) {
+export class SignUpStudentDto extends OmitType(StudentDto, ['subscriptions', 'profilePicture']) {
     @ApiProperty({ type: String, example: 'P@ssw0rd', description: 'password of student' })
     @IsStrongPassword(
         { minLength: 6, minNumbers: 0, minSymbols: 0, minLowercase: 0, minUppercase: 0 },

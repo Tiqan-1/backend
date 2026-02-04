@@ -29,10 +29,10 @@ export class Assignment {
     @Prop({ required: true, type: String, enum: AssignmentType, default: AssignmentType.exam })
     type: AssignmentType
 
-    @Prop({ required: false, type: Number })
+    @Prop({ required: true, type: Number })
     durationInMinutes: number
 
-    @Prop({ required: false, type: Number })
+    @Prop({ required: true, type: Number })
     passingScore: number
 
     @Prop({ required: true, type: Date })

@@ -1,5 +1,6 @@
 import { ConflictException, Injectable, Logger, NotAcceptableException, NotFoundException } from '@nestjs/common'
 import { I18nService } from 'nestjs-i18n'
+import assert from 'node:assert'
 import { oneMonth } from '../../shared/constants'
 import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
@@ -201,5 +202,27 @@ export class SubscriptionsService {
             this.logger.error(`Program registration period is not active.`)
             throw new NotAcceptableException(this.i18n.t('students.errors.programNotPublished'))
         }
+    }
+
+    async addCompletedTask(subscriptionId: ObjectId, taskId: ObjectId): Promise<void> {
+        const subscription = await this.repository.findById(subscriptionId)
+        if (!subscription) {
+            throw new NotFoundException(this.i18n.t('subscriptions.errors.subscriptionNotFound'))
+        }
+        subscription.completedTaskIds.push(taskId)
+        const program = await this.sharedDocumentsService.getProgram(subscription.program._id.toString())
+        assert(program !== undefined, 'program not found.')
+
+        let totalTaskCount = 0
+        for (const rawLevel of program.levels) {
+            const level = await this.sharedDocumentsService.getLevel(rawLevel._id.toString())
+            assert(level !== undefined, 'level not found.')
+            totalTaskCount += level.tasks.length ?? 0
+        }
+        assert(totalTaskCount > 0, 'totalTaskCount cannot be zero')
+
+        subscription.progressPercentage = (subscription.completedTaskIds.length * 100) / totalTaskCount
+        await subscription.save()
+        this.logger.log(`Task ${taskId.toString()} marked as completed in subscription ${subscriptionId.toString()}`)
     }
 }

@@ -10,9 +10,12 @@ import { AssignmentsRepository } from '../assignments/assignments.repository'
 import { AssignmentDocument } from '../assignments/schemas/assignment.schema'
 import { ChatService } from '../chat/chat.service'
 import { LessonsService } from '../lessons/lessons.service'
+import { LevelDocument } from '../levels/schemas/level.schema'
+import { SubscriptionsService } from '../subscriptions/subscriptions.service'
+import { CompleteTaskDto } from './dto/complete-task.dto'
 import { PaginatedTaskDto } from './dto/paginated-task.dto'
 import { CreateTaskDto, SearchTasksQueryDto, TaskDto, UpdateTaskDto } from './dto/task.dto'
-import { TaskState } from './enums'
+import { TaskState, TaskType } from './enums'
 import { TaskDocument } from './schemas/task.schema'
 import { TasksRepository } from './tasks.repository'
 
@@ -25,33 +28,17 @@ export class TasksService {
         private readonly lessonsService: LessonsService,
         private readonly assignmentRepository: AssignmentsRepository,
         private readonly documentsService: SharedDocumentsService,
+        private readonly subscriptionService: SubscriptionsService,
         private readonly chatService: ChatService,
         private readonly i18n: I18nService
     ) {}
 
     async create(task: CreateTaskDto, createdBy: ObjectId): Promise<CreatedDto> {
-        if (task.type === 'lesson' && !task.lessonIds?.length) {
-            this.logger.error(`LessonIds are required for task type ${task.type}.`)
-            throw new NotAcceptableException(this.i18n.t('tasks.errors.lessonIdsRequired'))
-        }
-        let assignment: AssignmentDocument | undefined
-        if (task.type === 'assignment') {
-            if (!task.assignmentId) {
-                this.logger.error(`AssignmentId is required for task type ${task.type}.`)
-                throw new NotAcceptableException(this.i18n.t('tasks.errors.assignmentIdRequired'))
-            }
-            assignment = await this.assignmentRepository.findById(task.assignmentId)
-            if (!assignment) {
-                this.logger.error(`Assignment ${task.assignmentId.toString()} not found.`)
-                throw new NotFoundException(this.i18n.t('tasks.errors.assignmentNotFound'))
-            }
-        }
-        const validatedLessons = task.lessonIds?.length ? await this.lessonsService.validateLessonIds(task.lessonIds) : undefined
-        const level = await this.documentsService.getLevel(task.levelId)
-        if (!level) {
-            this.logger.error(`Level ${task.levelId} not found.`)
-            throw new NotFoundException(this.i18n.t('tasks.errors.levelNotFound'))
-        }
+        await this.validateLessons(task)
+        const assignment = await this.validateAndGetAssignment(task)
+        this.validateMeeting(task)
+        this.validateWird(task)
+        const level = await this.validateAndGetLevel(task)
 
         const createObject: Partial<TaskDocument> = {
             createdBy,
@@ -60,8 +47,12 @@ export class TasksService {
             chatRoomId: task.hasChatRoom ? await this.chatService.createChatRoom(createdBy) : undefined,
             type: task.type,
             assignment: task.assignmentId,
+            lessons: task.lessonIds,
+            minimumWatchTime: task.minimumWatchTime,
+            meetingLink: task.meetingLink,
+            wirdTitle: task.wirdTitle,
+            wirdDetails: task.wirdDetails,
             ...(task.note && { note: task.note }),
-            ...(validatedLessons && { lessons: validatedLessons }),
         }
 
         const created = await this.taskRepository.create(createObject)
@@ -81,9 +72,9 @@ export class TasksService {
     async find(query: SearchTasksQueryDto, createdBy: ObjectId): Promise<PaginatedTaskDto> {
         let levelTasks: ObjectId[] | undefined
         if (query.levelId) {
-            const level = await this.documentsService.getLevel(query.levelId)
+            const level = await this.documentsService.getLevel(query.levelId.toString())
             if (!level?.tasks.length) {
-                this.logger.warn(`Level ${query.levelId} not found or has no tasks.`)
+                this.logger.warn(`Level ${query.levelId.toString()} not found or has no tasks.`)
                 return PaginationHelper.emptyResponse(query.page, query.pageSize)
             }
             levelTasks = level.tasks as ObjectId[]
@@ -91,7 +82,7 @@ export class TasksService {
         const filterBuilder = SearchFilterBuilder.init()
         if (query.id) {
             if (levelTasks && !levelTasks.some(id => id.equals(query.id))) {
-                this.logger.warn(`Task ${query.id} requested but not found within level ${query.levelId}.`)
+                this.logger.warn(`Task ${query.id} requested but not found within level ${query.levelId?.toString()}.`)
                 return PaginationHelper.emptyResponse(query.page, query.pageSize)
             }
             filterBuilder.withObjectId('_id', query.id)
@@ -117,10 +108,12 @@ export class TasksService {
     }
 
     async update(taskId: ObjectId, task: UpdateTaskDto, updatedBy: ObjectId): Promise<void> {
-        const validatedLessons = task.lessonIds?.length ? await this.lessonsService.validateLessonIds(task.lessonIds) : undefined
+        await this.validateLessons(task)
+        const assignment = await this.validateAndGetAssignment(task)
+        this.validateMeeting(task)
+        this.validateWird(task)
 
         const taskFound = await this.taskRepository.findOne({ _id: taskId })
-
         if (task.hasChatRoom === false && taskFound?.chatRoomId) {
             await this.chatService.removeChatRoom(taskFound.chatRoomId)
         }
@@ -128,8 +121,13 @@ export class TasksService {
         const updateObject: Partial<TaskDocument> = {
             ...(task.date && { date: task.date }),
             ...(task.note && { note: task.note }),
+            assignment,
+            meetingLink: task.meetingLink,
             chatRoomId: task.hasChatRoom ? await this.chatService.createChatRoom(updatedBy) : undefined,
-            ...(validatedLessons && { lessons: validatedLessons }),
+            wirdTitle: task.wirdTitle,
+            wirdDetails: task.wirdDetails,
+            ...{ lessons: task.lessonIds },
+            minimumWatchTime: task.minimumWatchTime,
         }
 
         const updated = await this.taskRepository.update({ _id: taskId, state: { $ne: TaskState.deleted } }, updateObject)
@@ -159,5 +157,74 @@ export class TasksService {
             }
         }
         this.logger.log(`Task ${id} removed.`)
+    }
+
+    async complete(id: ObjectId, dto: CompleteTaskDto, studentId: ObjectId): Promise<void> {
+        const task = await this.taskRepository.findById(id)
+        if (!task) {
+            this.logger.error(`Attempt to complete Task ${id.toString()} failed.`)
+            throw new NotFoundException(this.i18n.t('tasks.errors.taskNotFound'))
+        }
+        const student = await this.documentsService.getStudent(studentId.toString())
+        if (!student) {
+            this.logger.error(`Attempt to complete Task ${id.toString()} failed. Student ${studentId.toString()} not found.`)
+            throw new NotFoundException(this.i18n.t('tasks.errors.studentNotFound'))
+        }
+        if (!student.subscriptions.some(subscription => subscription._id.equals(dto.subscriptionId))) {
+            this.logger.error(
+                `Attempt to complete Task ${id.toString()} failed. Subscription ${dto.subscriptionId.toString()} not found for student ${studentId.toString()}.`
+            )
+            throw new NotFoundException(this.i18n.t('tasks.errors.studentSubscriptionNotFound'))
+        }
+        await this.subscriptionService.addCompletedTask(dto.subscriptionId, id)
+    }
+
+    private async validateAndGetLevel(task: CreateTaskDto): Promise<LevelDocument> {
+        const level = await this.documentsService.getLevel(task.levelId.toString())
+        if (!level) {
+            this.logger.error(`Level ${task.levelId.toString()} not found.`)
+            throw new NotFoundException(this.i18n.t('tasks.errors.levelNotFound'))
+        }
+        return level
+    }
+
+    private validateWird(task: CreateTaskDto | UpdateTaskDto): void {
+        if (task.type === TaskType.wird && !task.wirdTitle) {
+            this.logger.error(`WirdTitle is required for task type ${task.type}.`)
+            throw new NotAcceptableException(this.i18n.t('tasks.errors.wirdTitleRequired'))
+        }
+    }
+
+    private validateMeeting(task: CreateTaskDto | UpdateTaskDto): void {
+        if (task.type === TaskType.meeting && !task.meetingLink) {
+            this.logger.error(`MeetingLink is required for task type ${task.type}.`)
+            throw new NotAcceptableException(this.i18n.t('tasks.errors.meetingLinkRequired'))
+        }
+    }
+
+    private async validateAndGetAssignment(task: CreateTaskDto | UpdateTaskDto): Promise<AssignmentDocument | undefined> {
+        let assignment: AssignmentDocument | undefined
+        if (task.type === TaskType.assignment) {
+            if (!task.assignmentId) {
+                this.logger.error(`AssignmentId is required for task type ${task.type}.`)
+                throw new NotAcceptableException(this.i18n.t('tasks.errors.assignmentIdRequired'))
+            }
+            assignment = await this.assignmentRepository.findById(task.assignmentId)
+            if (!assignment) {
+                this.logger.error(`Assignment ${task.assignmentId.toString()} not found.`)
+                throw new NotFoundException(this.i18n.t('tasks.errors.assignmentNotFound'))
+            }
+        }
+        return assignment
+    }
+
+    private async validateLessons(task: CreateTaskDto | UpdateTaskDto): Promise<void> {
+        if (task.type === TaskType.lesson) {
+            if (!task.lessonIds?.length) {
+                this.logger.error(`LessonIds are required for task type ${task.type}.`)
+                throw new NotAcceptableException(this.i18n.t('tasks.errors.lessonIdsRequired'))
+            }
+            await this.lessonsService.validateLessonIds(task.lessonIds)
+        }
     }
 }
