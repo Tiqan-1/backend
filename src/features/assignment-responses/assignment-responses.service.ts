@@ -49,7 +49,9 @@ export class AssignmentResponsesService {
     ) {}
 
     async findById(responseId: ObjectId, user: TokenUser): Promise<AssignmentResponseDto> {
-        const response = await this.responsesRepository.findById(responseId, true)
+        const response = await this.responsesRepository.findById(responseId, undefined, {
+            populate: [{ path: 'assignments' }, { path: 'student', select: 'name email' }],
+        })
         if (!response) {
             throw new NotFoundException(this.i18n.t('assignmentResponses.errors.notFoundBy'))
         }
