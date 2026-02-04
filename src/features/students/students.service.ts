@@ -1,5 +1,6 @@
 import { ConflictException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common'
 import * as bcrypt from 'bcryptjs'
+import { ProjectionType, QueryOptions } from 'mongoose'
 import { I18nService } from 'nestjs-i18n'
 import { oneMonth } from '../../shared/constants'
 import { CreatedDto } from '../../shared/dto/created.dto'
@@ -13,12 +14,16 @@ import { ProgramState } from '../programs/enums/program-state.enum'
 import { ProgramsService } from '../programs/programs.service'
 import { PaginatedStudentSubscriptionDto } from '../subscriptions/dto/paginated-subscripition.dto'
 import { SearchSubscriptionsQueryDto } from '../subscriptions/dto/search-subscriptions-query.dto'
-import { CreateSubscriptionDto, CreateSubscriptionV2Dto, StudentSubscriptionDto } from '../subscriptions/dto/subscription.dto'
+import {
+    CreateSubscriptionDto,
+    CreateSubscriptionV2Dto,
+    StudentSubscriptionDto
+} from '../subscriptions/dto/subscription.dto'
 import { SubscriptionState } from '../subscriptions/enums/subscription-state.enum'
 import { SubscriptionsService } from '../subscriptions/subscriptions.service'
 import { UserStatus } from '../users/enums/user-status'
 import { UsersRepository } from '../users/users.repository'
-import { SignUpStudentDto } from './dto/student.dto'
+import { SignUpStudentDto, StudentDto } from './dto/student.dto'
 import { StudentDocument } from './schemas/student.schema'
 import { StudentRepository } from './students.repository'
 
@@ -139,8 +144,17 @@ export class StudentsService {
         return programs
     }
 
-    private async loadStudent(studentId: ObjectId): Promise<StudentDocument> {
-        const student = await this.studentRepository.findById(studentId)
+    async getProfile(id: ObjectId): Promise<StudentDto> {
+        const student = await this.loadStudent(id, undefined, { populate: 'subscriptions' })
+        return new StudentDto(student)
+    }
+
+    private async loadStudent(
+        studentId: ObjectId,
+        projections?: ProjectionType<StudentDto>,
+        options?: QueryOptions<StudentDocument>
+    ): Promise<StudentDocument> {
+        const student = await this.studentRepository.findById(studentId, projections, options)
         if (!student || student.status === UserStatus.deleted) {
             this.logger.error(`Trying to load student ${studentId.toString()} from session but not found in the database.`)
             throw new InternalServerErrorException(this.i18n.t('students.errors.unknown'))

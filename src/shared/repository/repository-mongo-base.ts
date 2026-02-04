@@ -1,4 +1,4 @@
-import { Model } from 'mongoose'
+import { Model, ProjectionType, QueryOptions } from 'mongoose'
 import { RepositoryBase } from './repository-base'
 import { ObjectId } from './types'
 
@@ -24,8 +24,8 @@ export class RepositoryMongoBase<T> extends RepositoryBase<T> {
         return undefined
     }
 
-    async findById(id: ObjectId): Promise<T | undefined> {
-        const foundElement = await this.model.findById(id).exec()
+    async findById(id: ObjectId, projection?: ProjectionType<T>, options?: QueryOptions<T>): Promise<T | undefined> {
+        const foundElement = await this.model.findById(id, projection, options).exec()
         if (foundElement) {
             return foundElement
         }

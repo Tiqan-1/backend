@@ -669,10 +669,10 @@ describe('StudentsController (e2e)', () => {
             expect(programDto?.id).toEqual(program._id.toString())
             expect(programDto?.levels[0].id).toEqual(level._id.toString())
             expect(programDto?.levels[0].tasks[0].id).toEqual(task._id.toString())
-            expect(programDto?.levels[0].tasks[0].lessons[0].id).toEqual(lesson._id.toString())
+            expect(programDto?.levels[0].tasks[0].lessons?.[0].id).toEqual(lesson._id.toString())
             expect(levelDto?.id).toEqual(level._id.toString())
             expect(levelDto?.tasks[0].id).toEqual(task._id.toString())
-            expect(levelDto?.tasks[0].lessons[0].id).toEqual(lesson._id.toString())
+            expect(levelDto?.tasks[0].lessons?.[0].id).toEqual(lesson._id.toString())
             expect(currentLevel?.id).toEqual(level._id.toString())
             expect(state).toEqual(subscription.state)
             expect(subscriptionDate).toEqual(subscription.subscriptionDate.toISOString())
@@ -818,7 +818,7 @@ describe('StudentsController (e2e)', () => {
             expect(programs[0].id).toEqual(program._id.toString())
             expect(programs[0].levels[0].name).toEqual(level.name)
             expect(programs[0].levels[0].tasks[0].date).toEqual(task.date.toISOString())
-            expect(programs[0].levels[0].tasks[0].lessons[0].url).toEqual(lesson.url)
+            expect(programs[0].levels[0].tasks[0].lessons?.[0].url).toEqual(lesson.url)
             expect(programs[0].thumbnail).toContain(`base64-`)
         })
 
@@ -920,6 +920,28 @@ describe('StudentsController (e2e)', () => {
             const body = response.body as PaginatedProgramDto
             expect(body.items.length).toEqual(1)
             expect(body.items[0].id).toEqual(program._id.toString())
+        })
+    })
+
+    describe('GET /api/students/v1/profile', () => {
+        it('should succeed', async () => {
+            const student = await mongoTestHelper.createStudent()
+            const token = jwtService.sign({ id: student._id, role: student.role })
+
+            const response = await request(app.getHttpServer())
+                .get('/api/students/v1/profile')
+                .set('Authorization', `Bearer ${token}`)
+                .expect(HttpStatus.OK)
+
+            expect(response.body).toBeDefined()
+            expect(response.body.email).toBeDefined()
+            expect(response.body.name).toBeDefined()
+            expect(response.body.gender).toBeDefined()
+            expect(response.body.profilePicture).toBeUndefined()
+        })
+
+        it('should fail if student is not authenticated', async () => {
+            await request(app.getHttpServer()).get('/api/students/v1/profile').expect(HttpStatus.UNAUTHORIZED)
         })
     })
 })
