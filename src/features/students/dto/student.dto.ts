@@ -14,6 +14,10 @@ export class StudentDto {
         this.subscriptions = arePopulated(student.subscriptions) ? SubscriptionDto.fromDocuments(student.subscriptions) : []
         this.gender = student.gender
         this.profilePicture = student.profilePicture
+        this.phoneNumber = student.phoneNumber
+        this.country = student.country
+        this.academicNumber = student.academicNumber as string
+        this.dateOfBirth = student.dateOfBirth
     }
 
     @ApiProperty({ type: String, example: 'John Doe', description: 'full name of student' })

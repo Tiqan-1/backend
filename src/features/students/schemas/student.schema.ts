@@ -29,7 +29,7 @@ export class Student {
     @Prop({ required: false, type: String })
     profilePicture?: string
 
-    @Prop({ required: true, type: Number })
+    @Prop({ required: true, type: String })
     phoneNumber: string
 
     @Prop({ required: true, type: String })
