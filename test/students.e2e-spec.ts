@@ -135,6 +135,9 @@ describe('StudentsController (e2e)', () => {
                 email: 'testUser@gmail.com',
                 gender: Gender.male,
                 password: 'P@ssw0rd',
+                dateOfBirth: new Date('1990-01-01'),
+                phoneNumber: '09123456789',
+                country: 'Test Country',
             }
             await request(app.getHttpServer()).post('/api/students/sign-up').send(user).expect(HttpStatus.CREATED)
         })

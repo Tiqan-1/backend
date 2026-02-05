@@ -12,6 +12,10 @@ import { Lesson, LessonSchema } from '../../features/lessons/schemas/lesson.sche
 import { Level, LevelSchema } from '../../features/levels/schemas/level.schema'
 import { Manager, ManagerSchema } from '../../features/managers/schemas/manager.schema'
 import { Program, ProgramSchema } from '../../features/programs/schemas/program.schema'
+import {
+    AcademicNumberCounter,
+    AcademicNumberCounterSchema,
+} from '../../features/students/schemas/academic-number-counter.schema'
 import { Student, StudentSchema } from '../../features/students/schemas/student.schema'
 import { Subject, SubjectSchema } from '../../features/subjects/schemas/subject.schema'
 import { Subscription, SubscriptionSchema } from '../../features/subscriptions/schemas/subscription.schema'
@@ -23,6 +27,7 @@ import { SharedDocumentsService } from './shared-documents.service'
 
 @Module({
     imports: [
+        MongooseModule.forFeature([{ name: AcademicNumberCounter.name, schema: AcademicNumberCounterSchema }]),
         MongooseModule.forFeature([{ name: DbVersion.name, schema: DbVersionSchema }]),
         MongooseModule.forFeature([{ name: Assignment.name, schema: AssignmentSchema }]),
         MongooseModule.forFeature([{ name: AssignmentResponse.name, schema: AssignmentResponseSchema }]),

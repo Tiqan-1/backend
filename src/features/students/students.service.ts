@@ -14,11 +14,7 @@ import { ProgramState } from '../programs/enums/program-state.enum'
 import { ProgramsService } from '../programs/programs.service'
 import { PaginatedStudentSubscriptionDto } from '../subscriptions/dto/paginated-subscripition.dto'
 import { SearchSubscriptionsQueryDto } from '../subscriptions/dto/search-subscriptions-query.dto'
-import {
-    CreateSubscriptionDto,
-    CreateSubscriptionV2Dto,
-    StudentSubscriptionDto
-} from '../subscriptions/dto/subscription.dto'
+import { CreateSubscriptionDto, CreateSubscriptionV2Dto, StudentSubscriptionDto } from '../subscriptions/dto/subscription.dto'
 import { SubscriptionState } from '../subscriptions/enums/subscription-state.enum'
 import { SubscriptionsService } from '../subscriptions/subscriptions.service'
 import { UserStatus } from '../users/enums/user-status'
@@ -46,8 +42,10 @@ export class StudentsService {
             this.logger.error(`Manager signup attempt with duplicate email detected: ${duplicate.email}`)
             throw new ConflictException(this.i18n.t('students.errors.duplicateEmail'))
         }
+
+        student.password = bcrypt.hashSync(student.password, 10)
+
         try {
-            student.password = bcrypt.hashSync(student.password, 10)
             const createdStudent = await this.studentRepository.create({
                 ...student,
                 role: Role.Student,

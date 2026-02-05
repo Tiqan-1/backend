@@ -1,5 +1,6 @@
 import { MigrationScript } from './migration-script'
 import { V1 } from './v1'
+import { V10 } from './v10'
 import { V2 } from './v2'
 import { V3 } from './v3'
 import { V4 } from './v4'
@@ -19,4 +20,5 @@ export const MIGRATION_SCRIPTS_MAP = new Map<number, MigrationScript>([
     [7, new V7()],
     [8, new V8()],
     [9, new V9()],
+    [10, new V10()],
 ])

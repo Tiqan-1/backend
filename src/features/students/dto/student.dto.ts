@@ -1,5 +1,6 @@
-import { ApiProperty, OmitType } from '@nestjs/swagger'
-import { IsEmail, IsEnum, IsString, IsStrongPassword, ValidateNested } from 'class-validator'
+import { ApiProperty, OmitType, PickType } from '@nestjs/swagger'
+import { Type } from 'class-transformer'
+import { IsDate, IsEmail, IsEnum, IsString, IsStrongPassword, ValidateNested } from 'class-validator'
 import { i18nValidationMessage } from 'nestjs-i18n'
 import { arePopulated } from '../../../shared/helper/populated-type.helper'
 import { SubscriptionDto } from '../../subscriptions/dto/subscription.dto'
@@ -31,12 +32,29 @@ export class StudentDto {
     @IsString({ message: i18nValidationMessage('validation.string', { property: 'profilePicture' }) })
     profilePicture?: string
 
+    @ApiProperty({ type: String, required: false, description: 'academic number of student' })
+    @IsString({ message: i18nValidationMessage('validation.string', { property: 'academicNumber' }) })
+    academicNumber: string
+
+    @ApiProperty({ type: String, required: false, description: 'phone number of student' })
+    @IsString({ message: i18nValidationMessage('validation.string', { property: 'phone' }) })
+    phoneNumber: string
+
+    @ApiProperty({ type: Date, required: false, description: 'date of birth of student' })
+    @Type(() => Date)
+    @IsDate({ message: i18nValidationMessage('validation.date', { property: 'dateOfBirth' }) })
+    dateOfBirth: Date
+
+    @ApiProperty({ type: String, required: false, description: 'country of student' })
+    @IsString({ message: i18nValidationMessage('validation.string', { property: 'country' }) })
+    country: string
+
     @ApiProperty({ type: () => SubscriptionDto, isArray: true, description: 'subscriptions for student' })
     @ValidateNested({ each: true })
     subscriptions: SubscriptionDto[]
 }
 
-export class SimpleStudentDto extends OmitType(StudentDto, ['subscriptions', 'gender', 'profilePicture']) {
+export class SimpleStudentDto extends PickType(StudentDto, ['name', 'email']) {
     static fromDocument(subscriber: StudentDocument): SimpleStudentDto {
         return {
             name: subscriber.name,
@@ -45,7 +63,7 @@ export class SimpleStudentDto extends OmitType(StudentDto, ['subscriptions', 'ge
     }
 }
 
-export class SignUpStudentDto extends OmitType(StudentDto, ['subscriptions', 'profilePicture']) {
+export class SignUpStudentDto extends OmitType(StudentDto, ['subscriptions', 'profilePicture', 'academicNumber']) {
     @ApiProperty({ type: String, example: 'P@ssw0rd', description: 'password of student' })
     @IsStrongPassword(
         { minLength: 6, minNumbers: 0, minSymbols: 0, minLowercase: 0, minUppercase: 0 },

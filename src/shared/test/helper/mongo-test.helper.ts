@@ -25,6 +25,10 @@ import { ProgramState } from '../../../features/programs/enums/program-state.enu
 import { ProgramSubscriptionType } from '../../../features/programs/enums/program-subscription-type.enum'
 import { Program, ProgramDocument, ProgramSchema } from '../../../features/programs/schemas/program.schema'
 import { Gender } from '../../../features/students/enums/gender'
+import {
+    AcademicNumberCounter,
+    AcademicNumberCounterSchema,
+} from '../../../features/students/schemas/academic-number-counter.schema'
 import { Student, StudentDocument, StudentSchema } from '../../../features/students/schemas/student.schema'
 import { Subject, SubjectDocument, SubjectSchema } from '../../../features/subjects/schemas/subject.schema'
 import { SubscriptionState } from '../../../features/subscriptions/enums/subscription-state.enum'
@@ -50,6 +54,7 @@ export class MongoTestHelper {
     private verificationCodeModel: Model<VerificationCode>
     private managerModel: Model<Manager>
     private studentModel: Model<Student>
+    private academicNumberCounterModel: Model<AcademicNumberCounter>
     private refreshTokenModel: Model<RefreshToken>
     private subjectModel: Model<Subject>
     private assigmentModel: Model<Assignment>
@@ -70,6 +75,7 @@ export class MongoTestHelper {
 
     get providers(): Provider[] {
         return [
+            { provide: getModelToken(AcademicNumberCounter.name), useValue: this.getAcademicNumberCounterModel() },
             { provide: getModelToken(DbVersion.name), useValue: this.getDbVersionModel() },
             { provide: getModelToken(Assignment.name), useValue: this.getAssignmentModel() },
             { provide: getModelToken(AssignmentResponse.name), useValue: this.getAssignmentResponseModel() },
@@ -131,6 +137,13 @@ export class MongoTestHelper {
             this.studentModel = userModel.discriminator<Student>(Student.name, StudentSchema)
         }
         return this.studentModel
+    }
+
+    getAcademicNumberCounterModel(): Model<AcademicNumberCounter> {
+        if (!this.academicNumberCounterModel) {
+            this.academicNumberCounterModel = this.mongoConnection.model(AcademicNumberCounter.name, AcademicNumberCounterSchema)
+        }
+        return this.academicNumberCounterModel
     }
 
     getSubjectModel(): Model<Subject> {
@@ -222,6 +235,9 @@ export class MongoTestHelper {
             role: Role.Student,
             subscriptions: [],
             status: UserStatus.active,
+            phoneNumber: '1234567890',
+            country: 'Test Country',
+            dateOfBirth: new Date('2000-01-01'),
         }
         const model = this.getStudentModel()
         return model.create(student)

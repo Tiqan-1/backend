@@ -1,11 +1,14 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
-import { VerificationCode, VerificationCodeDocument } from '../../features/authentication/schema/verification-code.schema'
 import { Lesson, LessonDocument } from '../../features/lessons/schemas/lesson.schema'
 import { Level, LevelDocument } from '../../features/levels/schemas/level.schema'
 import { Manager, ManagerDocument } from '../../features/managers/schemas/manager.schema'
 import { Program, ProgramDocument } from '../../features/programs/schemas/program.schema'
+import {
+    AcademicNumberCounter,
+    AcademicNumberCounterDocument,
+} from '../../features/students/schemas/academic-number-counter.schema'
 import { Student, StudentDocument } from '../../features/students/schemas/student.schema'
 import { Subject, SubjectDocument } from '../../features/subjects/schemas/subject.schema'
 import { Subscription, SubscriptionDocument } from '../../features/subscriptions/schemas/subscription.schema'
@@ -26,7 +29,8 @@ export class SharedDocumentsService {
         @InjectModel(Task.name) private taskModel: Model<TaskDocument>,
         @InjectModel(Level.name) private levelModel: Model<LevelDocument>,
         @InjectModel(Program.name) private programModel: Model<ProgramDocument>,
-        @InjectModel(Subscription.name) private subscriptionModel: Model<SubscriptionDocument>
+        @InjectModel(Subscription.name) private subscriptionModel: Model<SubscriptionDocument>,
+        @InjectModel(AcademicNumberCounter.name) private academicNumberCounterModel: Model<AcademicNumberCounterDocument>
     ) {}
 
     async getDbVersion(): Promise<DbVersionDocument> {
@@ -71,6 +75,14 @@ export class SharedDocumentsService {
 
     async getStudents(ids: string[]): Promise<StudentDocument[]> {
         return this.getDocuments<StudentDocument>(ids, this.studentModel)
+    }
+
+    async getAcademicNumberCounter(): Promise<AcademicNumberCounterDocument> {
+        const found = await this.academicNumberCounterModel.findOne()
+        if (!found) {
+            throw new Error('Academic number counter not found')
+        }
+        return found
     }
 
     getUser(id: string): Promise<UserDocument | undefined> {
