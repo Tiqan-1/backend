@@ -12,7 +12,7 @@ export class V10 implements MigrationScript {
 
         for (const student of students) {
             if (!student.academicNumber) {
-                const counter = await documentsService.getAcademicNumberCounter()
+                const counter = await documentsService.getCounter('academicNumber')
 
                 student.academicNumber = `${counter.seq + 1}`
                 counter.seq += 1

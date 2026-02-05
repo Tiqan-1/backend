@@ -1,11 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { HydratedDocument, Model } from 'mongoose'
+import { Counter, CounterDocument } from '../../../shared/database-services/schema/counter.schema'
 import { ObjectId, Populated } from '../../../shared/repository/types'
 import { Role } from '../../authentication/enums/role.enum'
 import { Subscription, SubscriptionDocument } from '../../subscriptions/schemas/subscription.schema'
 import { UserStatus } from '../../users/enums/user-status'
 import { Gender } from '../enums/gender'
-import { AcademicNumberCounter, AcademicNumberCounterDocument } from './academic-number-counter.schema'
 
 export type StudentDocument = HydratedDocument<Student>
 
@@ -47,7 +47,7 @@ export const StudentSchema = SchemaFactory.createForClass(Student)
 StudentSchema.pre('save', async function (next) {
     if (!this.academicNumber) {
         const studentModel = this.constructor as Model<StudentDocument>
-        const counterModel = studentModel.db.model<AcademicNumberCounterDocument>(AcademicNumberCounter.name)
+        const counterModel = studentModel.db.model<CounterDocument>(Counter.name)
 
         const counter = await counterModel.findOneAndUpdate(
             { name: 'academicNumber' },

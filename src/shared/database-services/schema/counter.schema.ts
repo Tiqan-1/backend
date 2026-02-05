@@ -1,10 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { HydratedDocument } from 'mongoose'
 
-export type AcademicNumberCounterDocument = HydratedDocument<AcademicNumberCounter>
+export type CounterDocument = HydratedDocument<Counter>
 
 @Schema()
-export class AcademicNumberCounter {
+export class Counter {
     @Prop({ required: true, unique: true })
     name: string
 
@@ -12,4 +12,4 @@ export class AcademicNumberCounter {
     seq: number
 }
 
-export const AcademicNumberCounterSchema = SchemaFactory.createForClass(AcademicNumberCounter)
+export const CounterSchema = SchemaFactory.createForClass(Counter)

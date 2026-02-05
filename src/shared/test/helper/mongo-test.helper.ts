@@ -25,10 +25,6 @@ import { ProgramState } from '../../../features/programs/enums/program-state.enu
 import { ProgramSubscriptionType } from '../../../features/programs/enums/program-subscription-type.enum'
 import { Program, ProgramDocument, ProgramSchema } from '../../../features/programs/schemas/program.schema'
 import { Gender } from '../../../features/students/enums/gender'
-import {
-    AcademicNumberCounter,
-    AcademicNumberCounterSchema,
-} from '../../../features/students/schemas/academic-number-counter.schema'
 import { Student, StudentDocument, StudentSchema } from '../../../features/students/schemas/student.schema'
 import { Subject, SubjectDocument, SubjectSchema } from '../../../features/subjects/schemas/subject.schema'
 import { SubscriptionState } from '../../../features/subscriptions/enums/subscription-state.enum'
@@ -42,6 +38,7 @@ import { Task, TaskDocument, TaskSchema } from '../../../features/tasks/schemas/
 import { RefreshToken, RefreshTokenSchema } from '../../../features/tokens/schemas/refresh-token.schema'
 import { UserStatus } from '../../../features/users/enums/user-status'
 import { User, UserDocument, UserSchema } from '../../../features/users/schemas/user.schema'
+import { Counter, CounterSchema } from '../../database-services/schema/counter.schema'
 import { DbVersion, DbVersionSchema } from '../../database-services/schema/db-version.schema'
 import { ObjectId } from '../../repository/types'
 
@@ -54,7 +51,7 @@ export class MongoTestHelper {
     private verificationCodeModel: Model<VerificationCode>
     private managerModel: Model<Manager>
     private studentModel: Model<Student>
-    private academicNumberCounterModel: Model<AcademicNumberCounter>
+    private counterModel: Model<Counter>
     private refreshTokenModel: Model<RefreshToken>
     private subjectModel: Model<Subject>
     private assigmentModel: Model<Assignment>
@@ -75,7 +72,7 @@ export class MongoTestHelper {
 
     get providers(): Provider[] {
         return [
-            { provide: getModelToken(AcademicNumberCounter.name), useValue: this.getAcademicNumberCounterModel() },
+            { provide: getModelToken(Counter.name), useValue: this.getCounterModel() },
             { provide: getModelToken(DbVersion.name), useValue: this.getDbVersionModel() },
             { provide: getModelToken(Assignment.name), useValue: this.getAssignmentModel() },
             { provide: getModelToken(AssignmentResponse.name), useValue: this.getAssignmentResponseModel() },
@@ -139,11 +136,11 @@ export class MongoTestHelper {
         return this.studentModel
     }
 
-    getAcademicNumberCounterModel(): Model<AcademicNumberCounter> {
-        if (!this.academicNumberCounterModel) {
-            this.academicNumberCounterModel = this.mongoConnection.model(AcademicNumberCounter.name, AcademicNumberCounterSchema)
+    getCounterModel(): Model<Counter> {
+        if (!this.counterModel) {
+            this.counterModel = this.mongoConnection.model(Counter.name, CounterSchema)
         }
-        return this.academicNumberCounterModel
+        return this.counterModel
     }
 
     getSubjectModel(): Model<Subject> {

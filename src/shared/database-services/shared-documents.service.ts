@@ -5,16 +5,13 @@ import { Lesson, LessonDocument } from '../../features/lessons/schemas/lesson.sc
 import { Level, LevelDocument } from '../../features/levels/schemas/level.schema'
 import { Manager, ManagerDocument } from '../../features/managers/schemas/manager.schema'
 import { Program, ProgramDocument } from '../../features/programs/schemas/program.schema'
-import {
-    AcademicNumberCounter,
-    AcademicNumberCounterDocument,
-} from '../../features/students/schemas/academic-number-counter.schema'
 import { Student, StudentDocument } from '../../features/students/schemas/student.schema'
 import { Subject, SubjectDocument } from '../../features/subjects/schemas/subject.schema'
 import { Subscription, SubscriptionDocument } from '../../features/subscriptions/schemas/subscription.schema'
 import { Task, TaskDocument } from '../../features/tasks/schemas/task.schema'
 import { User, UserDocument } from '../../features/users/schemas/user.schema'
 import { ObjectId } from '../repository/types'
+import { Counter, CounterDocument } from './schema/counter.schema'
 import { DbVersion, DbVersionDocument } from './schema/db-version.schema'
 
 @Injectable()
@@ -30,7 +27,7 @@ export class SharedDocumentsService {
         @InjectModel(Level.name) private levelModel: Model<LevelDocument>,
         @InjectModel(Program.name) private programModel: Model<ProgramDocument>,
         @InjectModel(Subscription.name) private subscriptionModel: Model<SubscriptionDocument>,
-        @InjectModel(AcademicNumberCounter.name) private academicNumberCounterModel: Model<AcademicNumberCounterDocument>
+        @InjectModel(Counter.name) private counterModel: Model<CounterDocument>
     ) {}
 
     async getDbVersion(): Promise<DbVersionDocument> {
@@ -77,10 +74,10 @@ export class SharedDocumentsService {
         return this.getDocuments<StudentDocument>(ids, this.studentModel)
     }
 
-    async getAcademicNumberCounter(): Promise<AcademicNumberCounterDocument> {
-        const found = await this.academicNumberCounterModel.findOne()
+    async getCounter(name: string): Promise<CounterDocument> {
+        const found = await this.counterModel.findOne({ name })
         if (!found) {
-            return await this.academicNumberCounterModel.create({ seq: 100000 })
+            return await this.counterModel.create({ seq: 100000, name })
         }
         return found
     }
