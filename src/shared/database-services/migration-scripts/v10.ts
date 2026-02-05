@@ -27,6 +27,7 @@ export class V10 implements MigrationScript {
             if (!student.dateOfBirth) {
                 student.dateOfBirth = new Date('1990-01-01')
             }
+            await student.save()
         }
 
         this.logger.log(`Migration process of script ${V10.name} completed successfully.`)
