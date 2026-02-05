@@ -80,7 +80,7 @@ export class SharedDocumentsService {
     async getAcademicNumberCounter(): Promise<AcademicNumberCounterDocument> {
         const found = await this.academicNumberCounterModel.findOne()
         if (!found) {
-            throw new Error('Academic number counter not found')
+            return await this.academicNumberCounterModel.create({ seq: 100000 })
         }
         return found
     }
