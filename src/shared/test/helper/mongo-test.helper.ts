@@ -38,6 +38,7 @@ import { Task, TaskDocument, TaskSchema } from '../../../features/tasks/schemas/
 import { RefreshToken, RefreshTokenSchema } from '../../../features/tokens/schemas/refresh-token.schema'
 import { UserStatus } from '../../../features/users/enums/user-status'
 import { User, UserDocument, UserSchema } from '../../../features/users/schemas/user.schema'
+import { Counter, CounterSchema } from '../../database-services/schema/counter.schema'
 import { DbVersion, DbVersionSchema } from '../../database-services/schema/db-version.schema'
 import { ObjectId } from '../../repository/types'
 
@@ -50,6 +51,7 @@ export class MongoTestHelper {
     private verificationCodeModel: Model<VerificationCode>
     private managerModel: Model<Manager>
     private studentModel: Model<Student>
+    private counterModel: Model<Counter>
     private refreshTokenModel: Model<RefreshToken>
     private subjectModel: Model<Subject>
     private assigmentModel: Model<Assignment>
@@ -70,6 +72,7 @@ export class MongoTestHelper {
 
     get providers(): Provider[] {
         return [
+            { provide: getModelToken(Counter.name), useValue: this.getCounterModel() },
             { provide: getModelToken(DbVersion.name), useValue: this.getDbVersionModel() },
             { provide: getModelToken(Assignment.name), useValue: this.getAssignmentModel() },
             { provide: getModelToken(AssignmentResponse.name), useValue: this.getAssignmentResponseModel() },
@@ -131,6 +134,13 @@ export class MongoTestHelper {
             this.studentModel = userModel.discriminator<Student>(Student.name, StudentSchema)
         }
         return this.studentModel
+    }
+
+    getCounterModel(): Model<Counter> {
+        if (!this.counterModel) {
+            this.counterModel = this.mongoConnection.model(Counter.name, CounterSchema)
+        }
+        return this.counterModel
     }
 
     getSubjectModel(): Model<Subject> {
@@ -222,6 +232,9 @@ export class MongoTestHelper {
             role: Role.Student,
             subscriptions: [],
             status: UserStatus.active,
+            phoneNumber: '1234567890',
+            country: 'Test Country',
+            dateOfBirth: new Date('2000-01-01'),
         }
         const model = this.getStudentModel()
         return model.create(student)

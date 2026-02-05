@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
-import { VerificationCode, VerificationCodeDocument } from '../../features/authentication/schema/verification-code.schema'
 import { Lesson, LessonDocument } from '../../features/lessons/schemas/lesson.schema'
 import { Level, LevelDocument } from '../../features/levels/schemas/level.schema'
 import { Manager, ManagerDocument } from '../../features/managers/schemas/manager.schema'
@@ -12,6 +11,7 @@ import { Subscription, SubscriptionDocument } from '../../features/subscriptions
 import { Task, TaskDocument } from '../../features/tasks/schemas/task.schema'
 import { User, UserDocument } from '../../features/users/schemas/user.schema'
 import { ObjectId } from '../repository/types'
+import { Counter, CounterDocument } from './schema/counter.schema'
 import { DbVersion, DbVersionDocument } from './schema/db-version.schema'
 
 @Injectable()
@@ -26,7 +26,8 @@ export class SharedDocumentsService {
         @InjectModel(Task.name) private taskModel: Model<TaskDocument>,
         @InjectModel(Level.name) private levelModel: Model<LevelDocument>,
         @InjectModel(Program.name) private programModel: Model<ProgramDocument>,
-        @InjectModel(Subscription.name) private subscriptionModel: Model<SubscriptionDocument>
+        @InjectModel(Subscription.name) private subscriptionModel: Model<SubscriptionDocument>,
+        @InjectModel(Counter.name) private counterModel: Model<CounterDocument>
     ) {}
 
     async getDbVersion(): Promise<DbVersionDocument> {
@@ -71,6 +72,14 @@ export class SharedDocumentsService {
 
     async getStudents(ids: string[]): Promise<StudentDocument[]> {
         return this.getDocuments<StudentDocument>(ids, this.studentModel)
+    }
+
+    async getCounter(name: string): Promise<CounterDocument> {
+        const found = await this.counterModel.findOne({ name })
+        if (!found) {
+            return await this.counterModel.create({ seq: 100000, name })
+        }
+        return found
     }
 
     getUser(id: string): Promise<UserDocument | undefined> {

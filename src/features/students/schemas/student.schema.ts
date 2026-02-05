@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
-import { HydratedDocument } from 'mongoose'
+import { HydratedDocument, Model } from 'mongoose'
+import { Counter, CounterDocument } from '../../../shared/database-services/schema/counter.schema'
 import { ObjectId, Populated } from '../../../shared/repository/types'
 import { Role } from '../../authentication/enums/role.enum'
 import { Subscription, SubscriptionDocument } from '../../subscriptions/schemas/subscription.schema'
@@ -16,6 +17,9 @@ export class Student {
     role: Role
     status: UserStatus
 
+    @Prop({ unique: true })
+    academicNumber?: string
+
     @Prop({ required: true, enum: [Gender.male, Gender.female], type: String })
     gender: Gender
 
@@ -25,8 +29,35 @@ export class Student {
     @Prop({ required: false, type: String })
     profilePicture?: string
 
+    @Prop({ required: true, type: String })
+    phoneNumber: string
+
+    @Prop({ required: true, type: String })
+    country: string
+
+    @Prop({ required: true, type: Date })
+    dateOfBirth: Date
+
     @Prop({ type: Date, index: { expireAfterSeconds: 0 } })
     expireAt?: Date
 }
 
 export const StudentSchema = SchemaFactory.createForClass(Student)
+
+StudentSchema.pre('save', async function (next) {
+    if (!this.academicNumber) {
+        const studentModel = this.constructor as Model<StudentDocument>
+        const counterModel = studentModel.db.model<CounterDocument>(Counter.name)
+
+        const counter = await counterModel.findOneAndUpdate(
+            { name: 'academicNumber' },
+            { $inc: { seq: 1 } },
+            { new: true, upsert: true, setDefaultsOnInsert: true }
+        )
+
+        // Starting from 100000 to ensure 6 digits
+        const startValue = 100000
+        this.academicNumber = (startValue + counter.seq).toString()
+    }
+    next()
+})

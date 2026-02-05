@@ -18,11 +18,13 @@ import { Subscription, SubscriptionSchema } from '../../features/subscriptions/s
 import { Task, TaskSchema } from '../../features/tasks/schemas/task.schema'
 import { User, UserSchema } from '../../features/users/schemas/user.schema'
 import { MigrationService } from './migration.service'
+import { Counter, CounterSchema } from './schema/counter.schema'
 import { DbVersion, DbVersionSchema } from './schema/db-version.schema'
 import { SharedDocumentsService } from './shared-documents.service'
 
 @Module({
     imports: [
+        MongooseModule.forFeature([{ name: Counter.name, schema: CounterSchema }]),
         MongooseModule.forFeature([{ name: DbVersion.name, schema: DbVersionSchema }]),
         MongooseModule.forFeature([{ name: Assignment.name, schema: AssignmentSchema }]),
         MongooseModule.forFeature([{ name: AssignmentResponse.name, schema: AssignmentResponseSchema }]),
