@@ -1,16 +1,13 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { HydratedDocument } from 'mongoose'
 import { ObjectId, Populated } from '../../../shared/repository/types'
-import { AssignmentDocument } from '../../assignments/schemas/assignment.schema'
-import { Lesson, LessonDocument } from '../../lessons/schemas/lesson.schema'
 import { ManagerDocument } from '../../managers/schemas/manager.schema'
 import { TaskState, TaskType } from '../enums'
 
 export type TaskDocument = HydratedDocument<Task>
 
-@Schema()
+@Schema({ discriminatorKey: 'type' })
 export class Task {
-    // common fields
     @Prop({ required: true, type: ObjectId, ref: 'Manager' })
     createdBy: ObjectId | Populated<ManagerDocument>
     @Prop({ required: true, type: Date, default: Date.now })
@@ -27,28 +24,6 @@ export class Task {
     expireAt?: Date
     @Prop({ required: true, type: String, enum: TaskState, default: TaskState.active })
     state: TaskState
-
-    // for lessons
-    @Prop({ required: true, type: [ObjectId], ref: Lesson.name, default: [] })
-    lessons: ObjectId[] | Populated<LessonDocument[]>
-    @Prop({ required: false, type: Number, min: 0 })
-    minimumWatchTime?: number
-
-    // for assignments
-    @Prop({ required: false, type: ObjectId, ref: 'Assignment' })
-    assignment?: ObjectId | AssignmentDocument
-
-    // for meetings
-    @Prop({ required: false, type: String })
-    meetingLink?: string
-    @Prop({ required: false, type: ObjectId, ref: 'Chat' })
-    chatRoomId?: ObjectId
-
-    // for wirds
-    @Prop({ required: false, type: String })
-    wirdTitle?: string
-    @Prop({ required: false, type: String })
-    wirdDetails?: string
 }
 
 export const TaskSchema = SchemaFactory.createForClass(Task)

@@ -11,6 +11,7 @@ import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { RolesGuard } from '../authentication/guards/roles.guard'
 import { TokenUser } from '../authentication/types/token-user'
 import { CompleteTaskDto } from './dto/complete-task.dto'
+import { CreateLessonTaskDto } from './dto/lesson-task.dto'
 import { PaginatedTaskDto } from './dto/paginated-task.dto'
 import { CreateTaskDto, SearchTasksQueryDto, UpdateTaskDto } from './dto/task.dto'
 import { TasksService } from './tasks.service'
@@ -33,6 +34,21 @@ export class TasksController {
     @UseGuards(JwtAuthGuard, RolesGuard)
     create(@Body() createTaskDto: CreateTaskDto, @Request() request: { user: TokenUser }): Promise<CreatedDto> {
         return this.service.create(createTaskDto, request.user.id)
+    }
+
+    @ApiOperation({ summary: 'Creates a lesson-task', description: 'Creates a lesson-task and adds it to the level.' })
+    @ApiResponse({ status: HttpStatus.CREATED, type: CreatedDto, description: 'Task successfully created.' })
+    @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized user', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'User is forbidden to call this function.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Level not found.', type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request is not valid.', type: BadRequestErrorDto })
+    @Post('v1/lesson-tasks')
+    @HttpCode(HttpStatus.CREATED)
+    @Roles(Role.Manager)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    createLessonTask(@Body() dto: CreateLessonTaskDto, @Request() request: { user: TokenUser }): Promise<CreatedDto> {
+        return this.service.createLessonTask(dto, request.user.id)
     }
 
     @ApiOperation({ summary: 'Searches for tasks', description: `Searches for tasks.` })

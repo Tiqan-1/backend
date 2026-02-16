@@ -6,6 +6,7 @@ export enum TaskState {
 export enum TaskType {
     lesson = 'lesson',
     assignment = 'assignment',
+    oralExam = 'oralExam',
     meeting = 'meeting',
     wird = 'wird',
 }

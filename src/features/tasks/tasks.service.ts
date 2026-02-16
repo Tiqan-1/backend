@@ -1,4 +1,6 @@
 import { Injectable, Logger, NotAcceptableException, NotFoundException } from '@nestjs/common'
+import { InjectModel } from '@nestjs/mongoose'
+import { Model } from 'mongoose'
 import { I18nService } from 'nestjs-i18n'
 import { oneMonth } from '../../shared/constants'
 import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
@@ -13,9 +15,11 @@ import { LessonsService } from '../lessons/lessons.service'
 import { LevelDocument } from '../levels/schemas/level.schema'
 import { SubscriptionsService } from '../subscriptions/subscriptions.service'
 import { CompleteTaskDto } from './dto/complete-task.dto'
+import { CreateLessonTaskDto } from './dto/lesson-task.dto'
 import { PaginatedTaskDto } from './dto/paginated-task.dto'
 import { CreateTaskDto, SearchTasksQueryDto, TaskDto, UpdateTaskDto } from './dto/task.dto'
 import { TaskState, TaskType } from './enums'
+import { LessonTask, LessonTaskDocument } from './schemas/lesson-task.schema'
 import { TaskDocument } from './schemas/task.schema'
 import { TasksRepository } from './tasks.repository'
 
@@ -24,6 +28,7 @@ export class TasksService {
     private readonly logger = new Logger(TasksService.name)
 
     constructor(
+        @InjectModel(LessonTask.name) private lessonTaskModel: Model<LessonTaskDocument>,
         private readonly taskRepository: TasksRepository,
         private readonly lessonsService: LessonsService,
         private readonly assignmentRepository: AssignmentsRepository,
@@ -66,6 +71,28 @@ export class TasksService {
         }
 
         this.logger.log(`Task ${created._id.toString()} created.`)
+        return { id: created._id.toString() }
+    }
+
+    async createLessonTask(createLessonTaskDto: CreateLessonTaskDto, createdBy: ObjectId): Promise<CreatedDto> {
+        const level = this.validateAndGetLevel(createLessonTaskDto.levelId)
+
+        await this.lessonsService.validateLessonIds(createLessonTaskDto.lessonIds)
+
+        const created = new this.lessonTaskModel({
+            levelId: createLessonTaskDto.levelId,
+            date: createLessonTaskDto.date,
+            type: createLessonTaskDto.type,
+            node: createLessonTaskDto.note,
+            createdBy: createdBy,
+            lessons: createLessonTaskDto.lessonIds,
+            minimumWatchTime: createLessonTaskDto.minimumWatchTime,
+        })
+        await created.save()
+        ;(level.tasks as ObjectId[]).push(created._id)
+        await level.save()
+
+        this.logger.log(`Lesson task ${created._id.toString()} created`)
         return { id: created._id.toString() }
     }
 
@@ -179,10 +206,10 @@ export class TasksService {
         await this.subscriptionService.addCompletedTask(dto.subscriptionId, id)
     }
 
-    private async validateAndGetLevel(task: CreateTaskDto): Promise<LevelDocument> {
-        const level = await this.documentsService.getLevel(task.levelId.toString())
+    private async validateAndGetLevel(levelId: ObjectId): Promise<LevelDocument> {
+        const level = await this.documentsService.getLevel(levelId.toString())
         if (!level) {
-            this.logger.error(`Level ${task.levelId.toString()} not found.`)
+            this.logger.error(`Level ${levelId.toString()} not found.`)
             throw new NotFoundException(this.i18n.t('tasks.errors.levelNotFound'))
         }
         return level

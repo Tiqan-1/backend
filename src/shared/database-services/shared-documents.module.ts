@@ -15,7 +15,12 @@ import { Program, ProgramSchema } from '../../features/programs/schemas/program.
 import { Student, StudentSchema } from '../../features/students/schemas/student.schema'
 import { Subject, SubjectSchema } from '../../features/subjects/schemas/subject.schema'
 import { Subscription, SubscriptionSchema } from '../../features/subscriptions/schemas/subscription.schema'
+import { AssignmentTask, AssignmentTaskSchema } from '../../features/tasks/schemas/assignment-task.schema'
+import { LessonTask, LessonTaskSchema } from '../../features/tasks/schemas/lesson-task.schema'
+import { MeetingTask, MeetingTaskSchema } from '../../features/tasks/schemas/meeting-task.schema'
+import { OralExamTask, OralExamTaskSchema } from '../../features/tasks/schemas/oral-exam-task.schema'
 import { Task, TaskSchema } from '../../features/tasks/schemas/task.schema'
+import { WirdTask, WirdTaskSchema } from '../../features/tasks/schemas/wird-task.schema'
 import { User, UserSchema } from '../../features/users/schemas/user.schema'
 import { MigrationService } from './migration.service'
 import { Counter, CounterSchema } from './schema/counter.schema'
@@ -31,6 +36,11 @@ import { SharedDocumentsService } from './shared-documents.service'
         MongooseModule.forFeature([{ name: Lesson.name, schema: LessonSchema }]),
         MongooseModule.forFeature([{ name: Subject.name, schema: SubjectSchema }]),
         MongooseModule.forFeature([{ name: Task.name, schema: TaskSchema }]),
+        MongooseModule.forFeature([{ name: LessonTask.name, schema: LessonTaskSchema }]),
+        MongooseModule.forFeature([{ name: AssignmentTask.name, schema: AssignmentTaskSchema }]),
+        MongooseModule.forFeature([{ name: WirdTask.name, schema: WirdTaskSchema }]),
+        MongooseModule.forFeature([{ name: MeetingTask.name, schema: MeetingTaskSchema }]),
+        MongooseModule.forFeature([{ name: OralExamTask.name, schema: OralExamTaskSchema }]),
         MongooseModule.forFeature([{ name: Chat.name, schema: ChatSchema }]),
         MongooseModule.forFeature([{ name: Message.name, schema: MessageSchema }]),
         MongooseModule.forFeature([{ name: Level.name, schema: LevelSchema }]),

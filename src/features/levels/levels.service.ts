@@ -11,6 +11,7 @@ import { CreateLevelDto, LevelDto, SearchLevelsQueryDto, UpdateLevelDto } from '
 import { PaginatedLevelDto } from './dto/paginated-level.dto'
 import { LevelState } from './enums/level-stats.enum'
 import { LevelsRepository } from './levels.repository'
+import { LevelDocument } from './schemas/level.schema'
 
 @Injectable()
 export class LevelsService {
