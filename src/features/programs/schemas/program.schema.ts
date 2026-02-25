@@ -22,6 +22,9 @@ export class Program {
     @Prop({ required: true, type: ObjectId, ref: 'Manager' })
     createdBy: ObjectId | Populated<ManagerDocument>
 
+    @Prop({ required: true, type: [ObjectId], ref: 'Manager' })
+    sharedWith: ObjectId[] | Populated<ManagerDocument>[]
+
     @Prop({ required: true, type: String, enum: ProgramState, default: ProgramState.created })
     state: ProgramState
 
