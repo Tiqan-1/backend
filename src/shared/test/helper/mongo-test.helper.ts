@@ -34,7 +34,19 @@ import {
     SubscriptionSchema,
 } from '../../../features/subscriptions/schemas/subscription.schema'
 import { TaskState, TaskType } from '../../../features/tasks/enums'
-import { Task, TaskDocument, TaskSchema } from '../../../features/tasks/schemas/task.schema'
+import {
+    AssignmentTask,
+    AssignmentTaskSchema,
+    LessonTask,
+    LessonTaskDocument,
+    LessonTaskSchema,
+    MeetingTask,
+    MeetingTaskSchema,
+    Task,
+    TaskSchema,
+    WirdTask,
+    WirdTaskSchema,
+} from '../../../features/tasks/schemas/task.schema'
 import { RefreshToken, RefreshTokenSchema } from '../../../features/tokens/schemas/refresh-token.schema'
 import { UserStatus } from '../../../features/users/enums/user-status'
 import { User, UserDocument, UserSchema } from '../../../features/users/schemas/user.schema'
@@ -174,6 +186,10 @@ export class MongoTestHelper {
     getTaskModel(): Model<Task> {
         if (!this.taskModel) {
             this.taskModel = this.mongoConnection.model(Task.name, TaskSchema)
+            this.taskModel.discriminator(LessonTask.name, LessonTaskSchema, TaskType.lesson)
+            this.taskModel.discriminator(AssignmentTask.name, AssignmentTaskSchema, TaskType.assignment)
+            this.taskModel.discriminator(MeetingTask.name, MeetingTaskSchema, TaskType.meeting)
+            this.taskModel.discriminator(WirdTask.name, WirdTaskSchema, TaskType.wird)
         }
         return this.taskModel
     }
@@ -287,8 +303,12 @@ export class MongoTestHelper {
         return model.create(subject)
     }
 
-    async createTask(createdBy: ObjectId, levelId: ObjectId = new ObjectId(), lessons: ObjectId[] = []): Promise<TaskDocument> {
-        const task: Task = {
+    async createTask(
+        createdBy: ObjectId,
+        levelId: ObjectId = new ObjectId(),
+        lessons: ObjectId[] = []
+    ): Promise<LessonTaskDocument> {
+        const task: Partial<LessonTask> = {
             levelId,
             createdBy,
             date: new Date(),
@@ -298,7 +318,7 @@ export class MongoTestHelper {
             lessons: lessons.map(({ _id }) => _id),
         }
         const model = this.getTaskModel()
-        return model.create(task)
+        return model.create(task) as unknown as Promise<LessonTaskDocument>
     }
 
     async createProgram(createdBy: ObjectId, levels: ObjectId[] = []): Promise<ProgramDocument> {

@@ -7,10 +7,14 @@ import { ManagerDocument } from '../../managers/schemas/manager.schema'
 import { TaskState, TaskType } from '../enums'
 
 export type TaskDocument = HydratedDocument<Task>
+export type LessonTaskDocument = HydratedDocument<LessonTask>
+export type AssignmentTaskDocument = HydratedDocument<AssignmentTask>
+export type MeetingTaskDocument = HydratedDocument<MeetingTask>
+export type WirdTaskDocument = HydratedDocument<WirdTask>
+export type AnyTaskDocument = LessonTaskDocument | AssignmentTaskDocument | MeetingTaskDocument | WirdTaskDocument
 
-@Schema()
+@Schema({ discriminatorKey: 'type' })
 export class Task {
-    // common fields
     @Prop({ required: true, type: ObjectId, ref: 'Manager' })
     createdBy: ObjectId | Populated<ManagerDocument>
     @Prop({ required: true, type: Date, default: Date.now })
@@ -27,24 +31,36 @@ export class Task {
     expireAt?: Date
     @Prop({ required: true, type: String, enum: TaskState, default: TaskState.active })
     state: TaskState
+}
 
-    // for lessons
+@Schema()
+export class LessonTask extends Task {
+    declare type: TaskType.lesson
     @Prop({ required: true, type: [ObjectId], ref: Lesson.name, default: [] })
     lessons: ObjectId[] | Populated<LessonDocument[]>
     @Prop({ required: false, type: Number, min: 0 })
     minimumWatchTime?: number
+}
 
-    // for assignments
+@Schema()
+export class AssignmentTask extends Task {
+    declare type: TaskType.assignment
     @Prop({ required: false, type: ObjectId, ref: 'Assignment' })
     assignment?: ObjectId | AssignmentDocument
+}
 
-    // for meetings
+@Schema()
+export class MeetingTask extends Task {
+    declare type: TaskType.meeting
     @Prop({ required: false, type: String })
     meetingLink?: string
     @Prop({ required: false, type: ObjectId, ref: 'Chat' })
     chatRoomId?: ObjectId
+}
 
-    // for wirds
+@Schema()
+export class WirdTask extends Task {
+    declare type: TaskType.wird
     @Prop({ required: false, type: String })
     wirdTitle?: string
     @Prop({ required: false, type: String })
@@ -52,3 +68,11 @@ export class Task {
 }
 
 export const TaskSchema = SchemaFactory.createForClass(Task)
+export const LessonTaskSchema = SchemaFactory.createForClass(LessonTask)
+LessonTaskSchema.remove('type')
+export const AssignmentTaskSchema = SchemaFactory.createForClass(AssignmentTask)
+AssignmentTaskSchema.remove('type')
+export const MeetingTaskSchema = SchemaFactory.createForClass(MeetingTask)
+MeetingTaskSchema.remove('type')
+export const WirdTaskSchema = SchemaFactory.createForClass(WirdTask)
+WirdTaskSchema.remove('type')

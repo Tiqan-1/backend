@@ -16,7 +16,6 @@ import { CompleteTaskDto } from './dto/complete-task.dto'
 import { PaginatedTaskDto } from './dto/paginated-task.dto'
 import { CreateTaskDto, SearchTasksQueryDto, TaskDto, UpdateTaskDto } from './dto/task.dto'
 import { TaskState, TaskType } from './enums'
-import { TaskDocument } from './schemas/task.schema'
 import { TasksRepository } from './tasks.repository'
 
 @Injectable()
@@ -40,22 +39,37 @@ export class TasksService {
         this.validateWird(task)
         const level = await this.validateAndGetLevel(task)
 
-        const createObject: Partial<TaskDocument> = {
+        const commonFields = {
             createdBy,
             levelId: new ObjectId(task.levelId),
             date: task.date,
-            chatRoomId: task.hasChatRoom ? await this.chatService.createChatRoom(createdBy) : undefined,
             type: task.type,
-            assignment: task.assignmentId,
-            lessons: task.lessonIds,
-            minimumWatchTime: task.minimumWatchTime,
-            meetingLink: task.meetingLink,
-            wirdTitle: task.wirdTitle,
-            wirdDetails: task.wirdDetails,
             ...(task.note && { note: task.note }),
         }
 
-        const created = await this.taskRepository.create(createObject)
+        let typeFields: Record<string, unknown> = {}
+        if (task.type === TaskType.lesson) {
+            typeFields = {
+                lessons: task.lessonIds,
+                minimumWatchTime: task.minimumWatchTime,
+            }
+        } else if (task.type === TaskType.assignment) {
+            typeFields = {
+                assignment: task.assignmentId,
+            }
+        } else if (task.type === TaskType.meeting) {
+            typeFields = {
+                meetingLink: task.meetingLink,
+                chatRoomId: task.hasChatRoom ? await this.chatService.createChatRoom(createdBy) : undefined,
+            }
+        } else if (task.type === TaskType.wird) {
+            typeFields = {
+                wirdTitle: task.wirdTitle,
+                wirdDetails: task.wirdDetails,
+            }
+        }
+
+        const created = await this.taskRepository.create({ ...commonFields, ...typeFields })
 
         ;(level.tasks as ObjectId[]).push(created._id)
         await level.save()
@@ -114,20 +128,37 @@ export class TasksService {
         this.validateWird(task)
 
         const taskFound = await this.taskRepository.findOne({ _id: taskId })
-        if (task.hasChatRoom === false && taskFound?.chatRoomId) {
+        if (task.hasChatRoom === false && taskFound?.type === TaskType.meeting && taskFound.chatRoomId) {
             await this.chatService.removeChatRoom(taskFound.chatRoomId)
         }
 
-        const updateObject: Partial<TaskDocument> = {
+        const updateObject: Record<string, unknown> = {
             ...(task.date && { date: task.date }),
             ...(task.note && { note: task.note }),
-            assignment,
-            meetingLink: task.meetingLink,
-            chatRoomId: task.hasChatRoom ? await this.chatService.createChatRoom(updatedBy) : undefined,
-            wirdTitle: task.wirdTitle,
-            wirdDetails: task.wirdDetails,
-            ...{ lessons: task.lessonIds },
-            minimumWatchTime: task.minimumWatchTime,
+        }
+
+        if (task.type === TaskType.lesson) {
+            updateObject.lessons = task.lessonIds
+            updateObject.minimumWatchTime = task.minimumWatchTime
+        } else if (task.type === TaskType.assignment) {
+            updateObject.assignment = assignment
+        } else if (task.type === TaskType.meeting) {
+            updateObject.meetingLink = task.meetingLink
+            updateObject.chatRoomId = task.hasChatRoom ? await this.chatService.createChatRoom(updatedBy) : undefined
+        } else if (task.type === TaskType.wird) {
+            updateObject.wirdTitle = task.wirdTitle
+            updateObject.wirdDetails = task.wirdDetails
+        } else {
+            // type isn't provided in update — apply any supplied fields regardless of type
+            if (task.lessonIds !== undefined) updateObject.lessons = task.lessonIds
+            if (task.minimumWatchTime !== undefined) updateObject.minimumWatchTime = task.minimumWatchTime
+            if (assignment !== undefined) updateObject.assignment = assignment
+            if (task.meetingLink !== undefined) updateObject.meetingLink = task.meetingLink
+            if (task.hasChatRoom !== undefined) {
+                updateObject.chatRoomId = task.hasChatRoom ? await this.chatService.createChatRoom(updatedBy) : undefined
+            }
+            if (task.wirdTitle !== undefined) updateObject.wirdTitle = task.wirdTitle
+            if (task.wirdDetails !== undefined) updateObject.wirdDetails = task.wirdDetails
         }
 
         const updated = await this.taskRepository.update({ _id: taskId, state: { $ne: TaskState.deleted } }, updateObject)

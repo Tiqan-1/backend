@@ -9,7 +9,7 @@ import { AssignmentDocument } from '../../assignments/schemas/assignment.schema'
 import { LessonDto } from '../../lessons/dto/lesson.dto'
 import { LessonDocument } from '../../lessons/schemas/lesson.schema'
 import { TaskType } from '../enums'
-import { TaskDocument } from '../schemas/task.schema'
+import { AnyTaskDocument } from '../schemas/task.schema'
 
 export class TaskDto {
     @ApiProperty({ type: String, required: true, example: 'taskId' })
@@ -95,27 +95,34 @@ export class TaskDto {
     @IsOptional()
     wirdDetails?: string
 
-    constructor(document: TaskDocument) {
+    constructor(document: AnyTaskDocument) {
         this.id = document._id.toString()
         this.levelId = document.levelId
         this.date = new Date(document.date)
         this.note = document.note
-        this.lessons = document.lessons.map(lesson => LessonDto.fromDocument(lesson as LessonDocument))
-        this.chatRoomId = document.chatRoomId?.toString()
-        this.hasChatRoom = !!document.chatRoomId
         this.type = document.type
-        this.assignment = document.assignment && AssignmentDto.fromDocument(document.assignment as AssignmentDocument)
-        this.meetingLink = document.meetingLink
-        this.minimumWatchTime = document.minimumWatchTime
-        this.wirdTitle = document.wirdTitle
-        this.wirdDetails = document.wirdDetails
+        this.hasChatRoom = false
+
+        if (document.type === TaskType.lesson) {
+            this.lessons = document.lessons.map(lesson => LessonDto.fromDocument(lesson as LessonDocument))
+            this.minimumWatchTime = document.minimumWatchTime
+        } else if (document.type === TaskType.assignment) {
+            this.assignment = document.assignment && AssignmentDto.fromDocument(document.assignment as AssignmentDocument)
+        } else if (document.type === TaskType.meeting) {
+            this.meetingLink = document.meetingLink
+            this.chatRoomId = document.chatRoomId?.toString()
+            this.hasChatRoom = !!document.chatRoomId
+        } else if (document.type === TaskType.wird) {
+            this.wirdTitle = document.wirdTitle
+            this.wirdDetails = document.wirdDetails
+        }
     }
 
-    static fromDocument(document: TaskDocument): TaskDto {
+    static fromDocument(document: AnyTaskDocument): TaskDto {
         return new TaskDto(document)
     }
 
-    static fromDocuments(tasks: TaskDocument[] = []): TaskDto[] {
+    static fromDocuments(tasks: AnyTaskDocument[] = []): TaskDto[] {
         return tasks.map(task => this.fromDocument(task)).sort((a, b) => a.date.getTime() - b.date.getTime())
     }
 }
