@@ -42,6 +42,10 @@ import {
     LessonTaskSchema,
     MeetingTask,
     MeetingTaskSchema,
+    OralTestSlot,
+    OralTestTask,
+    OralTestTaskDocument,
+    OralTestTaskSchema,
     Task,
     TaskSchema,
     WirdTask,
@@ -190,6 +194,7 @@ export class MongoTestHelper {
             this.taskModel.discriminator(AssignmentTask.name, AssignmentTaskSchema, TaskType.assignment)
             this.taskModel.discriminator(MeetingTask.name, MeetingTaskSchema, TaskType.meeting)
             this.taskModel.discriminator(WirdTask.name, WirdTaskSchema, TaskType.wird)
+            this.taskModel.discriminator(OralTestTask.name, OralTestTaskSchema, TaskType.oralTest)
         }
         return this.taskModel
     }
@@ -319,6 +324,26 @@ export class MongoTestHelper {
         }
         const model = this.getTaskModel()
         return model.create(task) as unknown as Promise<LessonTaskDocument>
+    }
+
+    async createOralTestTask(
+        createdBy: ObjectId,
+        levelId: ObjectId = new ObjectId(),
+        slots: Partial<OralTestSlot>[] = []
+    ): Promise<OralTestTaskDocument> {
+        const task: Partial<OralTestTask> = {
+            levelId,
+            createdBy,
+            date: new Date(),
+            state: TaskState.active,
+            type: TaskType.oralTest,
+            createdAt: new Date(),
+            title: 'تسميع تجريبي',
+            description: 'وصف تجريبي',
+            slots: slots as OralTestSlot[],
+        }
+        const model = this.getTaskModel()
+        return model.create(task) as unknown as Promise<OralTestTaskDocument>
     }
 
     async createProgram(createdBy: ObjectId, levels: ObjectId[] = []): Promise<ProgramDocument> {

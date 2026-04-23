@@ -1,5 +1,6 @@
-import { Injectable, Logger, NotAcceptableException, NotFoundException } from '@nestjs/common'
+import { ConflictException, Injectable, Logger, NotAcceptableException, NotFoundException } from '@nestjs/common'
 import { I18nService } from 'nestjs-i18n'
+import { PusherService } from 'nestjs-pusher'
 import { oneMonth } from '../../shared/constants'
 import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
 import { CreatedDto } from '../../shared/dto/created.dto'
@@ -8,14 +9,23 @@ import { SearchFilterBuilder } from '../../shared/helper/search-filter.builder'
 import { ObjectId } from '../../shared/repository/types'
 import { AssignmentsRepository } from '../assignments/assignments.repository'
 import { AssignmentDocument } from '../assignments/schemas/assignment.schema'
+import { Role } from '../authentication/enums/role.enum'
+import { TokenUser } from '../authentication/types/token-user'
 import { ChatService } from '../chat/chat.service'
 import { LessonsService } from '../lessons/lessons.service'
 import { LevelDocument } from '../levels/schemas/level.schema'
 import { SubscriptionsService } from '../subscriptions/subscriptions.service'
+import { BookSlotDto } from './dto/book-slot.dto'
+import { CancelBookingDto } from './dto/cancel-booking.dto'
 import { CompleteTaskDto } from './dto/complete-task.dto'
+import { GradeSlotDto } from './dto/grade-slot.dto'
+import { OralTestBookingDto } from './dto/oral-test-booking.dto'
+import { CreateOralTestSlotDto, OralTestSlotDto } from './dto/oral-test-slot.dto'
 import { PaginatedTaskDto } from './dto/paginated-task.dto'
+import { ReplaceSlotsDto } from './dto/replace-slots.dto'
 import { CreateTaskDto, SearchTasksQueryDto, TaskDto, UpdateTaskDto } from './dto/task.dto'
 import { TaskState, TaskType } from './enums'
+import { OralTestSlot } from './schemas/task.schema'
 import { TasksRepository } from './tasks.repository'
 
 @Injectable()
@@ -29,6 +39,7 @@ export class TasksService {
         private readonly documentsService: SharedDocumentsService,
         private readonly subscriptionService: SubscriptionsService,
         private readonly chatService: ChatService,
+        private readonly pusherService: PusherService,
         private readonly i18n: I18nService
     ) {}
 
@@ -37,6 +48,7 @@ export class TasksService {
         const assignment = await this.validateAndGetAssignment(task)
         this.validateMeeting(task)
         this.validateWird(task)
+        this.validateOralTest(task)
         const level = await this.validateAndGetLevel(task)
 
         const commonFields = {
@@ -66,6 +78,13 @@ export class TasksService {
             typeFields = {
                 wirdTitle: task.wirdTitle,
                 wirdDetails: task.wirdDetails,
+            }
+        } else if (task.type === TaskType.oralTest) {
+            typeFields = {
+                title: task.title,
+                description: task.description,
+                meetingLink: task.meetingLink,
+                slots: task.initialSlots ?? [],
             }
         }
 
@@ -148,6 +167,11 @@ export class TasksService {
         } else if (task.type === TaskType.wird) {
             updateObject.wirdTitle = task.wirdTitle
             updateObject.wirdDetails = task.wirdDetails
+        } else if (task.type === TaskType.oralTest) {
+            // slots are intentionally not mutable here — managed via /slots endpoints to protect bookings
+            if (task.title !== undefined) updateObject.title = task.title
+            if (task.description !== undefined) updateObject.description = task.description
+            if (task.meetingLink !== undefined) updateObject.meetingLink = task.meetingLink
         } else {
             // type isn't provided in update — apply any supplied fields regardless of type
             if (task.lessonIds !== undefined) updateObject.lessons = task.lessonIds
@@ -159,6 +183,8 @@ export class TasksService {
             }
             if (task.wirdTitle !== undefined) updateObject.wirdTitle = task.wirdTitle
             if (task.wirdDetails !== undefined) updateObject.wirdDetails = task.wirdDetails
+            if (task.title !== undefined) updateObject.title = task.title
+            if (task.description !== undefined) updateObject.description = task.description
         }
 
         const updated = await this.taskRepository.update({ _id: taskId, state: { $ne: TaskState.deleted } }, updateObject)
@@ -196,6 +222,10 @@ export class TasksService {
             this.logger.error(`Attempt to complete Task ${id.toString()} failed.`)
             throw new NotFoundException(this.i18n.t('tasks.errors.taskNotFound'))
         }
+        if (task.type === TaskType.oralTest) {
+            this.logger.warn(`Student ${studentId.toString()} attempted to self-complete oralTest task ${id.toString()}.`)
+            throw new NotAcceptableException(this.i18n.t('tasks.errors.oralTestCannotSelfComplete'))
+        }
         const student = await this.documentsService.getStudent(studentId.toString())
         if (!student) {
             this.logger.error(`Attempt to complete Task ${id.toString()} failed. Student ${studentId.toString()} not found.`)
@@ -208,6 +238,169 @@ export class TasksService {
             throw new NotFoundException(this.i18n.t('tasks.errors.studentSubscriptionNotFound'))
         }
         await this.subscriptionService.addCompletedTask(dto.subscriptionId, id, task.levelId)
+    }
+
+    async addSlot(taskId: ObjectId, slotDto: CreateOralTestSlotDto, managerId: ObjectId): Promise<CreatedDto> {
+        const task = await this.taskRepository.findOralTestByIdAndOwner(taskId, managerId)
+        if (!task) {
+            throw new NotFoundException(this.i18n.t('tasks.errors.oralTestNotFound'))
+        }
+        task.slots.push({ startsAt: slotDto.startsAt, durationMinutes: slotDto.durationMinutes } as OralTestSlot)
+        await task.save()
+        const newSlot = task.slots[task.slots.length - 1]
+        this.logger.log(`Slot ${newSlot._id.toString()} added to oralTest ${taskId.toString()}.`)
+        return { id: newSlot._id.toString() }
+    }
+
+    async replaceSlots(taskId: ObjectId, dto: ReplaceSlotsDto, managerId: ObjectId): Promise<void> {
+        const task = await this.taskRepository.findOralTestByIdAndOwner(taskId, managerId)
+        if (!task) {
+            throw new NotFoundException(this.i18n.t('tasks.errors.oralTestNotFound'))
+        }
+        if (task.slots.some(s => s.bookedBy)) {
+            throw new ConflictException(this.i18n.t('tasks.errors.cannotReplaceSlotsWithBookings'))
+        }
+        task.slots = dto.slots.map(s => ({ startsAt: s.startsAt, durationMinutes: s.durationMinutes }) as OralTestSlot)
+        await task.save()
+        this.logger.log(`Slots replaced for oralTest ${taskId.toString()} (count=${task.slots.length}).`)
+    }
+
+    async removeSlot(taskId: ObjectId, slotId: ObjectId, managerId: ObjectId): Promise<void> {
+        const task = await this.taskRepository.findOralTestByIdAndOwner(taskId, managerId)
+        if (!task) {
+            throw new NotFoundException(this.i18n.t('tasks.errors.oralTestNotFound'))
+        }
+        const slot = task.slots.find(s => s._id.equals(slotId))
+        if (!slot) {
+            throw new NotFoundException(this.i18n.t('tasks.errors.slotNotFound'))
+        }
+        if (slot.bookedBy) {
+            throw new ConflictException(this.i18n.t('tasks.errors.cannotRemoveBookedSlot'))
+        }
+        task.slots = task.slots.filter(s => !s._id.equals(slotId))
+        await task.save()
+        this.logger.log(`Slot ${slotId.toString()} removed from oralTest ${taskId.toString()}.`)
+    }
+
+    async listSlots(taskId: ObjectId, viewer: TokenUser): Promise<OralTestSlotDto[]> {
+        const task = await this.taskRepository.findOralTestById(taskId)
+        if (!task) {
+            throw new NotFoundException(this.i18n.t('tasks.errors.oralTestNotFound'))
+        }
+        // Managers can only see their own tasks; students see any oralTest task they have a URL for
+        if (viewer.role === Role.Manager && !(task.createdBy as ObjectId).equals(viewer.id)) {
+            throw new NotFoundException(this.i18n.t('tasks.errors.oralTestNotFound'))
+        }
+        const exposeBookedBy = viewer.role === Role.Manager
+        return task.slots.map(s => OralTestSlotDto.fromDocument(s, { exposeBookedBy }))
+    }
+
+    async bookSlot(taskId: ObjectId, slotId: ObjectId, dto: BookSlotDto, studentId: ObjectId): Promise<void> {
+        const student = await this.documentsService.getStudent(studentId.toString())
+        if (!student) {
+            throw new NotFoundException(this.i18n.t('tasks.errors.studentNotFound'))
+        }
+        if (!student.subscriptions.some(s => s._id.equals(dto.subscriptionId))) {
+            throw new NotFoundException(this.i18n.t('tasks.errors.subscriptionNotForStudent'))
+        }
+        const task = await this.taskRepository.findOralTestById(taskId)
+        if (!task) {
+            throw new NotFoundException(this.i18n.t('tasks.errors.oralTestNotFound'))
+        }
+        if (!task.slots.some(s => s._id.equals(slotId))) {
+            throw new NotFoundException(this.i18n.t('tasks.errors.slotNotFound'))
+        }
+        // cross-validate: subscription's program must contain task's level
+        const subscription = await this.documentsService.getSubscription(dto.subscriptionId.toString())
+        if (!subscription) {
+            throw new NotFoundException(this.i18n.t('tasks.errors.subscriptionNotForStudent'))
+        }
+        const program = await this.documentsService.getProgram((subscription.program as ObjectId).toString())
+        if (!program || !(program.levels as ObjectId[]).some(lid => lid.equals(task.levelId))) {
+            throw new NotAcceptableException(this.i18n.t('tasks.errors.subscriptionNotInTaskProgram'))
+        }
+
+        const booked = await this.taskRepository.bookSlotAtomically(taskId, slotId, studentId, dto.subscriptionId)
+        if (!booked) {
+            this.logger.warn(`Slot ${slotId.toString()} on task ${taskId.toString()} already booked or missing.`)
+            throw new ConflictException(this.i18n.t('tasks.errors.slotAlreadyBooked'))
+        }
+        this.logger.log(`Slot ${slotId.toString()} booked by student ${studentId.toString()} on task ${taskId.toString()}.`)
+
+        await this.pusherService.trigger(`oral-test-${taskId.toString()}`, 'slot-booked', {
+            slotId: slotId.toString(),
+            studentId: studentId.toString(),
+            bookedAt: new Date(),
+        })
+    }
+
+    async cancelBooking(taskId: ObjectId, slotId: ObjectId, dto: CancelBookingDto, managerId: ObjectId): Promise<void> {
+        const task = await this.taskRepository.findOralTestByIdAndOwner(taskId, managerId)
+        if (!task) {
+            throw new NotFoundException(this.i18n.t('tasks.errors.oralTestNotFound'))
+        }
+        const slot = task.slots.find(s => s._id.equals(slotId))
+        if (!slot) {
+            throw new NotFoundException(this.i18n.t('tasks.errors.slotNotFound'))
+        }
+        if (!slot.bookedBy) {
+            throw new ConflictException(this.i18n.t('tasks.errors.slotNotBooked'))
+        }
+        const previousStudentId = slot.bookedBy as ObjectId
+
+        const cancelled = await this.taskRepository.cancelBookingAtomically(taskId, slotId, managerId, dto.reason)
+        if (!cancelled) {
+            this.logger.error(`Failed to cancel booking on slot ${slotId.toString()} of task ${taskId.toString()}.`)
+            throw new NotFoundException(this.i18n.t('tasks.errors.slotNotFound'))
+        }
+        this.logger.log(`Booking on slot ${slotId.toString()} of task ${taskId.toString()} cancelled by ${managerId.toString()}.`)
+
+        await this.pusherService.trigger(`student-${previousStudentId.toString()}`, 'oral-test-booking-cancelled', {
+            taskId: taskId.toString(),
+            slotId: slotId.toString(),
+            reason: dto.reason,
+        })
+    }
+
+    async gradeSlot(taskId: ObjectId, slotId: ObjectId, dto: GradeSlotDto, managerId: ObjectId): Promise<void> {
+        const task = await this.taskRepository.findOralTestByIdAndOwner(taskId, managerId)
+        if (!task) {
+            throw new NotFoundException(this.i18n.t('tasks.errors.oralTestNotFound'))
+        }
+        const slot = task.slots.find(s => s._id.equals(slotId))
+        if (!slot) {
+            throw new NotFoundException(this.i18n.t('tasks.errors.slotNotFound'))
+        }
+        if (!slot.bookedBy || !slot.bookedSubscriptionId) {
+            throw new ConflictException(this.i18n.t('tasks.errors.cannotGradeUnbookedSlot'))
+        }
+        const isFirstGrade = !slot.gradedAt
+
+        const graded = await this.taskRepository.setSlotGradeAtomically(taskId, slotId, dto.grade, dto.feedback)
+        if (!graded) {
+            this.logger.error(`Failed to grade slot ${slotId.toString()} of task ${taskId.toString()}.`)
+            throw new NotFoundException(this.i18n.t('tasks.errors.slotNotFound'))
+        }
+        this.logger.log(`Slot ${slotId.toString()} of task ${taskId.toString()} graded (grade=${dto.grade}).`)
+
+        if (isFirstGrade) {
+            await this.subscriptionService.addCompletedTask(slot.bookedSubscriptionId, taskId, task.levelId)
+        }
+
+        await this.pusherService.trigger(`student-${(slot.bookedBy as ObjectId).toString()}`, 'oral-test-graded', {
+            taskId: taskId.toString(),
+            slotId: slotId.toString(),
+            grade: dto.grade,
+            feedback: dto.feedback,
+        })
+    }
+
+    async listBookings(taskId: ObjectId, managerId: ObjectId): Promise<OralTestBookingDto[]> {
+        const task = await this.taskRepository.findOralTestByIdAndOwner(taskId, managerId, { populateBookings: true })
+        if (!task) {
+            throw new NotFoundException(this.i18n.t('tasks.errors.oralTestNotFound'))
+        }
+        return task.slots.filter(s => s.bookedBy).map(s => OralTestBookingDto.fromSlot(s))
     }
 
     private async validateAndGetLevel(task: CreateTaskDto): Promise<LevelDocument> {
@@ -230,6 +423,13 @@ export class TasksService {
         if (task.type === TaskType.meeting && !task.meetingLink) {
             this.logger.error(`MeetingLink is required for task type ${task.type}.`)
             throw new NotAcceptableException(this.i18n.t('tasks.errors.meetingLinkRequired'))
+        }
+    }
+
+    private validateOralTest(task: CreateTaskDto): void {
+        if (task.type === TaskType.oralTest && !task.title) {
+            this.logger.error(`Title is required for task type ${task.type}.`)
+            throw new NotAcceptableException(this.i18n.t('tasks.errors.oralTestTitleRequired'))
         }
     }
 

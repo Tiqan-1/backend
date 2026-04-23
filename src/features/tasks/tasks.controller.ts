@@ -10,8 +10,14 @@ import { Role } from '../authentication/enums/role.enum'
 import { JwtAuthGuard } from '../authentication/guards/jwt-auth.guard'
 import { RolesGuard } from '../authentication/guards/roles.guard'
 import { TokenUser } from '../authentication/types/token-user'
+import { BookSlotDto } from './dto/book-slot.dto'
+import { CancelBookingDto } from './dto/cancel-booking.dto'
 import { CompleteTaskDto } from './dto/complete-task.dto'
+import { GradeSlotDto } from './dto/grade-slot.dto'
+import { OralTestBookingDto } from './dto/oral-test-booking.dto'
+import { CreateOralTestSlotDto, OralTestSlotDto } from './dto/oral-test-slot.dto'
 import { PaginatedTaskDto } from './dto/paginated-task.dto'
+import { ReplaceSlotsDto } from './dto/replace-slots.dto'
 import { CreateTaskDto, SearchTasksQueryDto, UpdateTaskDto } from './dto/task.dto'
 import { TasksService } from './tasks.service'
 
@@ -99,5 +105,156 @@ export class TasksController {
         @Request() request: { user: TokenUser }
     ): Promise<void> | undefined {
         return this.service.complete(id, completeTaskDto, request.user.id)
+    }
+
+    // ───── OralTest sub-resources ─────
+
+    @ApiOperation({
+        summary: 'Lists slots for an OralTest task',
+        description: 'Manager owner sees full slot data; students see only availability.',
+    })
+    @ApiParam({ name: 'id', type: String, required: true })
+    @ApiResponse({ status: HttpStatus.OK, type: [OralTestSlotDto] })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, type: ErrorDto })
+    @Get(':id/slots')
+    @Roles(Role.Manager, Role.Student)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    listSlots(@Param('id', ParseMongoIdPipe) id: ObjectId, @Request() request: { user: TokenUser }): Promise<OralTestSlotDto[]> {
+        return this.service.listSlots(id, request.user)
+    }
+
+    @ApiOperation({ summary: 'Adds a slot to an OralTest task' })
+    @ApiParam({ name: 'id', type: String, required: true })
+    @ApiResponse({ status: HttpStatus.CREATED, type: CreatedDto })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, type: BadRequestErrorDto })
+    @Post(':id/slots')
+    @HttpCode(HttpStatus.CREATED)
+    @Roles(Role.Manager)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    addSlot(
+        @Param('id', ParseMongoIdPipe) id: ObjectId,
+        @Body() slotDto: CreateOralTestSlotDto,
+        @Request() request: { user: TokenUser }
+    ): Promise<CreatedDto> {
+        return this.service.addSlot(id, slotDto, request.user.id)
+    }
+
+    @ApiOperation({
+        summary: 'Replaces all slots on an OralTest task',
+        description: 'Refuses if any existing slot is already booked.',
+    })
+    @ApiParam({ name: 'id', type: String, required: true })
+    @ApiResponse({ status: HttpStatus.NO_CONTENT })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.CONFLICT, type: ErrorDto })
+    @Put(':id/slots')
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @Roles(Role.Manager)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    replaceSlots(
+        @Param('id', ParseMongoIdPipe) id: ObjectId,
+        @Body() body: ReplaceSlotsDto,
+        @Request() request: { user: TokenUser }
+    ): Promise<void> {
+        return this.service.replaceSlots(id, body, request.user.id)
+    }
+
+    @ApiOperation({ summary: 'Removes a slot from an OralTest task', description: 'Refuses if the slot is currently booked.' })
+    @ApiParam({ name: 'id', type: String, required: true })
+    @ApiParam({ name: 'slotId', type: String, required: true })
+    @ApiResponse({ status: HttpStatus.NO_CONTENT })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.CONFLICT, type: ErrorDto })
+    @Delete(':id/slots/:slotId')
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @Roles(Role.Manager)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    removeSlot(
+        @Param('id', ParseMongoIdPipe) id: ObjectId,
+        @Param('slotId', ParseMongoIdPipe) slotId: ObjectId,
+        @Request() request: { user: TokenUser }
+    ): Promise<void> {
+        return this.service.removeSlot(id, slotId, request.user.id)
+    }
+
+    @ApiOperation({ summary: 'Books a slot on an OralTest task' })
+    @ApiParam({ name: 'id', type: String, required: true })
+    @ApiParam({ name: 'slotId', type: String, required: true })
+    @ApiResponse({ status: HttpStatus.NO_CONTENT })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.CONFLICT, type: ErrorDto, description: 'Slot already booked.' })
+    @Post(':id/slots/:slotId/book')
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @Roles(Role.Student)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    bookSlot(
+        @Param('id', ParseMongoIdPipe) id: ObjectId,
+        @Param('slotId', ParseMongoIdPipe) slotId: ObjectId,
+        @Body() body: BookSlotDto,
+        @Request() request: { user: TokenUser }
+    ): Promise<void> {
+        return this.service.bookSlot(id, slotId, body, request.user.id)
+    }
+
+    @ApiOperation({
+        summary: 'Cancels a booking on an OralTest slot',
+        description: 'Manager-owner only. The slot becomes bookable again.',
+    })
+    @ApiParam({ name: 'id', type: String, required: true })
+    @ApiParam({ name: 'slotId', type: String, required: true })
+    @ApiResponse({ status: HttpStatus.NO_CONTENT })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.CONFLICT, type: ErrorDto })
+    @Delete(':id/slots/:slotId/booking')
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @Roles(Role.Manager)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    cancelBooking(
+        @Param('id', ParseMongoIdPipe) id: ObjectId,
+        @Param('slotId', ParseMongoIdPipe) slotId: ObjectId,
+        @Body() body: CancelBookingDto,
+        @Request() request: { user: TokenUser }
+    ): Promise<void> {
+        return this.service.cancelBooking(id, slotId, body, request.user.id)
+    }
+
+    @ApiOperation({
+        summary: 'Submits a grade for a booked OralTest slot',
+        description: 'On first grade, marks the task as completed in the student subscription.',
+    })
+    @ApiParam({ name: 'id', type: String, required: true })
+    @ApiParam({ name: 'slotId', type: String, required: true })
+    @ApiResponse({ status: HttpStatus.NO_CONTENT })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, type: ErrorDto })
+    @ApiResponse({ status: HttpStatus.CONFLICT, type: ErrorDto })
+    @Post(':id/slots/:slotId/grade')
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @Roles(Role.Manager)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    gradeSlot(
+        @Param('id', ParseMongoIdPipe) id: ObjectId,
+        @Param('slotId', ParseMongoIdPipe) slotId: ObjectId,
+        @Body() body: GradeSlotDto,
+        @Request() request: { user: TokenUser }
+    ): Promise<void> {
+        return this.service.gradeSlot(id, slotId, body, request.user.id)
+    }
+
+    @ApiOperation({
+        summary: 'Lists bookings for an OralTest task',
+        description: 'Manager-owner only. Returns hydrated student data per booked slot.',
+    })
+    @ApiParam({ name: 'id', type: String, required: true })
+    @ApiResponse({ status: HttpStatus.OK, type: [OralTestBookingDto] })
+    @ApiResponse({ status: HttpStatus.NOT_FOUND, type: ErrorDto })
+    @Get(':id/bookings')
+    @Roles(Role.Manager)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    listBookings(
+        @Param('id', ParseMongoIdPipe) id: ObjectId,
+        @Request() request: { user: TokenUser }
+    ): Promise<OralTestBookingDto[]> {
+        return this.service.listBookings(id, request.user.id)
     }
 }

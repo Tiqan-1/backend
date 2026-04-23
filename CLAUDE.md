@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Mubadarat** is an Islamic educational platform backend. It manages training programs, levels, tasks (lessons, assignments, meetings, wird), student subscriptions, and real-time chat.
+**Mubadarat** is an Islamic educational platform backend. It manages training programs, levels, tasks (lessons, assignments, meetings, wird, oral tests), student subscriptions, and real-time chat.
 
 - **Framework:** NestJS v11 + TypeScript v5.7
 - **Database:** MongoDB via Mongoose v8 (ODM)
@@ -28,7 +28,7 @@ src/
 │   ├── managers/
 │   ├── programs/
 │   ├── levels/
-│   ├── tasks/          # Polymorphic: lesson | assignment | meeting | wird
+│   ├── tasks/          # Polymorphic: lesson | assignment | meeting | wird | oralTest
 │   ├── lessons/
 │   ├── subjects/
 │   ├── assignments/
@@ -119,8 +119,16 @@ The `Task` schema uses Mongoose discriminators keyed on `type`:
 - `TaskType.assignment` → `AssignmentTask` (assignment ref)
 - `TaskType.meeting` → `MeetingTask` (meetingLink, chatRoomId)
 - `TaskType.wird` → `WirdTask` (wirdTitle, wirdDetails)
+- `TaskType.oralTest` → `OralTestTask` (title, description, meetingLink, slots: embedded `OralTestSlot[]`)
 
 Same pattern applies to `User` → `Student` | `Manager` (discriminator key: `role`).
+
+#### OralTest slot booking flow
+- Slots are embedded subdocuments. Booking is atomic via `updateOne` with `$elemMatch` predicate `{ _id: slotId, bookedBy: { $in: [null, undefined] } }` — guarantees exactly one booker wins.
+- Cancellation uses `$unset` on booking fields and `$set` on audit fields (`cancelledBy`, `cancelledAt`, `cancellationReason`).
+- **Students cannot self-complete oralTest tasks** via `POST /api/tasks/:id/complete` — it returns 406. Completion is triggered automatically when the manager submits the first grade for the student's slot (`POST /api/tasks/:id/slots/:slotId/grade`), which calls `subscriptionService.addCompletedTask`.
+- Slot mutation uses dedicated sub-resource endpoints (`POST/PUT/DELETE /api/tasks/:id/slots[/:slotId]`); the generic `PUT /api/tasks/:id` does NOT mutate slots, protecting bookings from accidental wipe.
+- Only the owner manager can cancel a booking, grade a slot, or list bookings.
 
 ### Migration System
 Versioned scripts in `src/shared/database-services/migration-scripts/`. Each migration is a function registered in `migration-scripts.map.ts`. `MigrationService` runs pending migrations at app startup. Current version: v10.
@@ -156,6 +164,15 @@ Log successes at `log` level, unexpected states at `warn`, failures at `error`.
 - Update/Delete endpoints return `204 No Content`
 - List endpoints return `{ items[], page, pageSize, total }`
 
+### Pusher channels & events
+
+| Channel | Event | Trigger |
+|---|---|---|
+| `<chatRoomId>` | `message` | Chat message sent |
+| `oral-test-<taskId>` | `slot-booked` | Student books an OralTest slot |
+| `student-<studentId>` | `oral-test-booking-cancelled` | Manager cancels a student's booking |
+| `student-<studentId>` | `oral-test-graded` | Manager grades a student's OralTest slot |
+
 ---
 
 ## Environment Variables
@@ -188,7 +205,7 @@ npm run test:e2e:watch
 **E2E test helpers** in `src/shared/test/helper/`:
 - `MongoTestHelper` — starts in-memory MongoDB, creates NestJS test app
 - `JwtMockModule` — bypasses real JWT validation in tests
-- Factory methods: `createStudent()`, `createManager()`, `createProgram()`, `createLevel()`, `createTask()`, etc.
+- Factory methods: `createStudent()`, `createManager()`, `createProgram()`, `createLevel()`, `createTask()`, `createOralTestTask()`, etc.
 
 E2E tests cover: authentication, students, programs, tasks, subscriptions.
 
@@ -218,12 +235,9 @@ E2E tests cover: authentication, students, programs, tasks, subscriptions.
 6. **Weak password reset code** (`src/features/authentication/authentication.service.ts:76`)
    — `uuidv4().substring(0, 8)` produces only 8 hex characters (~32 bits of entropy). Susceptible to brute force without rate limiting. **Fix: use a longer code or a cryptographically random 6-digit numeric OTP with strict rate limiting.**
 
-7. **Task delete missing ownership check** (`src/features/tasks/tasks.service.ts:171`)
-   — `remove(id)` does not verify that the requesting manager owns the task. Any manager can delete any task. Other features (programs) properly check ownership. **Fix: pass and validate `createdBy` in the task delete flow.**
+7. ~~**Task delete missing ownership check**~~ — fixed on `refactor-tasks-new` (commit 2c23c41).
 
-8. **Task complete doesn't validate task belongs to subscribed program**
-   (`src/features/tasks/tasks.service.ts:193`)
-   — A student can mark any task as complete as long as they have a valid subscription ID. The code only checks subscription membership, not whether the task belongs to the subscribed program. **Fix: cross-validate `taskId` against the subscription's program levels.**
+8. ~~**Task complete doesn't validate task belongs to subscribed program**~~ — fixed on `refactor-tasks-new` (commit 2c23c41).
 
 ### Code Quality Issues
 
