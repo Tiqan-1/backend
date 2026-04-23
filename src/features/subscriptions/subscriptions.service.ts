@@ -204,21 +204,28 @@ export class SubscriptionsService {
         }
     }
 
-    async addCompletedTask(subscriptionId: ObjectId, taskId: ObjectId): Promise<void> {
+    async addCompletedTask(subscriptionId: ObjectId, taskId: ObjectId, taskLevelId: ObjectId): Promise<void> {
         const subscription = await this.repository.findById(subscriptionId)
         if (!subscription) {
             throw new NotFoundException(this.i18n.t('subscriptions.errors.subscriptionNotFound'))
         }
-        subscription.completedTaskIds.push(taskId)
         const program = await this.sharedDocumentsService.getProgram(subscription.program._id.toString())
         assert(program !== undefined, 'program not found.')
 
-        let totalTaskCount = 0
-        for (const rawLevel of program.levels) {
-            const level = await this.sharedDocumentsService.getLevel(rawLevel._id.toString())
-            assert(level !== undefined, 'level not found.')
-            totalTaskCount += level.tasks.length ?? 0
+        const programLevelIds = program.levels as ObjectId[]
+        if (!programLevelIds.some(lid => lid.equals(taskLevelId))) {
+            this.logger.error(
+                `Task level ${taskLevelId.toString()} does not belong to program ${program._id.toString()} (subscription ${subscriptionId.toString()}).`
+            )
+            throw new NotAcceptableException(this.i18n.t('subscriptions.errors.taskNotBelongToSubscription'))
         }
+
+        subscription.completedTaskIds.push(taskId)
+
+        const levelIds = programLevelIds.map(l => l.toString())
+        const levels = await this.sharedDocumentsService.getLevels(levelIds)
+        assert(levels.length > 0, 'program has no levels.')
+        const totalTaskCount = levels.reduce((sum, level) => sum + (level.tasks.length ?? 0), 0)
         assert(totalTaskCount > 0, 'totalTaskCount cannot be zero')
 
         subscription.progressPercentage = (subscription.completedTaskIds.length * 100) / totalTaskCount

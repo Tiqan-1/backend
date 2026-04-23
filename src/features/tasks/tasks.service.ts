@@ -168,26 +168,26 @@ export class TasksService {
         }
     }
 
-    async remove(id: string): Promise<void> {
+    async remove(id: ObjectId, managerObjectId: ObjectId): Promise<void> {
         const deleted = await this.taskRepository.update(
-            { _id: new ObjectId(id) },
+            { _id: id, createdBy: managerObjectId },
             { state: TaskState.deleted, expireAt: oneMonth }
         )
         if (!deleted) {
-            this.logger.error(`Attempt to remove Task ${id} failed.`)
+            this.logger.error(`Attempt to remove Task ${id.toString()} by manager ${managerObjectId.toString()} failed.`)
             throw new NotFoundException(this.i18n.t('tasks.errors.taskNotFound'))
         }
         const level = await this.documentsService.getLevel(deleted.levelId.toString())
         if (level) {
-            const taskIndex = level.tasks.findIndex(task => task._id.toString() === id)
+            const taskIndex = level.tasks.findIndex(task => task._id.equals(id))
             if (taskIndex === -1) {
-                this.logger.warn(`Attempt to remove Task ${id} from level ${level._id.toString()} failed.`)
+                this.logger.warn(`Attempt to remove Task ${id.toString()} from level ${level._id.toString()} failed.`)
             } else {
                 ;(level.tasks as ObjectId[]).splice(taskIndex, 1)
                 await level.save()
             }
         }
-        this.logger.log(`Task ${id} removed.`)
+        this.logger.log(`Task ${id.toString()} removed.`)
     }
 
     async complete(id: ObjectId, dto: CompleteTaskDto, studentId: ObjectId): Promise<void> {
@@ -207,7 +207,7 @@ export class TasksService {
             )
             throw new NotFoundException(this.i18n.t('tasks.errors.studentSubscriptionNotFound'))
         }
-        await this.subscriptionService.addCompletedTask(dto.subscriptionId, id)
+        await this.subscriptionService.addCompletedTask(dto.subscriptionId, id, task.levelId)
     }
 
     private async validateAndGetLevel(task: CreateTaskDto): Promise<LevelDocument> {

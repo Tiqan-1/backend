@@ -78,8 +78,8 @@ export class TasksController {
     @HttpCode(HttpStatus.NO_CONTENT)
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
-    delete(@Param('id') id: string): Promise<void> {
-        return this.service.remove(id)
+    delete(@Param('id', ParseMongoIdPipe) id: ObjectId, @Request() request: { user: TokenUser }): Promise<void> {
+        return this.service.remove(id, request.user.id)
     }
 
     @ApiOperation({ summary: 'Marks a task as completed', description: 'Marks a task as completed for the user.' })

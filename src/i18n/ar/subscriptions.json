@@ -1,5 +1,9 @@
 {
   "errors": {
-    "cannotUpdateStateToDeleted": "لا يمكن حذف الاشتراك بهذه الطريقة، الرجاء حذف الاشتراك بالطريقة الصحيحة."
+    "cannotUpdateStateToDeleted": "لا يمكن حذف الاشتراك بهذه الطريقة، الرجاء حذف الاشتراك بالطريقة الصحيحة.",
+    "subscriptionNotFound": "الاشتراك غير موجود",
+    "subscriptionNotPending": "الاشتراك ليس في حالة انتظار",
+    "subscriptionNotOwnedByManager": "الاشتراك لا ينتمي إلى هذا المدير",
+    "taskNotBelongToSubscription": "هذه المهمة لا تنتمي إلى البرنامج المشترك به"
   }
 }
