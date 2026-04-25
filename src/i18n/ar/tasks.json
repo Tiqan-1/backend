@@ -1,6 +1,24 @@
 {
   "errors": {
     "levelNotFound": "المستوى غير موجود",
-    "taskNotFound": "المهمة غير موجودة"
+    "taskNotFound": "المهمة غير موجودة",
+    "studentNotFound": "الطالب غير موجود",
+    "studentSubscriptionNotFound": "اشتراك الطالب غير موجود",
+    "lessonIdsRequired": "معرّفات الدروس مطلوبة",
+    "assignmentIdRequired": "معرّف الواجب مطلوب",
+    "assignmentNotFound": "الواجب غير موجود",
+    "meetingLinkRequired": "رابط اللقاء مطلوب",
+    "wirdTitleRequired": "عنوان الورد مطلوب",
+    "oralTestTitleRequired": "عنوان التسميع مطلوب",
+    "oralTestNotFound": "اختبار التسميع غير موجود",
+    "slotNotFound": "الموعد غير موجود",
+    "slotAlreadyBooked": "تم حجز هذا الموعد مسبقاً",
+    "slotNotBooked": "هذا الموعد غير محجوز",
+    "cannotReplaceSlotsWithBookings": "لا يمكن استبدال المواعيد لوجود حجوزات حالية. ألغِ الحجوزات أولاً",
+    "cannotRemoveBookedSlot": "لا يمكن حذف موعد محجوز",
+    "cannotGradeUnbookedSlot": "لا يمكن تقييم موعد غير محجوز",
+    "oralTestCannotSelfComplete": "لا يمكن للطالب تحديد مهمة التسميع كمكتملة، تكتمل تلقائياً عند تقييم المعلم",
+    "subscriptionNotForStudent": "الاشتراك غير مرتبط بالطالب",
+    "subscriptionNotInTaskProgram": "هذه المهمة لا تنتمي لبرنامج اشتراكك"
   }
 }

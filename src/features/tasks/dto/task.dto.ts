@@ -1,6 +1,6 @@
 import { ApiProperty, IntersectionType, OmitType, PartialType } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
-import { IsDate, IsEnum, IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
+import { IsArray, IsDate, IsEnum, IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator'
 import { i18nValidationMessage } from 'nestjs-i18n'
 import { SearchQueryDto } from '../../../shared/dto/search.query.dto'
 import { ObjectId } from '../../../shared/repository/types'
@@ -9,7 +9,8 @@ import { AssignmentDocument } from '../../assignments/schemas/assignment.schema'
 import { LessonDto } from '../../lessons/dto/lesson.dto'
 import { LessonDocument } from '../../lessons/schemas/lesson.schema'
 import { TaskType } from '../enums'
-import { TaskDocument } from '../schemas/task.schema'
+import { AnyTaskDocument } from '../schemas/task.schema'
+import { CreateOralTestSlotDto, OralTestSlotDto } from './oral-test-slot.dto'
 
 export class TaskDto {
     @ApiProperty({ type: String, required: true, example: 'taskId' })
@@ -95,32 +96,64 @@ export class TaskDto {
     @IsOptional()
     wirdDetails?: string
 
-    constructor(document: TaskDocument) {
+    // for oral tests (تسميع)
+    @ApiProperty({ type: String, required: false, description: 'Oral test title (required for OralTest tasks)' })
+    @IsString({ message: i18nValidationMessage('validation.string', { property: 'title' }) })
+    @IsOptional()
+    title?: string
+
+    @ApiProperty({ type: String, required: false, description: 'Oral test description (only for OralTest tasks)' })
+    @IsString({ message: i18nValidationMessage('validation.string', { property: 'description' }) })
+    @IsOptional()
+    description?: string
+
+    @ApiProperty({
+        type: [OralTestSlotDto],
+        required: false,
+        description: 'Time slots for the oral test (only for OralTest tasks). bookedBy is exposed only to the owner manager.',
+    })
+    @IsOptional()
+    slots?: OralTestSlotDto[]
+
+    constructor(document: AnyTaskDocument) {
         this.id = document._id.toString()
         this.levelId = document.levelId
         this.date = new Date(document.date)
         this.note = document.note
-        this.lessons = document.lessons.map(lesson => LessonDto.fromDocument(lesson as LessonDocument))
-        this.chatRoomId = document.chatRoomId?.toString()
-        this.hasChatRoom = !!document.chatRoomId
         this.type = document.type
-        this.assignment = document.assignment && AssignmentDto.fromDocument(document.assignment as AssignmentDocument)
-        this.meetingLink = document.meetingLink
-        this.minimumWatchTime = document.minimumWatchTime
-        this.wirdTitle = document.wirdTitle
-        this.wirdDetails = document.wirdDetails
+        this.hasChatRoom = false
+
+        if (document.type === TaskType.lesson) {
+            this.lessons = document.lessons.map(lesson => LessonDto.fromDocument(lesson as LessonDocument))
+            this.minimumWatchTime = document.minimumWatchTime
+        } else if (document.type === TaskType.assignment) {
+            this.assignment = document.assignment && AssignmentDto.fromDocument(document.assignment as AssignmentDocument)
+        } else if (document.type === TaskType.meeting) {
+            this.meetingLink = document.meetingLink
+            this.chatRoomId = document.chatRoomId?.toString()
+            this.hasChatRoom = !!document.chatRoomId
+        } else if (document.type === TaskType.wird) {
+            this.wirdTitle = document.wirdTitle
+            this.wirdDetails = document.wirdDetails
+        } else if (document.type === TaskType.oralTest) {
+            this.title = document.title
+            this.description = document.description
+            this.meetingLink = document.meetingLink
+            // default to manager-view shape; student-view shaping is done by listSlots when needed
+            this.slots = document.slots.map(slot => OralTestSlotDto.fromDocument(slot, { exposeBookedBy: true }))
+        }
     }
 
-    static fromDocument(document: TaskDocument): TaskDto {
+    static fromDocument(document: AnyTaskDocument): TaskDto {
         return new TaskDto(document)
     }
 
-    static fromDocuments(tasks: TaskDocument[] = []): TaskDto[] {
+    static fromDocuments(tasks: AnyTaskDocument[] = []): TaskDto[] {
         return tasks.map(task => this.fromDocument(task)).sort((a, b) => a.date.getTime() - b.date.getTime())
     }
 }
 
-export class CreateTaskDto extends OmitType(TaskDto, ['id', 'lessons', 'assignment'] as const) {
+export class CreateTaskDto extends OmitType(TaskDto, ['id', 'lessons', 'assignment', 'slots'] as const) {
     @ApiProperty({ type: String, isArray: true, required: false })
     @IsOptional()
     @IsMongoId({ each: true, message: i18nValidationMessage('validation.mongoId', { property: 'lessonIds' }) })
@@ -136,6 +169,17 @@ export class CreateTaskDto extends OmitType(TaskDto, ['id', 'lessons', 'assignme
     @IsMongoId({ message: i18nValidationMessage('validation.mongoId') })
     @Type(() => ObjectId)
     assignmentId?: ObjectId
+
+    @ApiProperty({
+        type: [CreateOralTestSlotDto],
+        required: false,
+        description: 'Initial slots for an OralTest task (optional — slots can also be added later via /slots endpoints).',
+    })
+    @IsOptional()
+    @IsArray({ message: i18nValidationMessage('validation.array', { property: 'initialSlots' }) })
+    @ValidateNested({ each: true })
+    @Type(() => CreateOralTestSlotDto)
+    initialSlots?: CreateOralTestSlotDto[]
 }
 
 export class UpdateTaskDto extends PartialType(OmitType(CreateTaskDto, ['levelId'] as const)) {}
@@ -150,6 +194,9 @@ export class SearchTasksQueryDto extends IntersectionType(
             'minimumWatchTime',
             'wirdDetails',
             'wirdTitle',
+            'title',
+            'description',
+            'slots',
         ] as const)
     ),
     SearchQueryDto

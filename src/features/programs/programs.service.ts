@@ -147,7 +147,7 @@ export class ProgramsService {
 
         for (const level of found.levels) {
             try {
-                await this.levelsService.remove(level._id.toString())
+                await this.levelsService.remove(level._id.toString(), managerObjectId)
             } catch (error) {
                 this.logger.error(`Attempt to remove level ${level._id.toString()} from program ${id} failed.`, error)
             }

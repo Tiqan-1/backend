@@ -85,7 +85,7 @@ export class LevelsService {
         }
     }
 
-    async remove(id: string): Promise<void> {
+    async remove(id: string, managerObjectId: ObjectId): Promise<void> {
         const found = await this.levelsRepository.update(
             { _id: new ObjectId(id) },
             { state: LevelState.deleted, expireAt: oneMonth }
@@ -105,7 +105,7 @@ export class LevelsService {
             }
         }
         for (const task of found.tasks) {
-            await this.tasksService.remove(task._id.toString())
+            await this.tasksService.remove(task._id, managerObjectId)
         }
         this.logger.log(`Level ${id} removed.`)
     }

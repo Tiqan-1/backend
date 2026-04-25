@@ -126,7 +126,7 @@ export class AssignmentsService {
         await assignment.updateOne({ state: AssignmentState.deleted })
 
         if (assignment.taskId) {
-            await this.tasksService.remove(assignment.taskId.toString())
+            await this.tasksService.remove(assignment.taskId, managerObjectId)
         }
 
         await this.responsesRepository.updateMany({ assignment: assignmentId }, { state: AssignmentResponseState.withdrawn })

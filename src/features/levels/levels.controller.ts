@@ -71,7 +71,7 @@ export class LevelsController {
     @HttpCode(HttpStatus.NO_CONTENT)
     @Roles(Role.Manager)
     @UseGuards(JwtAuthGuard, RolesGuard)
-    remove(@Param('id') id: string): Promise<void> {
-        return this.service.remove(id)
+    remove(@Param('id') id: string, @Request() request: { user: TokenUser }): Promise<void> {
+        return this.service.remove(id, request.user.id)
     }
 }

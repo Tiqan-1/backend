@@ -15,7 +15,21 @@ import { Program, ProgramSchema } from '../../features/programs/schemas/program.
 import { Student, StudentSchema } from '../../features/students/schemas/student.schema'
 import { Subject, SubjectSchema } from '../../features/subjects/schemas/subject.schema'
 import { Subscription, SubscriptionSchema } from '../../features/subscriptions/schemas/subscription.schema'
-import { Task, TaskSchema } from '../../features/tasks/schemas/task.schema'
+import { TaskType } from '../../features/tasks/enums'
+import {
+    AssignmentTask,
+    AssignmentTaskSchema,
+    LessonTask,
+    LessonTaskSchema,
+    MeetingTask,
+    MeetingTaskSchema,
+    OralTestTask,
+    OralTestTaskSchema,
+    Task,
+    TaskSchema,
+    WirdTask,
+    WirdTaskSchema,
+} from '../../features/tasks/schemas/task.schema'
 import { User, UserSchema } from '../../features/users/schemas/user.schema'
 import { MigrationService } from './migration.service'
 import { Counter, CounterSchema } from './schema/counter.schema'
@@ -30,7 +44,19 @@ import { SharedDocumentsService } from './shared-documents.service'
         MongooseModule.forFeature([{ name: AssignmentResponse.name, schema: AssignmentResponseSchema }]),
         MongooseModule.forFeature([{ name: Lesson.name, schema: LessonSchema }]),
         MongooseModule.forFeature([{ name: Subject.name, schema: SubjectSchema }]),
-        MongooseModule.forFeature([{ name: Task.name, schema: TaskSchema }]),
+        MongooseModule.forFeature([
+            {
+                name: Task.name,
+                schema: TaskSchema,
+                discriminators: [
+                    { name: LessonTask.name, schema: LessonTaskSchema, value: TaskType.lesson },
+                    { name: AssignmentTask.name, schema: AssignmentTaskSchema, value: TaskType.assignment },
+                    { name: MeetingTask.name, schema: MeetingTaskSchema, value: TaskType.meeting },
+                    { name: WirdTask.name, schema: WirdTaskSchema, value: TaskType.wird },
+                    { name: OralTestTask.name, schema: OralTestTaskSchema, value: TaskType.oralTest },
+                ],
+            },
+        ]),
         MongooseModule.forFeature([{ name: Chat.name, schema: ChatSchema }]),
         MongooseModule.forFeature([{ name: Message.name, schema: MessageSchema }]),
         MongooseModule.forFeature([{ name: Level.name, schema: LevelSchema }]),

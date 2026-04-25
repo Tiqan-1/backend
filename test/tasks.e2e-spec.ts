@@ -38,6 +38,7 @@ describe('TasksController (e2e)', () => {
     let app: INestApplication<App>
     let jwtService: JwtService
     let mongoTestHelper: MongoTestHelper
+    const pusherMock = { trigger: vi.fn() }
 
     beforeAll(async () => {
         mongoTestHelper = await MongoTestHelper.instance()
@@ -50,7 +51,7 @@ describe('TasksController (e2e)', () => {
                 ChatRepository,
                 MessageRepository,
                 { provide: I18nService, useValue: { t: vi.fn() } },
-                { provide: PusherService, useValue: { trigger: vi.fn() } },
+                { provide: PusherService, useValue: pusherMock },
                 AssignmentsRepository,
                 TasksService,
                 TasksRepository,
@@ -80,6 +81,7 @@ describe('TasksController (e2e)', () => {
 
     afterEach(async () => {
         await mongoTestHelper.clearCollections()
+        pusherMock.trigger.mockClear()
     })
 
     describe('POST /api/tasks', () => {
@@ -607,6 +609,469 @@ describe('TasksController (e2e)', () => {
             const found = await mongoTestHelper.getSubscriptionModel().findById(subscription._id)
             expect(found?.completedTaskIds[0].toString()).toEqual(task._id.toString())
             expect(found?.progressPercentage).toEqual(50)
+        })
+    })
+
+    describe('OralTest', () => {
+        const slot = (offsetMinutes: number, duration = 30) => ({
+            startsAt: new Date(Date.now() + offsetMinutes * 60_000),
+            durationMinutes: duration,
+        })
+
+        const seedSubscribedStudent = async (
+            program: { _id: ObjectId; levels: ObjectId[]; save: () => Promise<unknown> },
+            level: { _id: ObjectId },
+            studentSuffix = ''
+        ) => {
+            const student = await mongoTestHelper.createStudent(studentSuffix)
+            const subscription = await mongoTestHelper.createSubscription(program._id, level._id, student._id)
+            ;(student.subscriptions as ObjectId[]).push(subscription._id)
+            await student.save()
+            return { student, subscription }
+        }
+
+        describe('POST /api/tasks (oralTest)', () => {
+            it('should succeed creating an oralTest with initial slots', async () => {
+                const manager = await mongoTestHelper.createManager()
+                const token = jwtService.sign({ id: manager._id, role: manager.role })
+                const level = await mongoTestHelper.createLevel(manager._id)
+
+                const body: CreateTaskDto = {
+                    levelId: level._id,
+                    date: new Date(),
+                    type: TaskType.oralTest,
+                    title: 'تسميع البقرة 1-50',
+                    description: 'وصف',
+                    meetingLink: 'https://meet.example.com/oral',
+                    initialSlots: [slot(60), slot(120)],
+                }
+
+                const response = await request(app.getHttpServer())
+                    .post(`/api/tasks`)
+                    .set('Authorization', `Bearer ${token}`)
+                    .send(body)
+                    .expect(HttpStatus.CREATED)
+
+                const { id } = response.body as CreatedDto
+                expect(id).toBeDefined()
+
+                const created = (await mongoTestHelper.getTaskModel().findById(id)) as TaskDocument & {
+                    type: string
+                    title: string
+                    slots: { _id: ObjectId; bookedBy?: ObjectId }[]
+                }
+                expect(created.type).toEqual(TaskType.oralTest)
+                expect(created.title).toEqual(body.title)
+                expect(created.slots).toHaveLength(2)
+                expect(created.slots.every(s => !s.bookedBy)).toBe(true)
+            })
+
+            it('should fail with 406 when title is missing', async () => {
+                const manager = await mongoTestHelper.createManager()
+                const token = jwtService.sign({ id: manager._id, role: manager.role })
+                const level = await mongoTestHelper.createLevel(manager._id)
+
+                const body: CreateTaskDto = {
+                    levelId: level._id,
+                    date: new Date(),
+                    type: TaskType.oralTest,
+                }
+
+                await request(app.getHttpServer())
+                    .post(`/api/tasks`)
+                    .set('Authorization', `Bearer ${token}`)
+                    .send(body)
+                    .expect(HttpStatus.NOT_ACCEPTABLE)
+            })
+        })
+
+        describe('PUT /api/tasks/:id/slots', () => {
+            it('should replace slots when none are booked', async () => {
+                const manager = await mongoTestHelper.createManager()
+                const token = jwtService.sign({ id: manager._id, role: manager.role })
+                const level = await mongoTestHelper.createLevel(manager._id)
+                const task = await mongoTestHelper.createOralTestTask(manager._id, level._id, [slot(60)])
+
+                await request(app.getHttpServer())
+                    .put(`/api/tasks/${task._id.toString()}/slots`)
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({ slots: [slot(180), slot(240)] })
+                    .expect(HttpStatus.NO_CONTENT)
+
+                const reloaded = (await mongoTestHelper.getTaskModel().findById(task._id)) as TaskDocument & {
+                    slots: { _id: ObjectId }[]
+                }
+                expect(reloaded.slots).toHaveLength(2)
+            })
+
+            it('should fail with 409 when at least one slot is booked', async () => {
+                const manager = await mongoTestHelper.createManager()
+                const token = jwtService.sign({ id: manager._id, role: manager.role })
+                const program = await mongoTestHelper.createProgram(manager._id)
+                const level = await mongoTestHelper.createLevel(manager._id, program._id)
+                program.levels = [level._id]
+                await program.save()
+                const { student } = await seedSubscribedStudent(program, level)
+                const task = await mongoTestHelper.createOralTestTask(manager._id, level._id, [
+                    { ...slot(60), bookedBy: student._id, bookedAt: new Date() },
+                ])
+
+                await request(app.getHttpServer())
+                    .put(`/api/tasks/${task._id.toString()}/slots`)
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({ slots: [slot(120)] })
+                    .expect(HttpStatus.CONFLICT)
+            })
+        })
+
+        describe('GET /api/tasks/:id/slots', () => {
+            it('should hide bookedBy when called by a student', async () => {
+                const manager = await mongoTestHelper.createManager()
+                const program = await mongoTestHelper.createProgram(manager._id)
+                const level = await mongoTestHelper.createLevel(manager._id, program._id)
+                program.levels = [level._id]
+                await program.save()
+                const { student } = await seedSubscribedStudent(program, level)
+                const task = await mongoTestHelper.createOralTestTask(manager._id, level._id, [
+                    { ...slot(60), bookedBy: student._id, bookedAt: new Date() },
+                ])
+                const studentToken = jwtService.sign({ id: student._id, role: student.role })
+
+                const response = await request(app.getHttpServer())
+                    .get(`/api/tasks/${task._id.toString()}/slots`)
+                    .set('Authorization', `Bearer ${studentToken}`)
+                    .expect(HttpStatus.OK)
+
+                const slots = response.body as { booked: boolean; bookedBy?: string }[]
+                expect(slots).toHaveLength(1)
+                expect(slots[0].booked).toBe(true)
+                expect(slots[0].bookedBy).toBeUndefined()
+            })
+
+            it('should expose bookedBy when called by the owner manager', async () => {
+                const manager = await mongoTestHelper.createManager()
+                const program = await mongoTestHelper.createProgram(manager._id)
+                const level = await mongoTestHelper.createLevel(manager._id, program._id)
+                program.levels = [level._id]
+                await program.save()
+                const { student } = await seedSubscribedStudent(program, level)
+                const task = await mongoTestHelper.createOralTestTask(manager._id, level._id, [
+                    { ...slot(60), bookedBy: student._id, bookedAt: new Date() },
+                ])
+                const managerToken = jwtService.sign({ id: manager._id, role: manager.role })
+
+                const response = await request(app.getHttpServer())
+                    .get(`/api/tasks/${task._id.toString()}/slots`)
+                    .set('Authorization', `Bearer ${managerToken}`)
+                    .expect(HttpStatus.OK)
+
+                const slots = response.body as { booked: boolean; bookedBy?: string }[]
+                expect(slots[0].bookedBy).toEqual(student._id.toString())
+            })
+        })
+
+        describe('POST /api/tasks/:id/slots/:slotId/book', () => {
+            it('should book successfully and notify via Pusher', async () => {
+                const manager = await mongoTestHelper.createManager()
+                const program = await mongoTestHelper.createProgram(manager._id)
+                const level = await mongoTestHelper.createLevel(manager._id, program._id)
+                program.levels = [level._id]
+                await program.save()
+                const { student, subscription } = await seedSubscribedStudent(program, level)
+                const task = await mongoTestHelper.createOralTestTask(manager._id, level._id, [slot(60)])
+                const slotId = task.slots[0]._id
+                const token = jwtService.sign({ id: student._id, role: student.role })
+
+                await request(app.getHttpServer())
+                    .post(`/api/tasks/${task._id.toString()}/slots/${slotId.toString()}/book`)
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({ subscriptionId: subscription._id })
+                    .expect(HttpStatus.NO_CONTENT)
+
+                const reloaded = (await mongoTestHelper.getTaskModel().findById(task._id)) as TaskDocument & {
+                    slots: { _id: ObjectId; bookedBy?: ObjectId; bookedSubscriptionId?: ObjectId }[]
+                }
+                expect(reloaded.slots[0].bookedBy?.toString()).toEqual(student._id.toString())
+                expect(reloaded.slots[0].bookedSubscriptionId?.toString()).toEqual(subscription._id.toString())
+                expect(pusherMock.trigger).toHaveBeenCalledWith(
+                    `oral-test-${task._id.toString()}`,
+                    'slot-booked',
+                    expect.objectContaining({ slotId: slotId.toString(), studentId: student._id.toString() })
+                )
+            })
+
+            it('should prevent double booking under concurrent requests', async () => {
+                const manager = await mongoTestHelper.createManager()
+                const program = await mongoTestHelper.createProgram(manager._id)
+                const level = await mongoTestHelper.createLevel(manager._id, program._id)
+                program.levels = [level._id]
+                await program.save()
+                const { student: studentA, subscription: subA } = await seedSubscribedStudent(program, level, 'A')
+                const { student: studentB, subscription: subB } = await seedSubscribedStudent(program, level, 'B')
+                const task = await mongoTestHelper.createOralTestTask(manager._id, level._id, [slot(60)])
+                const slotId = task.slots[0]._id
+                const tokenA = jwtService.sign({ id: studentA._id, role: studentA.role })
+                const tokenB = jwtService.sign({ id: studentB._id, role: studentB.role })
+
+                const [resA, resB] = await Promise.all([
+                    request(app.getHttpServer())
+                        .post(`/api/tasks/${task._id.toString()}/slots/${slotId.toString()}/book`)
+                        .set('Authorization', `Bearer ${tokenA}`)
+                        .send({ subscriptionId: subA._id }),
+                    request(app.getHttpServer())
+                        .post(`/api/tasks/${task._id.toString()}/slots/${slotId.toString()}/book`)
+                        .set('Authorization', `Bearer ${tokenB}`)
+                        .send({ subscriptionId: subB._id }),
+                ])
+                const statuses = [resA.status, resB.status].sort()
+                expect(statuses).toEqual([HttpStatus.NO_CONTENT, HttpStatus.CONFLICT])
+            })
+
+            it('should fail with 404 when subscription does not belong to student', async () => {
+                const manager = await mongoTestHelper.createManager()
+                const program = await mongoTestHelper.createProgram(manager._id)
+                const level = await mongoTestHelper.createLevel(manager._id, program._id)
+                program.levels = [level._id]
+                await program.save()
+                const otherStudent = await mongoTestHelper.createStudent('other')
+                const otherSub = await mongoTestHelper.createSubscription(program._id, level._id, otherStudent._id)
+                const myStudent = await mongoTestHelper.createStudent('mine')
+                const task = await mongoTestHelper.createOralTestTask(manager._id, level._id, [slot(60)])
+                const slotId = task.slots[0]._id
+                const token = jwtService.sign({ id: myStudent._id, role: myStudent.role })
+
+                await request(app.getHttpServer())
+                    .post(`/api/tasks/${task._id.toString()}/slots/${slotId.toString()}/book`)
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({ subscriptionId: otherSub._id })
+                    .expect(HttpStatus.NOT_FOUND)
+            })
+
+            it('should fail with 406 when task level is not in subscription program', async () => {
+                const manager = await mongoTestHelper.createManager()
+                const programA = await mongoTestHelper.createProgram(manager._id)
+                const levelA = await mongoTestHelper.createLevel(manager._id, programA._id)
+                programA.levels = [levelA._id]
+                await programA.save()
+                const programB = await mongoTestHelper.createProgram(manager._id)
+                const levelB = await mongoTestHelper.createLevel(manager._id, programB._id)
+                programB.levels = [levelB._id]
+                await programB.save()
+                const { student, subscription } = await seedSubscribedStudent(programA, levelA)
+                const task = await mongoTestHelper.createOralTestTask(manager._id, levelB._id, [slot(60)])
+                const slotId = task.slots[0]._id
+                const token = jwtService.sign({ id: student._id, role: student.role })
+
+                await request(app.getHttpServer())
+                    .post(`/api/tasks/${task._id.toString()}/slots/${slotId.toString()}/book`)
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({ subscriptionId: subscription._id })
+                    .expect(HttpStatus.NOT_ACCEPTABLE)
+            })
+        })
+
+        describe('DELETE /api/tasks/:id/slots/:slotId/booking', () => {
+            it('should fail with 404 for a non-owner manager', async () => {
+                const owner = await mongoTestHelper.createManager()
+                const stranger = await mongoTestHelper.createManager('stranger')
+                const program = await mongoTestHelper.createProgram(owner._id)
+                const level = await mongoTestHelper.createLevel(owner._id, program._id)
+                program.levels = [level._id]
+                await program.save()
+                const { student } = await seedSubscribedStudent(program, level)
+                const task = await mongoTestHelper.createOralTestTask(owner._id, level._id, [
+                    { ...slot(60), bookedBy: student._id, bookedAt: new Date() },
+                ])
+                const slotId = task.slots[0]._id
+                const token = jwtService.sign({ id: stranger._id, role: stranger.role })
+
+                await request(app.getHttpServer())
+                    .delete(`/api/tasks/${task._id.toString()}/slots/${slotId.toString()}/booking`)
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({ reason: 'no show' })
+                    .expect(HttpStatus.NOT_FOUND)
+            })
+
+            it('should release the slot, audit-stamp, and notify the student', async () => {
+                const manager = await mongoTestHelper.createManager()
+                const program = await mongoTestHelper.createProgram(manager._id)
+                const level = await mongoTestHelper.createLevel(manager._id, program._id)
+                program.levels = [level._id]
+                await program.save()
+                const { student, subscription } = await seedSubscribedStudent(program, level)
+                const task = await mongoTestHelper.createOralTestTask(manager._id, level._id, [
+                    { ...slot(60), bookedBy: student._id, bookedAt: new Date(), bookedSubscriptionId: subscription._id },
+                ])
+                const slotId = task.slots[0]._id
+                const token = jwtService.sign({ id: manager._id, role: manager.role })
+
+                await request(app.getHttpServer())
+                    .delete(`/api/tasks/${task._id.toString()}/slots/${slotId.toString()}/booking`)
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({ reason: 'rescheduled' })
+                    .expect(HttpStatus.NO_CONTENT)
+
+                const reloaded = (await mongoTestHelper.getTaskModel().findById(task._id)) as TaskDocument & {
+                    slots: {
+                        _id: ObjectId
+                        bookedBy?: ObjectId
+                        cancelledBy?: ObjectId
+                        cancellationReason?: string
+                    }[]
+                }
+                expect(reloaded.slots[0].bookedBy).toBeUndefined()
+                expect(reloaded.slots[0].cancelledBy?.toString()).toEqual(manager._id.toString())
+                expect(reloaded.slots[0].cancellationReason).toEqual('rescheduled')
+                expect(pusherMock.trigger).toHaveBeenCalledWith(
+                    `student-${student._id.toString()}`,
+                    'oral-test-booking-cancelled',
+                    expect.objectContaining({ taskId: task._id.toString(), slotId: slotId.toString() })
+                )
+            })
+        })
+
+        describe('POST /api/tasks/:id/slots/:slotId/grade', () => {
+            it('should set grade, mark task completed, and notify student', async () => {
+                const manager = await mongoTestHelper.createManager()
+                const program = await mongoTestHelper.createProgram(manager._id)
+                const level = await mongoTestHelper.createLevel(manager._id, program._id)
+                program.levels = [level._id]
+                await program.save()
+                const { student, subscription } = await seedSubscribedStudent(program, level)
+                const task = await mongoTestHelper.createOralTestTask(manager._id, level._id, [
+                    { ...slot(60), bookedBy: student._id, bookedAt: new Date(), bookedSubscriptionId: subscription._id },
+                ])
+                const task2 = await mongoTestHelper.createOralTestTask(manager._id, level._id, [slot(120)])
+                level.tasks = [task._id, task2._id]
+                await level.save()
+                const slotId = task.slots[0]._id
+                const token = jwtService.sign({ id: manager._id, role: manager.role })
+
+                await request(app.getHttpServer())
+                    .post(`/api/tasks/${task._id.toString()}/slots/${slotId.toString()}/grade`)
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({ grade: 95, feedback: 'ممتاز' })
+                    .expect(HttpStatus.NO_CONTENT)
+
+                const sub = await mongoTestHelper.getSubscriptionModel().findById(subscription._id)
+                expect(sub?.completedTaskIds.map(id => id.toString())).toContain(task._id.toString())
+                expect(sub?.progressPercentage).toEqual(50)
+                expect(pusherMock.trigger).toHaveBeenCalledWith(
+                    `student-${student._id.toString()}`,
+                    'oral-test-graded',
+                    expect.objectContaining({ taskId: task._id.toString(), grade: 95 })
+                )
+            })
+
+            it('should fail with 409 when grading an unbooked slot', async () => {
+                const manager = await mongoTestHelper.createManager()
+                const level = await mongoTestHelper.createLevel(manager._id)
+                const task = await mongoTestHelper.createOralTestTask(manager._id, level._id, [slot(60)])
+                const slotId = task.slots[0]._id
+                const token = jwtService.sign({ id: manager._id, role: manager.role })
+
+                await request(app.getHttpServer())
+                    .post(`/api/tasks/${task._id.toString()}/slots/${slotId.toString()}/grade`)
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({ grade: 80 })
+                    .expect(HttpStatus.CONFLICT)
+            })
+
+            it('should fail with 404 when called by a non-owner manager', async () => {
+                const owner = await mongoTestHelper.createManager()
+                const stranger = await mongoTestHelper.createManager('stranger')
+                const program = await mongoTestHelper.createProgram(owner._id)
+                const level = await mongoTestHelper.createLevel(owner._id, program._id)
+                program.levels = [level._id]
+                await program.save()
+                const { student, subscription } = await seedSubscribedStudent(program, level)
+                const task = await mongoTestHelper.createOralTestTask(owner._id, level._id, [
+                    { ...slot(60), bookedBy: student._id, bookedAt: new Date(), bookedSubscriptionId: subscription._id },
+                ])
+                const slotId = task.slots[0]._id
+                const token = jwtService.sign({ id: stranger._id, role: stranger.role })
+
+                await request(app.getHttpServer())
+                    .post(`/api/tasks/${task._id.toString()}/slots/${slotId.toString()}/grade`)
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({ grade: 80 })
+                    .expect(HttpStatus.NOT_FOUND)
+            })
+
+            it('should not double-credit completion on re-grade', async () => {
+                const manager = await mongoTestHelper.createManager()
+                const program = await mongoTestHelper.createProgram(manager._id)
+                const level = await mongoTestHelper.createLevel(manager._id, program._id)
+                program.levels = [level._id]
+                await program.save()
+                const { student, subscription } = await seedSubscribedStudent(program, level)
+                const task = await mongoTestHelper.createOralTestTask(manager._id, level._id, [
+                    { ...slot(60), bookedBy: student._id, bookedAt: new Date(), bookedSubscriptionId: subscription._id },
+                ])
+                level.tasks = [task._id]
+                await level.save()
+                const slotId = task.slots[0]._id
+                const token = jwtService.sign({ id: manager._id, role: manager.role })
+
+                await request(app.getHttpServer())
+                    .post(`/api/tasks/${task._id.toString()}/slots/${slotId.toString()}/grade`)
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({ grade: 80 })
+                    .expect(HttpStatus.NO_CONTENT)
+                await request(app.getHttpServer())
+                    .post(`/api/tasks/${task._id.toString()}/slots/${slotId.toString()}/grade`)
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({ grade: 90 })
+                    .expect(HttpStatus.NO_CONTENT)
+
+                const sub = await mongoTestHelper.getSubscriptionModel().findById(subscription._id)
+                expect(sub?.completedTaskIds.filter(id => id.equals(task._id))).toHaveLength(1)
+            })
+        })
+
+        describe('POST /api/tasks/:id/complete on oralTest', () => {
+            it('should reject student self-completion with 406', async () => {
+                const manager = await mongoTestHelper.createManager()
+                const program = await mongoTestHelper.createProgram(manager._id)
+                const level = await mongoTestHelper.createLevel(manager._id, program._id)
+                program.levels = [level._id]
+                await program.save()
+                const { student, subscription } = await seedSubscribedStudent(program, level)
+                const task = await mongoTestHelper.createOralTestTask(manager._id, level._id, [slot(60)])
+                const token = jwtService.sign({ id: student._id, role: student.role })
+
+                await request(app.getHttpServer())
+                    .post(`/api/tasks/${task._id.toString()}/complete`)
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({ subscriptionId: subscription._id })
+                    .expect(HttpStatus.NOT_ACCEPTABLE)
+            })
+        })
+
+        describe('GET /api/tasks/:id/bookings', () => {
+            it('should return hydrated student data per booked slot', async () => {
+                const manager = await mongoTestHelper.createManager()
+                const program = await mongoTestHelper.createProgram(manager._id)
+                const level = await mongoTestHelper.createLevel(manager._id, program._id)
+                program.levels = [level._id]
+                await program.save()
+                const { student } = await seedSubscribedStudent(program, level)
+                const task = await mongoTestHelper.createOralTestTask(manager._id, level._id, [
+                    { ...slot(60), bookedBy: student._id, bookedAt: new Date() },
+                    slot(120),
+                ])
+                const token = jwtService.sign({ id: manager._id, role: manager.role })
+
+                const response = await request(app.getHttpServer())
+                    .get(`/api/tasks/${task._id.toString()}/bookings`)
+                    .set('Authorization', `Bearer ${token}`)
+                    .expect(HttpStatus.OK)
+
+                const bookings = response.body as { student: { id: string; email: string } }[]
+                expect(bookings).toHaveLength(1)
+                expect(bookings[0].student.id).toEqual(student._id.toString())
+                expect(bookings[0].student.email).toEqual(student.email)
+            })
         })
     })
 })

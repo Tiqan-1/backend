@@ -8,4 +8,5 @@ export enum TaskType {
     assignment = 'assignment',
     meeting = 'meeting',
     wird = 'wird',
+    oralTest = 'oralTest',
 }

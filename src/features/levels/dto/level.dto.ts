@@ -3,11 +3,10 @@ import { Type } from 'class-transformer'
 import { IsDate, IsMongoId, IsString, ValidateNested } from 'class-validator'
 import { i18nValidationMessage } from 'nestjs-i18n'
 import { SearchQueryDto } from 'src/shared/dto/search.query.dto'
-import { Populated } from '../../../shared/repository/types'
 import { SimpleManagerDto } from '../../managers/dto/manager.dto'
 import { ManagerDocument } from '../../managers/schemas/manager.schema'
 import { TaskDto } from '../../tasks/dto/task.dto'
-import { TaskDocument } from '../../tasks/schemas/task.schema'
+import { AnyTaskDocument } from '../../tasks/schemas/task.schema'
 import { LevelDocument } from '../schemas/level.schema'
 
 export class LevelDto {
@@ -53,7 +52,7 @@ export class LevelDto {
             end: document.end,
             programId: document.programId.toString(),
             createdBy: document.createdBy && SimpleManagerDto.fromDocument(document.createdBy as ManagerDocument),
-            tasks: TaskDto.fromDocuments(document.tasks as Populated<TaskDocument[]>),
+            tasks: TaskDto.fromDocuments(document.tasks as AnyTaskDocument[]),
         }
     }
 }
