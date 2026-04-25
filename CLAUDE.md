@@ -224,9 +224,7 @@ E2E tests cover: authentication, students, programs, tasks, subscriptions.
 3. **No HTTP security headers (Helmet)**
    — No `helmet()` middleware. Missing CSP, HSTS, X-Frame-Options, X-Content-Type-Options. **Fix: add `helmet` package in `main.ts`.**
 
-4. **Missing `ParseMongoIdPipe` on task delete**
-   (`src/features/tasks/tasks.controller.ts:81`)
-   — `delete(@Param('id') id: string)` receives a raw string, unlike all other endpoints that use `ParseMongoIdPipe`. An invalid ObjectId string will propagate to the service and cause a Mongoose cast error instead of a clean 400. **Fix: add `ParseMongoIdPipe`.**
+4. ~~**Missing `ParseMongoIdPipe` on task delete**~~ — fixed on `refactor-tasks-new` (commit 2c23c41).
 
 5. **`SecurityErrorFilter` crashes on unauthenticated `ForbiddenException`**
    (`src/shared/errors/security-error.filter.ts:35`)
