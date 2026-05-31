@@ -39,7 +39,9 @@ async function bootstrap(): Promise<void> {
         .build()
 
     const documentFactory = (): OpenAPIObject => SwaggerModule.createDocument(app, config)
-    SwaggerModule.setup('api', app, documentFactory)
+    // Docs served on a dedicated path gated by Cloudflare Access (email OTP) at the edge.
+    // Keeps the public /api/* routes open for the SPA + mobile app, which can't do an interactive Access flow.
+    SwaggerModule.setup('swagger-ui', app, documentFactory)
 
     app.enableShutdownHooks()
 

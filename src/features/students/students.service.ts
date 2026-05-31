@@ -149,7 +149,7 @@ export class StudentsService {
 
     private async loadStudent(
         studentId: ObjectId,
-        projections?: ProjectionType<StudentDto>,
+        projections?: ProjectionType<StudentDocument>,
         options?: QueryOptions<StudentDocument>
     ): Promise<StudentDocument> {
         const student = await this.studentRepository.findById(studentId, projections, options)

@@ -10,7 +10,8 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import * as bcrypt from 'bcryptjs'
-import { addDays } from 'date-fns'
+import { randomInt } from 'node:crypto'
+import { addHours } from 'date-fns'
 import { I18nService } from 'nestjs-i18n'
 import { v4 as uuidv4 } from 'uuid'
 import { SharedDocumentsService } from '../../shared/database-services/shared-documents.service'
@@ -73,8 +74,8 @@ export class AuthenticationService {
         if (prevCode) {
             await this.verificationCodeRepository.remove({ _id: prevCode._id })
         }
-        const resetCode = uuidv4().substring(0, 8)
-        await this.verificationCodeRepository.create({ email: user.email, code: resetCode, expiresAt: addDays(Date.now(), 1) })
+        const resetCode = randomInt(0, 1_000_000).toString().padStart(6, '0')
+        await this.verificationCodeRepository.create({ email: user.email, code: resetCode, expiresAt: addHours(Date.now(), 1) })
         await this.emailService.sendResetPasswordEmail(user.email, resetCode)
         this.logger.log(`Password reset code sent to user ${user.email}.`)
     }
