@@ -12,6 +12,7 @@ import { AssignmentResponsesModule } from './features/assignment-responses/assig
 import { AssignmentsModule } from './features/assignments/assignments.module'
 import { AuthenticationModule } from './features/authentication/authentication.module'
 import { ChatModule } from './features/chat/chat.module'
+import { HealthModule } from './features/health/health.module'
 import { LessonsModule } from './features/lessons/lessons.module'
 import { LevelsModule } from './features/levels/levels.module'
 import { ManagersModule } from './features/managers/managers.module'
@@ -72,6 +73,7 @@ import { EmailModule } from './shared/email/email.module'
         AssignmentsModule,
         AssignmentResponsesModule,
         EmailModule,
+        HealthModule,
     ],
     providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
