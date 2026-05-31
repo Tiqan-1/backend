@@ -13,6 +13,7 @@ import {
     UseGuards,
 } from '@nestjs/common'
 import { ApiBasicAuth, ApiBody, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger'
+import { Throttle } from '@nestjs/throttler'
 import { BadRequestErrorDto } from '../../shared/dto/bad-request-error.dto'
 import { ErrorDto } from '../../shared/dto/error.dto'
 import { ParseMongoIdPipe } from '../../shared/pipes/ParseMongoIdPipe'
@@ -50,6 +51,7 @@ export class AuthenticationController {
     @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'An internal server error occurred.', type: ErrorDto })
     @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'User is not found.', type: ErrorDto })
     @ApiResponse({ status: HttpStatus.CONFLICT, description: 'User account is not activated.', type: ErrorDto })
+    @Throttle({ default: { limit: 5, ttl: 60_000 } })
     @HttpCode(HttpStatus.NO_CONTENT)
     @Get('forgot-password/:email')
     forgotPassword(@Param('email') email: string): Promise<void> {
@@ -60,6 +62,7 @@ export class AuthenticationController {
     @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'The password reset email was sent successfully.' })
     @ApiResponse({ status: HttpStatus.NOT_ACCEPTABLE, description: 'Verification code is invalid.', type: ErrorDto })
     @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Request validation failed.', type: BadRequestErrorDto })
+    @Throttle({ default: { limit: 10, ttl: 60_000 } })
     @HttpCode(HttpStatus.NO_CONTENT)
     @Put('change-password')
     async changePassword(@Body() dto: ChangePasswordRequestDto): Promise<void> {
@@ -83,6 +86,7 @@ export class AuthenticationController {
     @ApiBody({ type: AuthenticationRequestDto })
     @ApiBasicAuth()
     @HttpCode(HttpStatus.OK)
+    @Throttle({ default: { limit: 10, ttl: 60_000 } })
     @UseGuards(StudentsLocalAuthGuard)
     @Post('login')
     login(@Request() req: { user: UserDocument }): Promise<AuthenticationResponseDto> | undefined {
@@ -105,6 +109,7 @@ export class AuthenticationController {
     @ApiBody({ type: AuthenticationRequestDto })
     @ApiBasicAuth()
     @HttpCode(HttpStatus.OK)
+    @Throttle({ default: { limit: 10, ttl: 60_000 } })
     @UseGuards(ManagersLocalAuthGuard)
     @Post('manager-login')
     loginManager(@Request() req: { user: UserDocument }): Promise<AuthenticationResponseDto> | undefined {

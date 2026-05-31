@@ -1,5 +1,9 @@
 import { ObjectId } from '../repository/types'
 
+function escapeRegex(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 export class SearchFilterBuilder {
     private filter: Record<string, unknown> = {}
     constructor() {}
@@ -49,7 +53,7 @@ export class SearchFilterBuilder {
 
     withStringLike(key: string, value?: string): SearchFilterBuilder {
         if (value) {
-            this.filter[key] = { $regex: value, $options: 'i' }
+            this.filter[key] = { $regex: escapeRegex(value), $options: 'i' }
         }
         return this
     }

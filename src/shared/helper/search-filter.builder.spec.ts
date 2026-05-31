@@ -77,6 +77,11 @@ describe('SearchFilterBuilder', () => {
             expect(filter).toEqual({ [key]: { $regex: value, $options: 'i' } })
         })
 
+        it('should escape regex metacharacters to prevent ReDoS', () => {
+            const filter = builder.withStringLike('name', 'a.*+(b)[c]').build()
+            expect(filter).toEqual({ name: { $regex: 'a\\.\\*\\+\\(b\\)\\[c\\]', $options: 'i' } })
+        })
+
         it('should not add the key when value is undefined', () => {
             const filter = builder.withStringLike('name', undefined).build()
             expect(filter).not.toHaveProperty('name')

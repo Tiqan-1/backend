@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
+import { APP_GUARD } from '@nestjs/core'
 import { MongooseModule } from '@nestjs/mongoose'
 import { ServeStaticModule } from '@nestjs/serve-static'
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler'
 import { I18nModule } from 'nestjs-i18n'
 import { PusherModule } from 'nestjs-pusher'
 import { join } from 'node:path'
@@ -27,6 +29,10 @@ import { EmailModule } from './shared/email/email.module'
     imports: [
         ConfigModule.forRoot({
             isGlobal: true,
+        }),
+        ThrottlerModule.forRoot({
+            throttlers: [{ ttl: 60_000, limit: 200 }],
+            skipIf: () => process.env.NODE_ENV === 'test',
         }),
         ServeStaticModule.forRoot({
             rootPath: join(__dirname, '..', 'static'), // Adjust path to the folder where your HTML files are stored
@@ -67,6 +73,6 @@ import { EmailModule } from './shared/email/email.module'
         AssignmentResponsesModule,
         EmailModule,
     ],
-    providers: [],
+    providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

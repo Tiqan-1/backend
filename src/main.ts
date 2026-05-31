@@ -2,6 +2,7 @@ import { ConsoleLogger } from '@nestjs/common'
 import { LogLevel } from '@nestjs/common/services/logger.service'
 import { NestFactory } from '@nestjs/core'
 import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger'
+import helmet from 'helmet'
 import 'multer'
 import { I18nService, I18nValidationExceptionFilter, I18nValidationPipe } from 'nestjs-i18n'
 import * as process from 'node:process'
@@ -19,9 +20,22 @@ async function bootstrap(): Promise<void> {
     const migrationService = app.get(MigrationService)
     await migrationService.migrate()
 
+    app.use(
+        helmet({
+            contentSecurityPolicy: {
+                directives: {
+                    ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+                    // Swagger UI needs inline scripts/styles and loads the validator badge.
+                    'script-src': ["'self'", "'unsafe-inline'"],
+                    'img-src': ["'self'", 'data:', 'https://validator.swagger.io'],
+                },
+            },
+        })
+    )
+
     //await app.register(multipart)
     app.enableCors({
-        origin: [/https:\/\/.*\.yaseen\.dev$/, 'https://mubadarah.github.io', 'https://tiqan-1.github.io'],
+        origin: [/^https:\/\/([a-z0-9-]+\.)*yaseen\.dev$/, 'https://mubadarah.github.io', 'https://tiqan-1.github.io'],
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
         credentials: true,
     })
@@ -39,7 +53,9 @@ async function bootstrap(): Promise<void> {
         .build()
 
     const documentFactory = (): OpenAPIObject => SwaggerModule.createDocument(app, config)
-    SwaggerModule.setup('api', app, documentFactory)
+    // Docs served on a dedicated path gated by Cloudflare Access (email OTP) at the edge.
+    // Keeps the public /api/* routes open for the SPA + mobile app, which can't do an interactive Access flow.
+    SwaggerModule.setup('swagger-ui', app, documentFactory)
 
     app.enableShutdownHooks()
 
