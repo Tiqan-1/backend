@@ -11,7 +11,7 @@
 - **Email:** Nodemailer + Handlebars templates
 - **i18n:** nestjs-i18n (Arabic fallback)
 - **Tests:** Vitest (unit) + Supertest + mongodb-memory-server (E2E)
-- **API Docs:** Swagger / OpenAPI at `/api`
+- **API Docs:** Swagger / OpenAPI at **`/swagger-ui`** (the `/api` prefix is for the REST routes, not the docs)
 
 ---
 
@@ -145,12 +145,13 @@ Log successes at `log` level, unexpected states at `warn`, failures at `error`.
 
 ## Authentication & Authorization
 
-- **Two login paths**: Student (`/api/auth/students/login`) and Manager (`/api/auth/managers/login`)
+- **Two login paths**: Student `POST /api/authentication/login` and Manager `POST /api/authentication/manager-login`.
+  - Credentials come from the **JSON request body** `{ email, password }` (passport-local, `usernameField: 'email'`) — **not** Basic auth. Response: `{ name, email, accessToken, refreshToken }`.
 - **Access Token**: JWT signed with `JWT_SECRET`, payload: `{ id, role }`
 - **Refresh Token**: UUID stored in MongoDB (`refreshtokens` collection, TTL 10 days)
 - **Role enum**: `Role.Manager`, `Role.Student`
-- **Verification flow**: Email link → `GET /api/auth/verify/:id` → activates account
-- **Password reset**: 8-char code emailed → `POST /api/auth/change-password`
+- **Verification flow**: accounts are created `status: inactive` → email link `GET /api/authentication/verify/:id` → activates (302 redirect to `STUDENT_WEB_URL`/`MANAGEMENT_WEB_URL` + `#/login`). **Both students AND managers require verification**; logging in with an inactive account returns 401.
+- **Password reset**: `GET /api/authentication/forgot-password/:email` emails a code → `PUT /api/authentication/change-password` with `{ email, code, password }`.
 
 ---
 
@@ -274,3 +275,10 @@ Docker:
 ```bash
 docker compose -f docker-compose.dev.yml up
 ```
+
+**Dev environment gotchas** (observed standing this up locally):
+- `start:dev` (`nest start --watch`) needs **`chokidar`** — it's an unlisted peer of `@swc/cli` (`^5.0.0`). Without it watch fails with `Cannot find module 'chokidar'`. Add `chokidar@^5` to devDependencies.
+- The dev compose runs `mongodb` as `user: '1000:1000'` against a **host bind-mount** (`./mongodb_data-dev:/data/db`). If that host dir is created by the Docker daemon (root-owned), mongod crash-loops with `Permission denied "/data/db/journal"` (exitCode 100). Either pre-create the dir owned by uid 1000, or switch to a Docker **named volume**.
+- CORS in `main.ts` only allows production origins, so a local frontend needs a `localhost` origin added.
+- `PusherModule.forRoot` throws at boot if Pusher creds are empty strings — use dummy non-empty values locally (events just no-op).
+- Account signup sends an email; with no SMTP configured the request **500s** (the email error propagates). Run a local SMTP catcher (e.g. Mailpit) for the signup/verify/reset flows.
