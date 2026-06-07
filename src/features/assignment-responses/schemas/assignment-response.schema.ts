@@ -21,7 +21,7 @@ export class AssignmentResponse {
     @Prop({ required: false, type: Number, default: 0 })
     score: number
 
-    @Prop({ required: true, type: Date, default: Date.now() })
+    @Prop({ required: true, type: Date, default: Date.now })
     startedAt: Date
 
     @Prop({ required: false, type: Date })

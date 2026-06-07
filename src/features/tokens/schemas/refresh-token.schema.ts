@@ -13,7 +13,7 @@ export class RefreshToken {
     @Prop({ type: ObjectId, ref: User.name, required: true })
     user: UserDocument
 
-    @Prop({ required: true, default: Date.now(), expires: '10d' })
+    @Prop({ required: true, default: Date.now, expires: '10d' })
     createdAt: Date
 }
 

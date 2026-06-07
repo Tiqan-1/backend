@@ -8,7 +8,7 @@ export type ChatDocument = HydratedDocument<Chat>
 
 @Schema()
 export class Chat {
-    @Prop({ required: true, type: Date, default: Date.now() })
+    @Prop({ required: true, type: Date, default: Date.now })
     createdAt: Date
     @Prop({ required: true, type: ObjectId, ref: 'User' })
     createdBy: UserDocument

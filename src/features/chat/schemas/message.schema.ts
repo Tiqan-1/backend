@@ -7,7 +7,7 @@ export type MessageDocument = HydratedDocument<Message>
 
 @Schema()
 export class Message {
-    @Prop({ required: true, type: Date, default: Date.now() })
+    @Prop({ required: true, type: Date, default: Date.now })
     createdAt: Date
     @Prop({ required: false, type: Date })
     updatedAt?: Date

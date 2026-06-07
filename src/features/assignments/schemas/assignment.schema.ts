@@ -41,10 +41,10 @@ export class Assignment {
     @Prop({ required: true, type: Date })
     availableUntil: Date
 
-    @Prop({ required: true, type: Date, default: Date.now() })
+    @Prop({ required: true, type: Date, default: Date.now })
     createdAt: Date
 
-    @Prop({ required: true, type: Date, default: Date.now() })
+    @Prop({ required: true, type: Date, default: Date.now })
     updatedAt: Date
 
     @Prop({ required: false, type: Object })
